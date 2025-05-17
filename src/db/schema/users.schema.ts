@@ -1,4 +1,6 @@
 import { pgTable, uuid, varchar, boolean, index } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+import { sites } from './sites.schema';
 
 export const users = pgTable(
   'users',
@@ -16,6 +18,11 @@ export const users = pgTable(
     },
   ]
 );
+
+// Define relations
+export const usersRelations = relations(users, ({ many }) => ({
+  sites: many(sites),
+}));
 
 // Type for user records
 export type User = typeof users.$inferSelect;
