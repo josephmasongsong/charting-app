@@ -1,4 +1,3 @@
-// src/db/schema/sites.schema.ts
 import {
   pgTable,
   uuid,
@@ -10,6 +9,7 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { events } from './events.schema';
 import { users } from './users.schema';
 
 export const sites = pgTable(
@@ -47,11 +47,12 @@ export const sites = pgTable(
 );
 
 // Define relations
-export const sitesRelations = relations(sites, ({ one }) => ({
+export const sitesRelations = relations(sites, ({ one, many }) => ({
   user: one(users, {
     fields: [sites.userId],
     references: [users.id],
   }),
+  events: many(events)
 }));
 
 // Export types for this model

@@ -22,6 +22,13 @@
       "when": 1747455070606,
       "tag": "0002_dapper_khan",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1747459053704,
+      "tag": "0003_flawless_sinister_six",
+      "breakpoints": true
     }
   ]
 }

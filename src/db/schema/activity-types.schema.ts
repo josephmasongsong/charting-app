@@ -1,5 +1,6 @@
 import { pgTable, uuid, varchar, timestamp, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { events } from './events.schema';
 import { programGoals } from './program-goals.schema';
 
 export const activityTypes = pgTable(
@@ -21,11 +22,12 @@ export const activityTypes = pgTable(
 );
 
 // Define relations
-export const activityTypesRelations = relations(activityTypes, ({ one }) => ({
+export const activityTypesRelations = relations(activityTypes, ({ one, many }) => ({
   programGoal: one(programGoals, {
     fields: [activityTypes.programGoalId],
     references: [programGoals.id],
   }),
+  events: many(events)
 }));
 
 // Export types for this model

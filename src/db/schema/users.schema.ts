@@ -1,5 +1,6 @@
 import { pgTable, uuid, varchar, boolean, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { events } from './events.schema';
 import { sites } from './sites.schema';
 
 export const users = pgTable(
@@ -21,6 +22,7 @@ export const users = pgTable(
 
 // Define relations
 export const usersRelations = relations(users, ({ many }) => ({
+  events: many(events),
   sites: many(sites),
 }));
 
