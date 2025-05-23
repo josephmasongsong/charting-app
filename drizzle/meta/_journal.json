@@ -36,6 +36,13 @@
       "when": 1747970288596,
       "tag": "0004_striped_toad_men",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1747971961871,
+      "tag": "0005_volatile_viper",
+      "breakpoints": true
     }
   ]
 }

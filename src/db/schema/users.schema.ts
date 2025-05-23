@@ -22,6 +22,7 @@ export const users = pgTable(
     hashedPassword: text('hashed_password'),
     resetToken: text('reset_token').unique(),
     resetTokenExpiry: timestamp('reset_token_expiry'),
+    role: text('role').default('user'),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },
