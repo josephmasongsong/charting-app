@@ -1,4 +1,12 @@
-import { pgTable, uuid, varchar, boolean, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  boolean,
+  index,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { events } from './events.schema';
 import { sites } from './sites.schema';
@@ -11,6 +19,11 @@ export const users = pgTable(
     lastName: varchar('last_name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }).notNull().unique(),
     isAdmin: boolean('is_admin').default(false).notNull(),
+    hashedPassword: text('hashed_password'),
+    resetToken: text('reset_token').unique(),
+    resetTokenExpiry: timestamp('reset_token_expiry'),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
   },
   table => [
     {
