@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
 import SignOutButton from '@/components/SignOutButton';
+import Link from 'next/link';
 
 export default async function Dashboard() {
   const session = await requireAuth();
@@ -59,9 +60,11 @@ export default async function Dashboard() {
             <CardDescription>Configure your account</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" className="w-full">
-              View Settings
-            </Button>
+            <Link href="/settings">
+              <Button variant="outline" className="w-full">
+                View Settings
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 

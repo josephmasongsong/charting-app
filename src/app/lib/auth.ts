@@ -53,9 +53,23 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        // Fetch user role from database
+        const [dbUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, user.id))
+          .limit(1);
+        token.role = dbUser?.role || 'user';
+      }
+      return token;
+    },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.sub!;
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
       }
       return session;
     },

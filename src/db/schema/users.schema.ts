@@ -18,7 +18,6 @@ export const users = pgTable(
     firstName: varchar('first_name', { length: 255 }).notNull(),
     lastName: varchar('last_name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }).notNull().unique(),
-    isAdmin: boolean('is_admin').default(false).notNull(),
     hashedPassword: text('hashed_password'),
     resetToken: text('reset_token').unique(),
     resetTokenExpiry: timestamp('reset_token_expiry'),
@@ -44,3 +43,4 @@ export const usersRelations = relations(users, ({ many }) => ({
 export type User = typeof users.$inferSelect;
 // Type for inserting user records
 export type NewUser = typeof users.$inferInsert;
+export type UserRole = 'admin' | 'user' | 'moderator';

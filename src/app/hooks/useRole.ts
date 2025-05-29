@@ -15,7 +15,7 @@ export function useRole() {
 
     if (session?.user?.id) {
       // Fetch user role from your API
-      fetch(`/api/user/${session.user.id}/role`)
+      fetch(`/api/users/${session.user.id}/role`)
         .then(res => res.json())
         .then(data => {
           setUserRole(data.role);
