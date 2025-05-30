@@ -6,58 +6,120 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Users, UserPlus, Shield, Activity } from 'lucide-react';
+import Link from 'next/link';
+import { db, users } from '@/db';
+import { eq, sql } from 'drizzle-orm';
 
 export default async function AdminDashboard() {
-  const { session, user } = await requireAdmin();
+  await requireAdmin();
+
+  // Get user statistics
+  const [totalUsers] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(users);
+
+  const [adminCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(users)
+    .where(eq(users.role, 'admin'));
+
+  const [moderatorCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(users)
+    .where(eq(users.role, 'moderator'));
+
+  const [userCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(users)
+    .where(eq(users.role, 'user'));
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <Badge variant="destructive">Admin Only</Badge>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Admin Dashboard</h2>
+        <p className="text-muted-foreground">
+          Overview of your application's users and system status.
+        </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin Panel</CardTitle>
-          <CardDescription>
-            Welcome to the admin dashboard. You have administrative privileges.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <p>
-              <strong>Admin:</strong> {session.user?.name}
-            </p>
-            <p>
-              <strong>Email:</strong> {session.user?.email}
-            </p>
-            <p>
-              <strong>Role:</strong> {user.role}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalUsers.count}</div>
+          </CardContent>
+        </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Admins</CardTitle>
+            <Shield className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{adminCount.count}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Moderators</CardTitle>
+            <Activity className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{moderatorCount.count}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Regular Users</CardTitle>
+            <Users className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{userCount.count}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>User Management</CardTitle>
-            <CardDescription>Manage system users</CardDescription>
+            <CardDescription>
+              Manage users, roles, and permissions across your application.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p>Admin-only content here</p>
+          <CardContent className="space-y-2">
+            <Link href="/admin/users">
+              <Button className="w-full">
+                <Users className="h-4 w-4 mr-2" />
+                Manage Users
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>System Settings</CardTitle>
-            <CardDescription>Configure system-wide settings</CardDescription>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>
+              Common administrative tasks and system management.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p>System configuration options</p>
+          <CardContent className="space-y-2">
+            <Link href="/admin/users">
+              <Button variant="outline" className="w-full">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Invite New User
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

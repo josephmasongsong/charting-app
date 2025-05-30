@@ -16,6 +16,6 @@ export const config = {
     '/dashboard/:path*',
     '/profile/:path*',
     '/settings/:path*',
-    '/admin/:path*',
+    '/admin/:path*', // This will be additionally protected by requireAdmin()
   ],
 };

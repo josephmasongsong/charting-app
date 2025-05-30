@@ -15,11 +15,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
-    const { name, email, role } = body;
+    const { firstName, lastName, name, email, role } = body;
 
-    // Check if user is trying to update their own profile or if they're an admin
+    // Check current user permissions
     const [currentUser] = await db
       .select()
       .from(users)
@@ -30,12 +30,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Only allow role changes if:
-    // 1. User is admin, OR
-    // 2. User is updating their own non-role fields
     const isAdmin = currentUser.role === 'admin';
     const isOwnProfile = session.user.id === id;
 
+    // Only allow role changes if user is admin
     if (role && !isAdmin) {
       return NextResponse.json(
         { error: 'Only admins can change roles' },
@@ -43,11 +41,9 @@ export async function PATCH(
       );
     }
 
+    // Only allow editing other users if admin
     if (!isOwnProfile && !isAdmin) {
-      return NextResponse.json(
-        { error: 'You can only update your own profile' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Validate role if provided
@@ -60,9 +56,45 @@ export async function PATCH(
       updatedAt: new Date(),
     };
 
-    if (name !== undefined) updateData.name = name;
-    if (email !== undefined) updateData.email = email;
-    if (role !== undefined && isAdmin) updateData.role = role;
+    // Handle name field - prioritize firstName/lastName combination
+    if (firstName !== undefined || lastName !== undefined) {
+      const first = firstName?.trim() || '';
+      const last = lastName?.trim() || '';
+      updateData.name = `${first} ${last}`.trim();
+    } else if (name !== undefined) {
+      updateData.name = name;
+    }
+
+    if (email !== undefined) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return NextResponse.json(
+          { error: 'Invalid email format' },
+          { status: 400 }
+        );
+      }
+
+      // Check if email is already taken by another user
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email.toLowerCase()))
+        .limit(1);
+
+      if (existingUser && existingUser.id !== id) {
+        return NextResponse.json(
+          { error: 'Email is already taken' },
+          { status: 400 }
+        );
+      }
+
+      updateData.email = email.toLowerCase();
+    }
+
+    if (role !== undefined && isAdmin) {
+      updateData.role = role;
+    }
 
     // Update user in database
     const [updatedUser] = await db
@@ -81,7 +113,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      message: 'Profile updated successfully',
+      message: 'User updated successfully',
       user: safeUser,
     });
   } catch (error) {
@@ -104,13 +136,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { id } = params;
 
     const [user] = await db
       .select({
         id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
         name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as(
           'name'
         ),
@@ -127,18 +157,32 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Only allow access to own profile or if admin
+    // Check permissions
     const [currentUser] = await db
       .select()
       .from(users)
       .where(eq(users.id, session.user.id))
       .limit(1);
 
-    if (session.user.id !== id && currentUser?.role !== 'admin') {
+    const isAdmin = currentUser?.role === 'admin';
+    const isOwnProfile = session.user.id === id;
+
+    if (!isOwnProfile && !isAdmin) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    return NextResponse.json({ user });
+    // Split name into firstName and lastName for editing
+    const nameParts = user.name?.split(' ') || [];
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    return NextResponse.json({
+      user: {
+        ...user,
+        firstName,
+        lastName,
+      },
+    });
   } catch (error) {
     console.error('User fetch error:', error);
     return NextResponse.json(

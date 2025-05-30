@@ -15,10 +15,10 @@ export function useRole() {
 
     if (session?.user?.id) {
       // Fetch user role from your API
-      fetch(`/api/users/${session.user.id}/role`)
+      fetch(`/api/users/${session.user.id}`)
         .then(res => res.json())
         .then(data => {
-          setUserRole(data.role);
+          setUserRole(data.user.role);
           setLoading(false);
         })
         .catch(() => {

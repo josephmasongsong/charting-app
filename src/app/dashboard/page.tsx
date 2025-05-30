@@ -7,9 +7,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { signOut } from 'next-auth/react';
 import SignOutButton from '@/components/SignOutButton';
 import Link from 'next/link';
+import Navigation from '@/components/Navigation';
 
 export default async function Dashboard() {
   const session = await requireAuth();
@@ -20,6 +20,8 @@ export default async function Dashboard() {
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <SignOutButton />
       </div>
+
+      <Navigation />
 
       <Card>
         <CardHeader>
