@@ -206,7 +206,7 @@ export default function AdminUsers() {
     setMessage('');
 
     try {
-      const response = await fetch(`/api/user/${editingUser.id}`, {
+      const response = await fetch(`/api/users/${editingUser.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm),
