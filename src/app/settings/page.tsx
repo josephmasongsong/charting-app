@@ -49,14 +49,44 @@ function SettingsContent() {
   const [error, setError] = useState('');
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
 
+  // Add debug logging
+  useEffect(() => {
+    console.log('Session data:', session);
+    console.log('User ID:', session?.user?.id);
+  }, [session]);
+
+  // Fetch user data
   // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!session?.user?.id) return;
+      console.log('Starting fetchUserData...');
+
+      if (!session?.user?.id) {
+        console.log('No session or user ID, returning early');
+        return;
+      }
+
+      console.log('Fetching user data for ID:', session.user.id);
 
       try {
         const response = await fetch(`/api/users/${session.user.id}`);
+        console.log('API Response status:', response.status);
+
+        if (!response.ok) {
+          console.error(
+            'API response not OK:',
+            response.status,
+            response.statusText
+          );
+          const errorText = await response.text();
+          console.error('Error response body:', errorText);
+          setError(`Failed to load user data: ${response.status}`);
+          setIsLoading(false);
+          return;
+        }
+
         const data = await response.json();
+        console.log('API Response data:', data);
 
         if (data.user) {
           setUserData(data.user);
@@ -67,11 +97,16 @@ function SettingsContent() {
             role: data.user.role || 'user',
           });
           setCurrentUserRole(data.user.role || 'user');
+          console.log('User data set successfully');
+        } else {
+          console.log('No user data in response');
+          setError('No user data found');
         }
       } catch (error) {
-        console.error('Failed to fetch user data:', error);
-        setError('Failed to load user data');
+        console.error('Fetch error:', error);
+        setError('Network error occurred');
       } finally {
+        console.log('Setting loading to false');
         setIsLoading(false);
       }
     };
