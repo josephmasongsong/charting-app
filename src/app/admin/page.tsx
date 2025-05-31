@@ -156,6 +156,23 @@ export default async function AdminDashboard() {
             </Link>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Activity Types</CardTitle>
+            <CardDescription>
+              Manage activity types and their relationships to program goals.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/admin/activity-types">
+              <Button className="w-full">
+                <Activity className="h-4 w-4 mr-2" />
+                Manage Activity Types
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
