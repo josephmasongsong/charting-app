@@ -41,6 +41,7 @@ import {
   Users,
   Home,
   Check,
+  Eye,
   X,
 } from 'lucide-react';
 
@@ -331,9 +332,18 @@ export default function AdminSites() {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => router.push(`/sites/${site.id}`)}
+                              title="View site"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() =>
                                 router.push(`/admin/sites/${site.id}/edit`)
                               }
+                              title="Edit site"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -341,6 +351,7 @@ export default function AdminSites() {
                               variant="outline"
                               size="sm"
                               onClick={() => openDeleteSite(site)}
+                              title="Delete site"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

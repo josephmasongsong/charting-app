@@ -2,7 +2,7 @@
 // In your dashboard or navigation component
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Users } from 'lucide-react';
+import { Users, MapPin } from 'lucide-react';
 import { useRole } from '@/app/hooks/useRole';
 
 export default function Navigation() {
@@ -20,6 +20,13 @@ export default function Navigation() {
           </Button>
         </Link>
       )}
+
+      <Link href="/sites">
+        <Button variant="outline">
+          <MapPin className="h-4 w-4 mr-2" />
+          Browse Sites
+        </Button>
+      </Link>
     </nav>
   );
 }
