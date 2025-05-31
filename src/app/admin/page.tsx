@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, UserPlus, Shield, Activity } from 'lucide-react';
+import { Users, UserPlus, Shield, Activity, Target } from 'lucide-react';
 import Link from 'next/link';
 import { db, users } from '@/db';
 import { eq, sql } from 'drizzle-orm';
@@ -118,6 +118,23 @@ export default async function AdminDashboard() {
               <Button variant="outline" className="w-full">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Invite New User
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Program Goals</CardTitle>
+            <CardDescription>
+              Manage program goals and objectives for your application.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/admin/program-goals">
+              <Button className="w-full">
+                <Target className="h-4 w-4 mr-2" />
+                Manage Program Goals
               </Button>
             </Link>
           </CardContent>
