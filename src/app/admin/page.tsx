@@ -139,6 +139,23 @@ export default async function AdminDashboard() {
             </Link>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Community Partners</CardTitle>
+            <CardDescription>
+              Manage community partners and organizations for your application.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/admin/community-partners">
+              <Button className="w-full">
+                <Users className="h-4 w-4 mr-2" />
+                Manage Community Partners
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
