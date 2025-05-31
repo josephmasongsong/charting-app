@@ -6,6 +6,7 @@ import AuthProvider from '@/components/AuthProvider';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import ClientAuthGuard from '@/components/ClientAuthGuard';
+import Navigation from '@/components/Navigation';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -33,7 +34,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <AuthGuard>{children}</AuthGuard>
+          <AuthGuard>
+            <Navigation />
+            <main className="min-h-screen bg-gray-50">{children}</main>
+          </AuthGuard>
         </AuthProvider>
       </body>
     </html>
