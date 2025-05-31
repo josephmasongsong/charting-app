@@ -1,4 +1,6 @@
 import { pgTable, uuid, varchar, timestamp, index } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+import { sites } from './sites.schema';
 
 export const communityPartners = pgTable(
   'community_partners',
@@ -13,6 +15,13 @@ export const communityPartners = pgTable(
       nameIdx: index('site_name_idx').on(table.name),
     },
   ]
+);
+
+export const communityPartnersRelations = relations(
+  communityPartners,
+  ({ many }) => ({
+    sites: many(sites),
+  })
 );
 
 // Export types for this model

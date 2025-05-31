@@ -11,6 +11,7 @@ import {
 import { relations } from 'drizzle-orm';
 import { events } from './events.schema';
 import { users } from './users.schema';
+import { communityPartners } from './community-partners.schema';
 
 export const sites = pgTable(
   'sites',
@@ -25,6 +26,9 @@ export const sites = pgTable(
     hasCommunityPartner: boolean('has_community_partner')
       .default(false)
       .notNull(),
+    communityPartnerId: uuid('community_partner_id').references(
+      () => communityPartners.id
+    ),
     isSingleSeniorOnly: boolean('is_single_senior_only')
       .default(true)
       .notNull(),
@@ -47,12 +51,16 @@ export const sites = pgTable(
 );
 
 // Define relations
-export const sitesRelations = relations(sites, ({ one, many }) => ({
+export const sitesRelations = relations(sites, ({ one }) => ({
   user: one(users, {
     fields: [sites.userId],
     references: [users.id],
   }),
-  events: many(events)
+  communityPartner: one(communityPartners, {
+    fields: [sites.communityPartnerId],
+    references: [communityPartners.id],
+  }),
+  // events: many(events),
 }));
 
 // Export types for this model
