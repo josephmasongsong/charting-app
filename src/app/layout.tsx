@@ -1,7 +1,11 @@
+import { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import AuthProvider from '@/components/AuthProvider';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/lib/auth';
+import ClientAuthGuard from '@/components/ClientAuthGuard';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -28,8 +32,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <AuthGuard>{children}</AuthGuard>
+        </AuthProvider>
       </body>
     </html>
   );
+}
+
+async function AuthGuard({ children }: { children: ReactNode }) {
+  const session = await getServerSession(authOptions);
+
+  // Get the current pathname (you'll need to pass this from a client component)
+  // For now, we'll handle this in the client component below
+  return <ClientAuthGuard>{children}</ClientAuthGuard>;
 }
