@@ -17,12 +17,12 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // Convert date string back to Date object for validation
-    if (body.eventDate) {
-      body.eventDate = new Date(body.eventDate);
-    }
+    // ❌ Remove this line - it's causing the validation error!
+    // if (body.eventDate) {
+    //   body.eventDate = new Date(body.eventDate);
+    // }
 
-    // Validate with Zod
+    // Validate with Zod - body.eventDate is already a string which is what createEventSchema expects
     const validation = createEventSchema.safeParse(body);
 
     if (!validation.success) {
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       .values({
         ...data,
         userId: session.user.id,
-        eventDate: data.eventDate.toISOString().split('T')[0], // Convert to YYYY-MM-DD format
+        eventDate: new Date(data.eventDate).toISOString().split('T')[0], // Convert string to Date then to YYYY-MM-DD
         createdAt: new Date(),
         updatedAt: new Date(),
       })

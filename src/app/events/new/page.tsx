@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
-import CreateEventForm from './components/CreateEventForm';
+import EventForm from '@/components/EventForm';
 
 export default async function NewEventPage() {
   const session = await getServerSession(authOptions);
@@ -11,7 +11,7 @@ export default async function NewEventPage() {
     redirect('/login');
   }
 
-  return <CreateEventForm />;
+  return <EventForm mode="create" />;
 }
 
 export async function generateMetadata() {

@@ -100,9 +100,8 @@ export default function EventForm({
         description: initialData.description || '',
         eventDuration: minutesToDuration(initialData.eventDuration || 60),
         adminDuration: minutesToDuration(initialData.adminDuration || 30),
-        newParticipants: initialData.newParticipants?.toString() || '0',
-        returningParticipants:
-          initialData.returningParticipants?.toString() || '0',
+        newParticipants: initialData.newParticipants || 0,
+        returningParticipants: initialData.returningParticipants || 0,
         eventIsYouthFocused: initialData.eventIsYouthFocused || false,
         totalCost: initialData.totalCost || '0.00',
         activityTypeId: initialData.activityTypeId || '',
@@ -119,8 +118,8 @@ export default function EventForm({
       description: '',
       eventDuration: { hours: 1, minutes: 0 },
       adminDuration: { hours: 0, minutes: 30 },
-      newParticipants: '0',
-      returningParticipants: '0',
+      newParticipants: 0,
+      returningParticipants: 0,
       eventIsYouthFocused: false,
       totalCost: '0.00',
       activityTypeId: '',
@@ -227,63 +226,88 @@ export default function EventForm({
     setLoading(true);
     setError('');
 
-    // Prepare data for validation
-    const submitData = {
-      ...formData,
+    // Check if eventDate exists
+    if (!formData.eventDate) {
+      setErrors({ eventDate: 'Event date is required' });
+      setLoading(false);
+      return;
+    }
+
+    // Validate all steps one final time
+    const step1Valid = eventBasicInfoSchema.safeParse({
+      title: formData.title,
       eventDate: formData.eventDate,
-    };
+      description: formData.description,
+    });
 
-    // Final validation
-    const validation = eventBasicInfoSchema
-      .merge(eventDetailsSchema)
-      .merge(eventAssociationsBaseSchema)
-      .refine(
-        data => {
-          if (data.hasCoHost && !data.communityPartnerId) {
-            return false;
-          }
-          return true;
-        },
-        {
-          message:
-            "Community partner is required when 'Has Co-Host' is selected",
-          path: ['communityPartnerId'],
-        }
-      )
-      .safeParse(submitData);
+    const step2Valid = eventDetailsSchema.safeParse({
+      eventDuration: formData.eventDuration,
+      adminDuration: formData.adminDuration,
+      newParticipants: formData.newParticipants,
+      returningParticipants: formData.returningParticipants,
+      eventIsYouthFocused: formData.eventIsYouthFocused,
+      totalCost: formData.totalCost,
+    });
 
-    if (!validation.success) {
+    const step3Valid = eventAssociationsSchema.safeParse({
+      activityTypeId: formData.activityTypeId,
+      siteId: formData.siteId,
+      hasCoHost: formData.hasCoHost,
+      communityPartnerId: formData.communityPartnerId,
+    });
+
+    // Check for validation errors
+    if (!step1Valid.success || !step2Valid.success || !step3Valid.success) {
       const fieldErrors: Record<string, string> = {};
-      validation.error.errors.forEach(err => {
-        if (err.path.length > 0) {
-          const fieldPath = err.path.join('.');
-          fieldErrors[fieldPath] = err.message;
+
+      [step1Valid, step2Valid, step3Valid].forEach(validation => {
+        if (!validation.success) {
+          validation.error.errors.forEach(err => {
+            if (err.path.length > 0) {
+              const fieldPath = err.path.join('.');
+              fieldErrors[fieldPath] = err.message;
+            }
+          });
         }
       });
+
       setErrors(fieldErrors);
       setLoading(false);
       return;
     }
 
-    // Transform the validated data
-    const transformedData = {
-      ...validation.data,
+    // Check co-host refinement manually
+    if (formData.hasCoHost && !formData.communityPartnerId) {
+      setErrors({
+        communityPartnerId:
+          "Community partner is required when 'Has Co-Host' is selected",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Transform data for API (convert form format to API format)
+    const apiData = {
+      title: formData.title,
+      eventDate: formData.eventDate.toISOString(), // Convert Date to string
+      description: formData.description,
       eventDuration:
-        validation.data.eventDuration.hours * 60 +
-        validation.data.eventDuration.minutes,
+        formData.eventDuration.hours * 60 + formData.eventDuration.minutes, // Convert to minutes
       adminDuration:
-        validation.data.adminDuration.hours * 60 +
-        validation.data.adminDuration.minutes,
-      communityPartnerId: validation.data.hasCoHost
-        ? validation.data.communityPartnerId
+        formData.adminDuration.hours * 60 + formData.adminDuration.minutes, // Convert to minutes
+      newParticipants: formData.newParticipants, // Already a number
+      returningParticipants: formData.returningParticipants, // Already a number
+      eventIsYouthFocused: formData.eventIsYouthFocused,
+      hasCoHost: formData.hasCoHost,
+      totalCost: formData.totalCost,
+      activityTypeId: formData.activityTypeId,
+      siteId: formData.siteId,
+      communityPartnerId: formData.hasCoHost
+        ? formData.communityPartnerId
         : null,
     };
 
-    // Convert Date to ISO string for API
-    const apiData = {
-      ...transformedData,
-      eventDate: transformedData.eventDate.toISOString(),
-    };
+    console.log('API Data being sent:', apiData); // Debug log
 
     try {
       const url =
