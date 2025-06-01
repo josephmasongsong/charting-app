@@ -51,7 +51,7 @@ export const sites = pgTable(
 );
 
 // Define relations
-export const sitesRelations = relations(sites, ({ one }) => ({
+export const sitesRelations = relations(sites, ({ one, many }) => ({
   user: one(users, {
     fields: [sites.userId],
     references: [users.id],
@@ -60,7 +60,7 @@ export const sitesRelations = relations(sites, ({ one }) => ({
     fields: [sites.communityPartnerId],
     references: [communityPartners.id],
   }),
-  // events: many(events),
+  events: many(events),
 }));
 
 // Export types for this model

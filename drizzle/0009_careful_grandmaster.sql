@@ -1,0 +1,1 @@
+CREATE INDEX "community_partner_idx" ON "events" USING btree ("community_partner_id");
