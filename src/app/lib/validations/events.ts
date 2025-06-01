@@ -164,6 +164,35 @@ export const createEventSchema = createEventBaseSchema
     communityPartnerId: data.hasCoHost ? data.communityPartnerId : null,
   }));
 
+export const updateEventSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(255, 'Title too long'),
+  eventDate: z
+    .string()
+    .refine(date => !isNaN(Date.parse(date)), 'Invalid date format'),
+  description: z
+    .string()
+    .min(1, 'Description is required')
+    .max(5000, 'Description too long'),
+  eventDuration: z.number().min(1, 'Event duration must be at least 1 minute'),
+  adminDuration: z.number().min(0, 'Admin duration cannot be negative'),
+  newParticipants: z.number().min(0, 'New participants cannot be negative'),
+  returningParticipants: z
+    .number()
+    .min(0, 'Returning participants cannot be negative'),
+  eventIsYouthFocused: z.boolean(),
+  hasCoHost: z.boolean(),
+  totalCost: z
+    .string()
+    .refine(
+      cost => /^\d+(\.\d{1,2})?$/.test(cost),
+      'Total cost must be a valid monetary amount'
+    ),
+  activityTypeId: z.string().uuid('Invalid activity type'),
+  siteId: z.string().uuid('Invalid site'),
+  communityPartnerId: z.string().uuid('Invalid community partner').nullable(),
+});
+
+export type UpdateEvent = z.infer<typeof updateEventSchema>;
 export type EventBasicInfo = z.infer<typeof eventBasicInfoSchema>;
 export type EventDetails = z.infer<typeof eventDetailsSchema>;
 export type EventAssociations = z.infer<typeof eventAssociationsBaseSchema>;
