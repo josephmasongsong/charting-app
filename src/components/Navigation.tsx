@@ -3,7 +3,8 @@
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Home, MapPin, Settings, Shield, LogOut, User } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Home, MapPin, Settings, Shield, LogOut, Plus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,24 @@ export default function Navigation() {
   };
 
   if (!session) return null;
+
+  // Get user initials for avatar fallback
+  const getUserInitials = (name?: string | null, email?: string | null) => {
+    if (name) {
+      return name
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    if (email) {
+      return email[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  const userInitials = getUserInitials(session.user?.name, session.user?.email);
 
   return (
     <nav className="border-b bg-white sticky top-0 z-50">
@@ -58,45 +77,72 @@ export default function Navigation() {
             )}
           </div>
 
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <User className="h-4 w-4 mr-2" />
-                {session.user?.name || session.user?.email}
+          {/* Right Side - Create Event Button + User Menu */}
+          <div className="flex items-center space-x-3">
+            {/* Create Event Button */}
+            <Link href="/events/new">
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Event
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+            </Link>
 
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="w-full">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage
+                      src={session.user?.image || undefined}
+                      alt={
+                        session.user?.name ||
+                        session.user?.email ||
+                        'User avatar'
+                      }
+                    />
+                    <AvatarFallback className="text-sm">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>{session.user?.name || session.user?.email}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
 
-              {isAdmin && (
                 <DropdownMenuItem asChild>
-                  <Link href="/admin" className="w-full">
-                    <Shield className="h-4 w-4 mr-2" />
-                    Admin Dashboard
+                  <Link href="/settings" className="w-full">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
                   </Link>
                 </DropdownMenuItem>
-              )}
 
-              <DropdownMenuSeparator />
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="w-full">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Admin Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
 
-              <DropdownMenuItem
-                onClick={handleSignOut}
-                className="text-red-600"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="text-red-600"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </nav>

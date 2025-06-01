@@ -86,11 +86,10 @@ export const eventBasicInfoSchema = z.object({
     .min(1, 'Title is required')
     .max(255, 'Title must be 255 characters or less')
     .trim(),
-  eventDate: z
-    .date({ required_error: 'Please select an event date' })
-    .refine(date => date >= new Date(new Date().setHours(0, 0, 0, 0)), {
-      message: 'Event date cannot be in the past',
-    }),
+  eventDate: z.date({ required_error: 'Please select an event date' }),
+  // .refine(date => date >= new Date(new Date().setHours(0, 0, 0, 0)), {
+  //   message: 'Event date cannot be in the past',
+  // }),
   description: z
     .string()
     .min(1, 'Description is required')
