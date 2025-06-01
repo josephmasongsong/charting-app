@@ -4,7 +4,15 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Home, MapPin, Settings, Shield, LogOut, Plus } from 'lucide-react';
+import {
+  Home,
+  MapPin,
+  Calendar,
+  Settings,
+  Shield,
+  LogOut,
+  Plus,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +72,13 @@ export default function Navigation() {
               <Button variant="ghost" size="sm">
                 <MapPin className="h-4 w-4 mr-2" />
                 Sites
+              </Button>
+            </Link>
+
+            <Link href="/events">
+              <Button variant="ghost" size="sm">
+                <Calendar className="h-4 w-4 mr-2" />
+                Events
               </Button>
             </Link>
 
