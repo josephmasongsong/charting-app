@@ -38,6 +38,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import {
   Plus,
   Edit,
@@ -50,6 +51,7 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  UserX,
 } from 'lucide-react';
 
 interface User {
@@ -57,6 +59,7 @@ interface User {
   name: string;
   email: string;
   role: 'admin' | 'user' | 'partner';
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
   firstName?: string;
@@ -102,11 +105,15 @@ export default function AdminUsers() {
     lastName: '',
     email: '',
     role: 'user' as 'admin' | 'user' | 'partner',
+    isActive: true,
   });
   const [editLoading, setEditLoading] = useState(false);
 
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  // Check if current user is admin
+  const isAdmin = session?.user?.role === 'admin';
 
   // Fetch users
   const fetchUsers = async (page = 1, searchTerm = '') => {
@@ -193,6 +200,7 @@ export default function AdminUsers() {
       lastName: nameParts.slice(1).join(' ') || '',
       email: user.email,
       role: user.role,
+      isActive: user.isActive ?? true,
     });
     setEditOpen(true);
   };
@@ -251,6 +259,24 @@ export default function AdminUsers() {
       >
         {icons[role as keyof typeof icons]}
         {role}
+      </Badge>
+    );
+  };
+
+  // Status badge component
+  const StatusBadge = ({ isActive }: { isActive?: boolean }) => {
+    if (isActive === false) {
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <UserX className="h-3 w-3" />
+          Inactive
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="default" className="flex items-center gap-1">
+        <CheckCircle className="h-3 w-3" />
+        Active
       </Badge>
     );
   };
@@ -464,6 +490,7 @@ export default function AdminUsers() {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -475,6 +502,9 @@ export default function AdminUsers() {
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
                         <RoleBadge role={user.role} />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge isActive={user.isActive} />
                       </TableCell>
                       <TableCell>
                         {new Date(user.createdAt).toLocaleDateString()}
@@ -584,7 +614,7 @@ export default function AdminUsers() {
                   onValueChange={(value: 'admin' | 'user' | 'partner') =>
                     setEditForm({ ...editForm, role: value })
                   }
-                  disabled={editLoading}
+                  disabled={editLoading || !isAdmin}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -610,7 +640,46 @@ export default function AdminUsers() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
+                {!isAdmin && (
+                  <p className="text-sm text-muted-foreground">
+                    Only admins can change roles
+                  </p>
+                )}
               </div>
+
+              {/* Account Status Toggle - Only visible to admins */}
+              {isAdmin && (
+                <div className="space-y-2">
+                  <Label htmlFor="editIsActive">Account Status</Label>
+                  <div className="flex items-center space-x-3">
+                    <Switch
+                      id="editIsActive"
+                      checked={editForm.isActive}
+                      onCheckedChange={checked =>
+                        setEditForm({ ...editForm, isActive: checked })
+                      }
+                      disabled={editLoading}
+                    />
+                    <Label htmlFor="editIsActive" className="text-sm">
+                      {editForm.isActive ? (
+                        <span className="text-green-600 flex items-center gap-1">
+                          <CheckCircle className="h-4 w-4" />
+                          Active
+                        </span>
+                      ) : (
+                        <span className="text-red-600 flex items-center gap-1">
+                          <UserX className="h-4 w-4" />
+                          Inactive
+                        </span>
+                      )}
+                    </Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Inactive users cannot login and will be logged out
+                    automatically
+                  </p>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2">
                 <Button

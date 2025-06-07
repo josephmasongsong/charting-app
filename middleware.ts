@@ -6,6 +6,14 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
 
+    // Check if user is inactive and force logout
+    if (token && !token.isActive) {
+      // Redirect to login with a message about deactivated account
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('error', 'account_deactivated');
+      return NextResponse.redirect(loginUrl);
+    }
+
     // Redirect authenticated users away from auth pages
     if (
       token &&
@@ -43,8 +51,8 @@ export default withAuth(
           return true;
         }
 
-        // For all other routes, require authentication
-        return !!token;
+        // For all other routes, require authentication AND active account
+        return !!token && token.isActive !== false;
       },
     },
   }

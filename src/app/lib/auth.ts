@@ -28,6 +28,13 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Check if user account is active
+        if (!user.isActive) {
+          throw new Error(
+            'This account has been deactivated. Please contact your administrator.'
+          );
+        }
+
         const passwordMatch = await bcrypt.compare(
           credentials.password,
           user.hashedPassword
@@ -41,6 +48,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.firstName + ' ' + user.lastName,
+          isActive: user.isActive,
         };
       },
     }),
@@ -56,6 +64,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.isActive = user.isActive;
         // Fetch user role from database
         const [dbUser] = await db
           .select()
@@ -63,6 +72,16 @@ export const authOptions: NextAuthOptions = {
           .where(eq(users.id, user.id))
           .limit(1);
         token.role = dbUser?.role || 'user';
+      } else {
+        // Re-check isActive status on each request to handle real-time deactivation
+        if (token.id) {
+          const [dbUser] = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, token.id as string))
+            .limit(1);
+          token.isActive = dbUser?.isActive ?? false;
+        }
       }
       return token;
     },
@@ -70,6 +89,7 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.isActive = token.isActive as boolean;
       }
       return session;
     },

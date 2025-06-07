@@ -9,6 +9,11 @@ export async function requireAuth() {
     redirect('/login');
   }
 
+  // Check if user account is active
+  if (session.user.isActive === false) {
+    redirect('/login?error=account_deactivated');
+  }
+
   return session;
 }
 

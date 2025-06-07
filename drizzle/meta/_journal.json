@@ -78,6 +78,13 @@
       "when": 1748728823204,
       "tag": "0010_next_shiver_man",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1749329531533,
+      "tag": "0011_wild_rick_jones",
+      "breakpoints": true
     }
   ]
 }

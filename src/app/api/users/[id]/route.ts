@@ -17,7 +17,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const { firstName, lastName, name, email, role } = body;
+    const { firstName, lastName, name, email, role, isActive } = body;
 
     // Check current user permissions
     const [currentUser] = await db
@@ -41,6 +41,14 @@ export async function PATCH(
       );
     }
 
+    // Only allow isActive changes if user is admin
+    if (isActive !== undefined && !isAdmin) {
+      return NextResponse.json(
+        { error: 'Only admins can change account status' },
+        { status: 403 }
+      );
+    }
+
     // Only allow editing other users if admin
     if (!isOwnProfile && !isAdmin) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -60,9 +68,13 @@ export async function PATCH(
     if (firstName !== undefined || lastName !== undefined) {
       const first = firstName?.trim() || '';
       const last = lastName?.trim() || '';
-      updateData.name = `${first} ${last}`.trim();
+      updateData.firstName = first;
+      updateData.lastName = last;
     } else if (name !== undefined) {
-      updateData.name = name;
+      // If only name is provided, try to split it
+      const nameParts = name.trim().split(' ');
+      updateData.firstName = nameParts[0] || '';
+      updateData.lastName = nameParts.slice(1).join(' ') || '';
     }
 
     if (email !== undefined) {
@@ -94,6 +106,10 @@ export async function PATCH(
 
     if (role !== undefined && isAdmin) {
       updateData.role = role;
+    }
+
+    if (isActive !== undefined && isAdmin) {
+      updateData.isActive = isActive;
     }
 
     // Update user in database
@@ -146,6 +162,7 @@ export async function GET(
         ),
         email: users.email,
         role: users.role,
+        isActive: users.isActive,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
       })

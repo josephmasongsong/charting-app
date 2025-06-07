@@ -22,6 +22,7 @@ export const users = pgTable(
     resetToken: text('reset_token').unique(),
     resetTokenExpiry: timestamp('reset_token_expiry'),
     role: text('role').default('user'),
+    isActive: boolean('is_active').default(true).notNull(), // Add this line
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },
