@@ -56,7 +56,7 @@ export default async function AdminDashboard() {
     .select({ count: sql<number>`count(*)` })
     .from(programGoals);
 
-  const [partnerCount] = await db
+  const [communityPartnerCount] = await db
     .select({ count: sql<number>`count(*)` })
     .from(communityPartners);
 
@@ -182,7 +182,9 @@ export default async function AdminDashboard() {
               <CommunityIcon className="h-4 w-4 text-teal-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{partnerCount.count}</div>
+              <div className="text-2xl font-bold">
+                {communityPartnerCount.count}
+              </div>
             </CardContent>
           </Card>
         </div>
