@@ -41,10 +41,10 @@ export default async function AdminDashboard() {
     .from(users)
     .where(eq(users.role, 'admin'));
 
-  const [moderatorCount] = await db
+  const [partnerCount] = await db
     .select({ count: sql<number>`count(*)` })
     .from(users)
-    .where(eq(users.role, 'moderator'));
+    .where(eq(users.role, 'partner'));
 
   const [userCount] = await db
     .select({ count: sql<number>`count(*)` })
@@ -109,11 +109,11 @@ export default async function AdminDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Moderators</CardTitle>
+              <CardTitle className="text-sm font-medium">Partners</CardTitle>
               <Activity className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{moderatorCount.count}</div>
+              <div className="text-2xl font-bold">{partnerCount.count}</div>
             </CardContent>
           </Card>
 

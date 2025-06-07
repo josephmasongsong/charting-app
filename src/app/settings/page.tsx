@@ -29,7 +29,7 @@ interface UserData {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'admin' | 'user' | 'moderator';
+  role: 'admin' | 'user' | 'partner';
   createdAt: string;
   updatedAt: string;
 }
@@ -41,7 +41,7 @@ function SettingsContent() {
     firstName: '',
     lastName: '',
     email: '',
-    role: 'user' as 'admin' | 'user' | 'moderator',
+    role: 'user' as 'admin' | 'user' | 'partner',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -159,7 +159,7 @@ function SettingsContent() {
     switch (role) {
       case 'admin':
         return <Shield className="h-4 w-4" />;
-      case 'moderator':
+      case 'partner':
         return <UserCheck className="h-4 w-4" />;
       default:
         return <User className="h-4 w-4" />;
@@ -170,7 +170,7 @@ function SettingsContent() {
     switch (role) {
       case 'admin':
         return 'destructive';
-      case 'moderator':
+      case 'partner':
         return 'secondary';
       default:
         return 'default';
@@ -274,7 +274,7 @@ function SettingsContent() {
               <Label htmlFor="role">Role</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: 'admin' | 'user' | 'moderator') =>
+                onValueChange={(value: 'admin' | 'user' | 'partner') =>
                   setFormData({ ...formData, role: value })
                 }
                 disabled={isSaving || currentUserRole !== 'admin'}
@@ -289,10 +289,10 @@ function SettingsContent() {
                       User
                     </div>
                   </SelectItem>
-                  <SelectItem value="moderator">
+                  <SelectItem value="partner">
                     <div className="flex items-center gap-2">
                       <UserCheck className="h-4 w-4" />
-                      Moderator
+                      Partner
                     </div>
                   </SelectItem>
                   <SelectItem value="admin">

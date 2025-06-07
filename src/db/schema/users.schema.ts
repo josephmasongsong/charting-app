@@ -43,4 +43,4 @@ export const usersRelations = relations(users, ({ many }) => ({
 export type User = typeof users.$inferSelect;
 // Type for inserting user records
 export type NewUser = typeof users.$inferInsert;
-export type UserRole = 'admin' | 'user' | 'moderator';
+export type UserRole = 'admin' | 'user' | 'partner';

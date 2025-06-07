@@ -56,7 +56,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user' | 'moderator';
+  role: 'admin' | 'user' | 'partner';
   createdAt: string;
   updatedAt: string;
   firstName?: string;
@@ -89,7 +89,7 @@ export default function AdminUsers() {
     lastName: '',
     email: '',
     password: '',
-    role: 'user' as 'admin' | 'user' | 'moderator',
+    role: 'user' as 'admin' | 'user' | 'partner',
     sendInvite: true,
   });
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -101,7 +101,7 @@ export default function AdminUsers() {
     firstName: '',
     lastName: '',
     email: '',
-    role: 'user' as 'admin' | 'user' | 'moderator',
+    role: 'user' as 'admin' | 'user' | 'partner',
   });
   const [editLoading, setEditLoading] = useState(false);
 
@@ -234,13 +234,13 @@ export default function AdminUsers() {
   const RoleBadge = ({ role }: { role: string }) => {
     const variants = {
       admin: 'destructive',
-      moderator: 'secondary',
+      partner: 'secondary',
       user: 'default',
     } as const;
 
     const icons = {
       admin: <Shield className="h-3 w-3" />,
-      moderator: <UserCheck className="h-3 w-3" />,
+      partner: <UserCheck className="h-3 w-3" />,
       user: <User className="h-3 w-3" />,
     };
 
@@ -343,7 +343,7 @@ export default function AdminUsers() {
                 <Label htmlFor="role">Role</Label>
                 <Select
                   value={inviteForm.role}
-                  onValueChange={(value: 'admin' | 'user' | 'moderator') =>
+                  onValueChange={(value: 'admin' | 'user' | 'partner') =>
                     setInviteForm({ ...inviteForm, role: value })
                   }
                   disabled={inviteLoading}
@@ -358,10 +358,10 @@ export default function AdminUsers() {
                         User
                       </div>
                     </SelectItem>
-                    <SelectItem value="moderator">
+                    <SelectItem value="partner">
                       <div className="flex items-center gap-2">
                         <UserCheck className="h-4 w-4" />
-                        Moderator
+                        Partner
                       </div>
                     </SelectItem>
                     <SelectItem value="admin">
@@ -581,7 +581,7 @@ export default function AdminUsers() {
                 <Label htmlFor="editRole">Role</Label>
                 <Select
                   value={editForm.role}
-                  onValueChange={(value: 'admin' | 'user' | 'moderator') =>
+                  onValueChange={(value: 'admin' | 'user' | 'partner') =>
                     setEditForm({ ...editForm, role: value })
                   }
                   disabled={editLoading}
@@ -596,10 +596,10 @@ export default function AdminUsers() {
                         User
                       </div>
                     </SelectItem>
-                    <SelectItem value="moderator">
+                    <SelectItem value="partner">
                       <div className="flex items-center gap-2">
                         <UserCheck className="h-4 w-4" />
-                        Moderator
+                        Partner
                       </div>
                     </SelectItem>
                     <SelectItem value="admin">

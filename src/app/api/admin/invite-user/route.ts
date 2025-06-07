@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     }
 
     // Validate role
-    if (!['admin', 'user', 'moderator'].includes(role)) {
+    if (!['admin', 'user', 'partner'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 

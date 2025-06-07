@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
-export type UserRole = 'admin' | 'user' | 'moderator';
+export type UserRole = 'admin' | 'user' | 'partner';
 
 export function useRole() {
   const { data: session, status } = useSession();
@@ -33,7 +33,7 @@ export function useRole() {
     role: userRole,
     loading,
     isAdmin: userRole === 'admin',
-    isModerator: userRole === 'moderator',
+    isPartner: userRole === 'partner',
     isUser: userRole === 'user',
   };
 }
