@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -55,8 +56,18 @@ export default function Navigation() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo/Brand */}
-          <Link href="/dashboard" className="font-bold text-xl">
-            Tenant Engagement Hub
+          <Link
+            href="/dashboard"
+            className="font-bold text-xl flex items-center"
+          >
+            <Image
+              src="/logo.jpg"
+              width={40}
+              height={40}
+              alt="BCH Tenant Engagement"
+              className="h-10 w-10 mr-4"
+            />
+            Tenant Engagement
           </Link>
 
           {/* Main Navigation */}

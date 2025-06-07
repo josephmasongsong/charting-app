@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,6 +92,13 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
+          <Image
+            src="/logo.jpg"
+            width={40}
+            height={40}
+            alt="BCH Tenant Engagement"
+            className="h-10 w-10 mx-auto"
+          />
           <CardTitle className="text-2xl font-bold text-center">
             Sign in
           </CardTitle>
