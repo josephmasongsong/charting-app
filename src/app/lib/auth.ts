@@ -49,6 +49,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.firstName + ' ' + user.lastName,
           isActive: user.isActive,
+          region: user.region,
         };
       },
     }),
@@ -65,6 +66,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.isActive = user.isActive;
+        token.region = user.region;
         // Fetch user role from database
         const [dbUser] = await db
           .select()
@@ -81,6 +83,7 @@ export const authOptions: NextAuthOptions = {
             .where(eq(users.id, token.id as string))
             .limit(1);
           token.isActive = dbUser?.isActive ?? false;
+          token.region = dbUser?.region ?? 'LMDM';
         }
       }
       return token;
@@ -90,6 +93,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.isActive = token.isActive as boolean;
+        session.user.region = token.region as string;
       }
       return session;
     },

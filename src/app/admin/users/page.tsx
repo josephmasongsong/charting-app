@@ -59,6 +59,7 @@ interface User {
   name: string;
   email: string;
   role: 'admin' | 'user' | 'partner';
+  region?: string;
   isActive?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -93,6 +94,7 @@ export default function AdminUsers() {
     email: '',
     password: '',
     role: 'user' as 'admin' | 'user' | 'partner',
+    region: 'LMDM' as 'LMDM' | 'VIR' | 'Interior' | 'Northern',
     sendInvite: true,
   });
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -105,6 +107,7 @@ export default function AdminUsers() {
     lastName: '',
     email: '',
     role: 'user' as 'admin' | 'user' | 'partner',
+    region: 'LMDM' as 'LMDM' | 'VIR' | 'Interior' | 'Northern',
     isActive: true,
   });
   const [editLoading, setEditLoading] = useState(false);
@@ -177,6 +180,7 @@ export default function AdminUsers() {
           email: '',
           password: '',
           role: 'user',
+          region: 'LMDM',
           sendInvite: true,
         });
         setInviteOpen(false);
@@ -200,6 +204,8 @@ export default function AdminUsers() {
       lastName: nameParts.slice(1).join(' ') || '',
       email: user.email,
       role: user.role,
+      region:
+        (user.region as 'LMDM' | 'VIR' | 'Interior' | 'Northern') || 'LMDM',
       isActive: user.isActive ?? true,
     });
     setEditOpen(true);
@@ -259,6 +265,22 @@ export default function AdminUsers() {
       >
         {icons[role as keyof typeof icons]}
         {role}
+      </Badge>
+    );
+  };
+
+  // Region badge component
+  const RegionBadge = ({ region }: { region?: string }) => {
+    const variants = {
+      LMDM: 'default',
+      VIR: 'secondary',
+      Interior: 'outline',
+      Northern: 'destructive',
+    } as const;
+
+    return (
+      <Badge variant={variants[region as keyof typeof variants] || 'default'}>
+        {region || 'LMDM'}
       </Badge>
     );
   };
@@ -400,6 +422,30 @@ export default function AdminUsers() {
                 </Select>
               </div>
 
+              {/* Region Selection - Only visible to admins */}
+              {isAdmin && (
+                <div className="space-y-2">
+                  <Label htmlFor="region">Region</Label>
+                  <Select
+                    value={inviteForm.region}
+                    onValueChange={(
+                      value: 'LMDM' | 'VIR' | 'Interior' | 'Northern'
+                    ) => setInviteForm({ ...inviteForm, region: value })}
+                    disabled={inviteLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LMDM">LMDM</SelectItem>
+                      <SelectItem value="VIR">VIR</SelectItem>
+                      <SelectItem value="Interior">Interior</SelectItem>
+                      <SelectItem value="Northern">Northern</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="sendInvite"
@@ -490,6 +536,7 @@ export default function AdminUsers() {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Region</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Actions</TableHead>
@@ -502,6 +549,9 @@ export default function AdminUsers() {
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
                         <RoleBadge role={user.role} />
+                      </TableCell>
+                      <TableCell>
+                        <RegionBadge region={user.region} />
                       </TableCell>
                       <TableCell>
                         <StatusBadge isActive={user.isActive} />
@@ -646,6 +696,30 @@ export default function AdminUsers() {
                   </p>
                 )}
               </div>
+
+              {/* Region Selection - Only visible to admins */}
+              {isAdmin && (
+                <div className="space-y-2">
+                  <Label htmlFor="editRegion">Region</Label>
+                  <Select
+                    value={editForm.region}
+                    onValueChange={(
+                      value: 'LMDM' | 'VIR' | 'Interior' | 'Northern'
+                    ) => setEditForm({ ...editForm, region: value })}
+                    disabled={editLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LMDM">LMDM</SelectItem>
+                      <SelectItem value="VIR">VIR</SelectItem>
+                      <SelectItem value="Interior">Interior</SelectItem>
+                      <SelectItem value="Northern">Northern</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Account Status Toggle - Only visible to admins */}
               {isAdmin && (

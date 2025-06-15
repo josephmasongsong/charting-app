@@ -41,6 +41,7 @@ export async function GET(req: Request) {
         ),
         email: users.email,
         role: users.role,
+        region: users.region,
         isActive: users.isActive,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,

@@ -7,6 +7,7 @@ declare module 'next-auth' {
       email: string;
       name?: string | null;
       role?: string;
+      region?: string;
       isActive?: boolean;
     };
   }
@@ -16,6 +17,7 @@ declare module 'next-auth' {
     email: string;
     name?: string | null;
     role?: string;
+    region?: string;
     isActive?: boolean;
   }
 }
@@ -24,6 +26,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string;
     role?: string;
+    region?: string;
     isActive?: boolean;
   }
 }

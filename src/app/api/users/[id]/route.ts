@@ -17,7 +17,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const { firstName, lastName, name, email, role, isActive } = body;
+    const { firstName, lastName, name, email, role, isActive, region } = body;
 
     // Check current user permissions
     const [currentUser] = await db
@@ -49,6 +49,14 @@ export async function PATCH(
       );
     }
 
+    // Only allow region changes if user is admin
+    if (region !== undefined && !isAdmin) {
+      return NextResponse.json(
+        { error: 'Only admins can change regions' },
+        { status: 403 }
+      );
+    }
+
     // Only allow editing other users if admin
     if (!isOwnProfile && !isAdmin) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -57,6 +65,11 @@ export async function PATCH(
     // Validate role if provided
     if (role && !['admin', 'user', 'partner'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
+    // Validate region if provided
+    if (region && !['LMDM', 'VIR', 'Interior'].includes(region)) {
+      return NextResponse.json({ error: 'Invalid region' }, { status: 400 });
     }
 
     // Build update object
@@ -112,6 +125,10 @@ export async function PATCH(
       updateData.isActive = isActive;
     }
 
+    if (region !== undefined && isAdmin) {
+      updateData.region = region;
+    }
+
     // Update user in database
     const [updatedUser] = await db
       .update(users)
@@ -162,6 +179,7 @@ export async function GET(
         ),
         email: users.email,
         role: users.role,
+        region: users.region,
         isActive: users.isActive,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
