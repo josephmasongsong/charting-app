@@ -60,6 +60,7 @@ interface User {
   email: string;
   role: 'admin' | 'user' | 'partner';
   region?: string;
+  jobTitle?: string;
   isActive?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -95,6 +96,11 @@ export default function AdminUsers() {
     password: '',
     role: 'user' as 'admin' | 'user' | 'partner',
     region: 'LMDM' as 'LMDM' | 'VIR' | 'Interior' | 'Northern',
+    jobTitle: 'Tenant Engagement Worker' as
+      | 'Tenant Engagement Worker'
+      | 'People Plants & Homes'
+      | 'Tenant Support Worker'
+      | 'Health Services Manager',
     sendInvite: true,
   });
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -108,6 +114,11 @@ export default function AdminUsers() {
     email: '',
     role: 'user' as 'admin' | 'user' | 'partner',
     region: 'LMDM' as 'LMDM' | 'VIR' | 'Interior' | 'Northern',
+    jobTitle: 'Tenant Engagement Worker' as
+      | 'Tenant Engagement Worker'
+      | 'People Plants & Homes'
+      | 'Tenant Support Worker'
+      | 'Health Services Manager',
     isActive: true,
   });
   const [editLoading, setEditLoading] = useState(false);
@@ -181,6 +192,7 @@ export default function AdminUsers() {
           password: '',
           role: 'user',
           region: 'LMDM',
+          jobTitle: 'Tenant Engagement Worker',
           sendInvite: true,
         });
         setInviteOpen(false);
@@ -206,6 +218,12 @@ export default function AdminUsers() {
       role: user.role,
       region:
         (user.region as 'LMDM' | 'VIR' | 'Interior' | 'Northern') || 'LMDM',
+      jobTitle:
+        (user.jobTitle as
+          | 'Tenant Engagement Worker'
+          | 'People Plants & Homes'
+          | 'Tenant Support Worker'
+          | 'Health Services Manager') || 'Tenant Engagement Worker',
       isActive: user.isActive ?? true,
     });
     setEditOpen(true);
@@ -265,6 +283,31 @@ export default function AdminUsers() {
       >
         {icons[role as keyof typeof icons]}
         {role}
+      </Badge>
+    );
+  };
+
+  // Job Title badge component
+  const JobTitleBadge = ({ jobTitle }: { jobTitle?: string }) => {
+    if (!jobTitle) return <Badge variant="outline">N/A</Badge>;
+
+    const variants = {
+      'Tenant Engagement Worker': 'default',
+      'People Plants & Homes': 'secondary',
+      'Tenant Support Worker': 'outline',
+      'Health Services Manager': 'destructive',
+    } as const;
+
+    const shortTitles = {
+      'Tenant Engagement Worker': 'TEW',
+      'People Plants & Homes': 'PPH',
+      'Tenant Support Worker': 'TSW',
+      'Health Services Manager': 'HSM',
+    } as const;
+
+    return (
+      <Badge variant={variants[jobTitle as keyof typeof variants] || 'default'}>
+        {shortTitles[jobTitle as keyof typeof shortTitles] || jobTitle}
       </Badge>
     );
   };
@@ -391,9 +434,13 @@ export default function AdminUsers() {
                 <Label htmlFor="role">Role</Label>
                 <Select
                   value={inviteForm.role}
-                  onValueChange={(value: 'admin' | 'user' | 'partner') =>
-                    setInviteForm({ ...inviteForm, role: value })
-                  }
+                  onValueChange={(value: 'admin' | 'user' | 'partner') => {
+                    setInviteForm({
+                      ...inviteForm,
+                      role: value,
+                      // Keep current jobTitle for non-partners, no need to reset
+                    });
+                  }}
                   disabled={inviteLoading}
                 >
                   <SelectTrigger>
@@ -441,6 +488,42 @@ export default function AdminUsers() {
                       <SelectItem value="VIR">VIR</SelectItem>
                       <SelectItem value="Interior">Interior</SelectItem>
                       <SelectItem value="Northern">Northern</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Job Title Selection - Only visible to admins and not for partners */}
+              {isAdmin && inviteForm.role !== 'partner' && (
+                <div className="space-y-2">
+                  <Label htmlFor="jobTitle">Job Title</Label>
+                  <Select
+                    value={inviteForm.jobTitle}
+                    onValueChange={(
+                      value:
+                        | 'Tenant Engagement Worker'
+                        | 'People Plants & Homes'
+                        | 'Tenant Support Worker'
+                        | 'Health Services Manager'
+                    ) => setInviteForm({ ...inviteForm, jobTitle: value })}
+                    disabled={inviteLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Tenant Engagement Worker">
+                        Tenant Engagement Worker
+                      </SelectItem>
+                      <SelectItem value="People Plants & Homes">
+                        People Plants & Homes
+                      </SelectItem>
+                      <SelectItem value="Tenant Support Worker">
+                        Tenant Support Worker
+                      </SelectItem>
+                      <SelectItem value="Health Services Manager">
+                        Health Services Manager
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -536,6 +619,7 @@ export default function AdminUsers() {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Job Title</TableHead>
                     <TableHead>Region</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
@@ -549,6 +633,9 @@ export default function AdminUsers() {
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
                         <RoleBadge role={user.role} />
+                      </TableCell>
+                      <TableCell>
+                        <JobTitleBadge jobTitle={user.jobTitle} />
                       </TableCell>
                       <TableCell>
                         <RegionBadge region={user.region} />
@@ -661,9 +748,13 @@ export default function AdminUsers() {
                 <Label htmlFor="editRole">Role</Label>
                 <Select
                   value={editForm.role}
-                  onValueChange={(value: 'admin' | 'user' | 'partner') =>
-                    setEditForm({ ...editForm, role: value })
-                  }
+                  onValueChange={(value: 'admin' | 'user' | 'partner') => {
+                    setEditForm({
+                      ...editForm,
+                      role: value,
+                      // Keep current jobTitle for non-partners
+                    });
+                  }}
                   disabled={editLoading || !isAdmin}
                 >
                   <SelectTrigger>
@@ -716,6 +807,42 @@ export default function AdminUsers() {
                       <SelectItem value="VIR">VIR</SelectItem>
                       <SelectItem value="Interior">Interior</SelectItem>
                       <SelectItem value="Northern">Northern</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Job Title Selection - Only visible to admins and not for partners */}
+              {isAdmin && editForm.role !== 'partner' && (
+                <div className="space-y-2">
+                  <Label htmlFor="editJobTitle">Job Title</Label>
+                  <Select
+                    value={editForm.jobTitle}
+                    onValueChange={(
+                      value:
+                        | 'Tenant Engagement Worker'
+                        | 'People Plants & Homes'
+                        | 'Tenant Support Worker'
+                        | 'Health Services Manager'
+                    ) => setEditForm({ ...editForm, jobTitle: value })}
+                    disabled={editLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Tenant Engagement Worker">
+                        Tenant Engagement Worker
+                      </SelectItem>
+                      <SelectItem value="People Plants & Homes">
+                        People Plants & Homes
+                      </SelectItem>
+                      <SelectItem value="Tenant Support Worker">
+                        Tenant Support Worker
+                      </SelectItem>
+                      <SelectItem value="Health Services Manager">
+                        Health Services Manager
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

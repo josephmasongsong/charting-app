@@ -17,7 +17,16 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const { firstName, lastName, name, email, role, isActive, region } = body;
+    const {
+      firstName,
+      lastName,
+      name,
+      email,
+      role,
+      isActive,
+      region,
+      jobTitle,
+    } = body;
 
     // Check current user permissions
     const [currentUser] = await db
@@ -57,6 +66,14 @@ export async function PATCH(
       );
     }
 
+    // Only allow jobTitle changes if user is admin
+    if (jobTitle !== undefined && !isAdmin) {
+      return NextResponse.json(
+        { error: 'Only admins can change job titles' },
+        { status: 403 }
+      );
+    }
+
     // Only allow editing other users if admin
     if (!isOwnProfile && !isAdmin) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -68,8 +85,21 @@ export async function PATCH(
     }
 
     // Validate region if provided
-    if (region && !['LMDM', 'VIR', 'Interior'].includes(region)) {
+    if (region && !['LMDM', 'VIR', 'Interior', 'Northern'].includes(region)) {
       return NextResponse.json({ error: 'Invalid region' }, { status: 400 });
+    }
+
+    // Validate jobTitle if provided
+    if (
+      jobTitle &&
+      ![
+        'Tenant Engagement Worker',
+        'People Plants & Homes',
+        'Tenant Support Worker',
+        'Health Services Manager',
+      ].includes(jobTitle)
+    ) {
+      return NextResponse.json({ error: 'Invalid job title' }, { status: 400 });
     }
 
     // Build update object
@@ -129,6 +159,46 @@ export async function PATCH(
       updateData.region = region;
     }
 
+    if (jobTitle !== undefined && isAdmin) {
+      // Set jobTitle to null if role is partner, otherwise use the provided value
+      if (role === 'partner') {
+        updateData.jobTitle = null;
+      } else {
+        // Check current user role if role is not being updated
+        const [currentUserData] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, id))
+          .limit(1);
+
+        if (currentUserData?.role === 'partner' && role === undefined) {
+          updateData.jobTitle = null;
+        } else {
+          updateData.jobTitle = jobTitle;
+        }
+      }
+    }
+
+    // Handle role changes and jobTitle implications
+    if (role !== undefined && isAdmin) {
+      updateData.role = role;
+      // If changing to partner role, set jobTitle to null
+      if (role === 'partner') {
+        updateData.jobTitle = null;
+      }
+      // If changing from partner to another role and no jobTitle provided, set default
+      else if (jobTitle === undefined) {
+        const [currentUserData] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, id))
+          .limit(1);
+        if (currentUserData?.role === 'partner') {
+          updateData.jobTitle = 'Tenant Engagement Worker';
+        }
+      }
+    }
+
     // Update user in database
     const [updatedUser] = await db
       .update(users)
@@ -180,6 +250,7 @@ export async function GET(
         email: users.email,
         role: users.role,
         region: users.region,
+        jobTitle: users.jobTitle,
         isActive: users.isActive,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,

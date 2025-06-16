@@ -8,6 +8,7 @@ declare module 'next-auth' {
       name?: string | null;
       role?: string;
       region?: string;
+      jobTitle?: string | null;
       isActive?: boolean;
     };
   }
@@ -18,6 +19,7 @@ declare module 'next-auth' {
     name?: string | null;
     role?: string;
     region?: string;
+    jobTitle?: string | null;
     isActive?: boolean;
   }
 }
@@ -27,6 +29,7 @@ declare module 'next-auth/jwt' {
     id: string;
     role?: string;
     region?: string;
+    jobTitle?: string | null;
     isActive?: boolean;
   }
 }

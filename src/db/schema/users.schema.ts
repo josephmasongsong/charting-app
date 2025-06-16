@@ -23,6 +23,7 @@ export const users = pgTable(
     resetTokenExpiry: timestamp('reset_token_expiry'),
     role: text('role').default('user'),
     region: text('region').default('LMDM').notNull(),
+    jobTitle: text('job_title').default('Tenant Engagement Worker'),
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
@@ -47,3 +48,8 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserRole = 'admin' | 'user' | 'partner';
 export type UserRegion = 'LMDM' | 'VIR' | 'Interior' | 'Northern';
+export type UserJobTitle =
+  | 'Tenant Engagement Worker'
+  | 'People Plants & Homes'
+  | 'Tenant Support Worker'
+  | 'Health Services Manager';

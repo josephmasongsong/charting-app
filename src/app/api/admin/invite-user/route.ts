@@ -37,6 +37,8 @@ export async function POST(req: Request) {
       email,
       password,
       role = 'user',
+      region = 'LMDM',
+      jobTitle = 'Tenant Engagement Worker',
       sendInvite = true,
     } = await req.json();
 
@@ -62,6 +64,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
+    // Validate region
+    if (!['LMDM', 'VIR', 'Interior', 'Northern'].includes(region)) {
+      return NextResponse.json({ error: 'Invalid region' }, { status: 400 });
+    }
+
+    // Validate jobTitle
+    if (
+      jobTitle &&
+      ![
+        'Tenant Engagement Worker',
+        'People Plants & Homes',
+        'Tenant Support Worker',
+        'Health Services Manager',
+      ].includes(jobTitle)
+    ) {
+      return NextResponse.json({ error: 'Invalid job title' }, { status: 400 });
+    }
+
     // Check if user already exists
     const [existingUser] = await db
       .select()
@@ -82,20 +102,27 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
     // const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
+    // Prepare user data
+    const userData: any = {
+      firstName: firstName,
+      lastName: lastName,
+      email: email.toLowerCase(),
+      hashedPassword,
+      role,
+      region,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Set jobTitle based on role
+    if (role === 'partner') {
+      userData.jobTitle = null;
+    } else {
+      userData.jobTitle = jobTitle;
+    }
+
     // Create user
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        // id: userId,
-        firstName: firstName,
-        lastName: lastName,
-        email: email.toLowerCase(),
-        hashedPassword,
-        role,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
+    const [newUser] = await db.insert(users).values(userData).returning();
 
     // Send invitation email if requested
     if (sendInvite && process.env.RESEND_API_KEY) {
@@ -114,6 +141,8 @@ export async function POST(req: Request) {
                 <p><strong>Email:</strong> ${email}</p>
                 <p><strong>Temporary Password:</strong> ${password}</p>
                 <p><strong>Role:</strong> ${role}</p>
+                <p><strong>Region:</strong> ${region}</p>
+                ${role !== 'partner' ? `<p><strong>Job Title:</strong> ${jobTitle}</p>` : ''}
               </div>
 
               <p style="margin: 20px 0;">
