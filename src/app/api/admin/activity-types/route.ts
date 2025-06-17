@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { db, users, activityTypes, programGoals } from '@/db';
-import { eq, ilike, or, count, desc } from 'drizzle-orm';
+import { eq, ilike, or, count, desc, asc } from 'drizzle-orm';
 
 export async function GET(req: Request) {
   try {
@@ -30,6 +30,8 @@ export async function GET(req: Request) {
     const search = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
     const offset = (page - 1) * limit;
 
     // Build where condition based on search
@@ -52,6 +54,27 @@ export async function GET(req: Request) {
 
     const totalCount = countResult[0]?.count || 0;
 
+    // Determine sort column and order
+    let sortColumn;
+    switch (sortBy) {
+      case 'name':
+        sortColumn = activityTypes.name;
+        break;
+      case 'programGoal':
+        sortColumn = programGoals.name;
+        break;
+      case 'createdAt':
+        sortColumn = activityTypes.createdAt;
+        break;
+      case 'updatedAt':
+        sortColumn = activityTypes.updatedAt;
+        break;
+      default:
+        sortColumn = activityTypes.createdAt;
+    }
+
+    const sortFunction = sortOrder === 'asc' ? asc : desc;
+
     // Get paginated results with program goal data
     let typesQuery = db
       .select({
@@ -66,7 +89,7 @@ export async function GET(req: Request) {
       .leftJoin(programGoals, eq(activityTypes.programGoalId, programGoals.id))
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(activityTypes.createdAt));
+      .orderBy(sortFunction(sortColumn));
 
     // Apply search condition if it exists
     const allTypes = searchCondition

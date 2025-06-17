@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { db, communityPartners, users } from '@/db';
-import { eq, ilike, count, desc } from 'drizzle-orm';
+import { eq, ilike, count, desc, asc } from 'drizzle-orm';
 
 export async function GET(req: Request) {
   try {
@@ -30,6 +30,8 @@ export async function GET(req: Request) {
     const search = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
     const offset = (page - 1) * limit;
 
     // Build where condition based on search
@@ -45,6 +47,24 @@ export async function GET(req: Request) {
 
     const totalCount = countResult[0]?.count || 0;
 
+    // Determine sort column and order
+    let sortColumn;
+    switch (sortBy) {
+      case 'name':
+        sortColumn = communityPartners.name;
+        break;
+      case 'createdAt':
+        sortColumn = communityPartners.createdAt;
+        break;
+      case 'updatedAt':
+        sortColumn = communityPartners.updatedAt;
+        break;
+      default:
+        sortColumn = communityPartners.createdAt;
+    }
+
+    const sortFunction = sortOrder === 'asc' ? asc : desc;
+
     // Get paginated results
     let partnersQuery = db
       .select({
@@ -56,7 +76,7 @@ export async function GET(req: Request) {
       .from(communityPartners)
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(communityPartners.createdAt));
+      .orderBy(sortFunction(sortColumn));
 
     // Apply search condition if it exists
     const allPartners = searchCondition

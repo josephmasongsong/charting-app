@@ -1,9 +1,8 @@
-// app/api/admin/sites/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { db, users, sites, communityPartners } from '@/db';
-import { eq, ilike, or, count, desc, sql } from 'drizzle-orm';
+import { eq, ilike, or, count, desc, asc, sql } from 'drizzle-orm';
 import { createSiteSchema } from '@/app/lib/validations/sites';
 
 export async function GET(req: Request) {
@@ -32,6 +31,8 @@ export async function GET(req: Request) {
     const search = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
     const offset = (page - 1) * limit;
 
     // Build where condition based on search
@@ -39,7 +40,10 @@ export async function GET(req: Request) {
       ? or(
           ilike(sites.name, `%${search}%`),
           ilike(sites.address, `%${search}%`),
-          // ilike(users.name, `%${search}%`),
+          ilike(
+            sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+            `%${search}%`
+          ),
           ilike(communityPartners.name, `%${search}%`)
         )
       : undefined;
@@ -59,6 +63,33 @@ export async function GET(req: Request) {
       : await countQuery;
 
     const totalCount = countResult[0]?.count || 0;
+
+    // Determine sort column and order
+    let sortColumn;
+    switch (sortBy) {
+      case 'name':
+        sortColumn = sites.name;
+        break;
+      case 'address':
+        sortColumn = sites.address;
+        break;
+      case 'numberOfTenants':
+        sortColumn = sites.numberOfTenants;
+        break;
+      case 'userName':
+        sortColumn = sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`;
+        break;
+      case 'createdAt':
+        sortColumn = sites.createdAt;
+        break;
+      case 'updatedAt':
+        sortColumn = sites.updatedAt;
+        break;
+      default:
+        sortColumn = sites.createdAt;
+    }
+
+    const sortFunction = sortOrder === 'asc' ? asc : desc;
 
     // Get paginated results with related data
     let sitesQuery = db
@@ -90,7 +121,7 @@ export async function GET(req: Request) {
       )
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(sites.createdAt));
+      .orderBy(sortFunction(sortColumn));
 
     // Apply search condition if it exists
     const allSites = searchCondition

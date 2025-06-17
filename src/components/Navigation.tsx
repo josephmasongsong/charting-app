@@ -58,7 +58,7 @@ export default function Navigation() {
           {/* Logo/Brand */}
           <Link
             href="/dashboard"
-            className="font-bold text-xl flex items-center"
+            className="font-medium text-lg flex items-center"
           >
             <Image
               src="/logo.jpg"

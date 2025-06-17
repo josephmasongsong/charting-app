@@ -38,6 +38,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 
 interface CommunityPartner {
@@ -54,10 +57,21 @@ interface PaginationInfo {
   pages: number;
 }
 
+type SortOrder = 'asc' | 'desc';
+
+interface SortConfig {
+  field: string;
+  order: SortOrder;
+}
+
 export default function AdminCommunityPartners() {
   const [partners, setPartners] = useState<CommunityPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: 'createdAt',
+    order: 'desc',
+  });
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 10,
@@ -88,12 +102,18 @@ export default function AdminCommunityPartners() {
   const [error, setError] = useState('');
 
   // Fetch partners
-  const fetchPartners = async (page = 1, searchTerm = '') => {
+  const fetchPartners = async (
+    page = 1,
+    searchTerm = '',
+    sort = sortConfig
+  ) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '10',
+        sortBy: sort.field,
+        sortOrder: sort.order,
         ...(searchTerm && { search: searchTerm }),
       });
 
@@ -120,7 +140,16 @@ export default function AdminCommunityPartners() {
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchPartners(1, search);
+    fetchPartners(1, search, sortConfig);
+  };
+
+  // Handle sorting
+  const handleSort = (field: string) => {
+    const newOrder: SortOrder =
+      sortConfig.field === field && sortConfig.order === 'asc' ? 'desc' : 'asc';
+    const newSortConfig = { field, order: newOrder };
+    setSortConfig(newSortConfig);
+    fetchPartners(pagination.page, search, newSortConfig);
   };
 
   // Handle create partner
@@ -145,7 +174,7 @@ export default function AdminCommunityPartners() {
         );
         setCreateForm({ name: '' });
         setCreateOpen(false);
-        fetchPartners(pagination.page, search);
+        fetchPartners(pagination.page, search, sortConfig);
       } else {
         setError(data.error || 'Failed to create community partner');
       }
@@ -188,7 +217,7 @@ export default function AdminCommunityPartners() {
           `Community partner "${editForm.name}" updated successfully!`
         );
         setEditOpen(false);
-        fetchPartners(pagination.page, search);
+        fetchPartners(pagination.page, search, sortConfig);
       } else {
         setError(data.error || 'Failed to update community partner');
       }
@@ -227,7 +256,7 @@ export default function AdminCommunityPartners() {
           `Community partner "${deletingPartner.name}" deleted successfully!`
         );
         setDeleteOpen(false);
-        fetchPartners(pagination.page, search);
+        fetchPartners(pagination.page, search, sortConfig);
       } else {
         setError(data.error || 'Failed to delete community partner');
       }
@@ -311,111 +340,289 @@ export default function AdminCommunityPartners() {
         </Alert>
       )}
 
-      {/* Search */}
+      {/* Partners Data Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Search Community Partners</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <Input
-              placeholder="Search by name..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" variant="outline">
-              <Search className="h-4 w-4" />
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Community Partners ({pagination.total})
+              </CardTitle>
+              <CardDescription>
+                Manage and organize your community partners
+              </CardDescription>
+            </div>
 
-      {/* Partners Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Community Partners ({pagination.total})
-          </CardTitle>
-          <CardDescription>
-            Manage and organize your community partners
-          </CardDescription>
+            {/* Search Bar */}
+            <div className="w-full md:w-80">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <Input
+                  placeholder="Search by name..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" variant="outline" size="icon">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
+          </div>
         </CardHeader>
+
         <CardContent>
           {loading ? (
             <div className="text-center py-8">Loading...</div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Updated</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {partners.map(partner => (
-                    <TableRow key={partner.id}>
-                      <TableCell className="font-medium">
-                        {partner.name}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(partner.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(partner.updatedAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openEditPartner(partner)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openDeletePartner(partner)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleSort('name')}
+                          className="h-auto p-0 font-semibold hover:bg-transparent"
+                        >
+                          Name
+                          {sortConfig.field === 'name' ? (
+                            sortConfig.order === 'asc' ? (
+                              <ChevronUp className="ml-2 h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="ml-2 h-4 w-4" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                          )}
+                        </Button>
+                      </TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Updated</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {partners.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8">
+                          {search ? (
+                            <>
+                              No community partners found matching "{search}".
+                              <Button
+                                variant="link"
+                                onClick={() => {
+                                  setSearch('');
+                                  fetchPartners(1, '', sortConfig);
+                                }}
+                                className="ml-2"
+                              >
+                                Clear search
+                              </Button>
+                            </>
+                          ) : (
+                            'No community partners found.'
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      partners.map(partner => (
+                        <TableRow key={partner.id}>
+                          <TableCell className="font-medium">
+                            {partner.name}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(partner.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(partner.updatedAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditPartner(partner)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openDeletePartner(partner)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
-              {/* Pagination */}
+              {/* Enhanced Pagination */}
               {pagination.pages > 1 && (
-                <div className="flex justify-between items-center mt-4">
+                <div className="flex flex-col space-y-4 mt-6 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                   <div className="text-sm text-muted-foreground">
-                    Page {pagination.page} of {pagination.pages} (
-                    {pagination.total} total)
+                    Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
+                    {Math.min(
+                      pagination.page * pagination.limit,
+                      pagination.total
+                    )}{' '}
+                    of {pagination.total} results
                   </div>
-                  <div className="flex gap-2">
+
+                  <div className="flex items-center space-x-2">
+                    {/* First page */}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => fetchPartners(pagination.page - 1, search)}
+                      onClick={() => fetchPartners(1, search, sortConfig)}
+                      disabled={pagination.page <= 1}
+                      className="hidden sm:inline-flex"
+                    >
+                      First
+                    </Button>
+
+                    {/* Previous page */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        fetchPartners(pagination.page - 1, search, sortConfig)
+                      }
                       disabled={pagination.page <= 1}
                     >
                       <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline ml-1">Previous</span>
                     </Button>
+
+                    {/* Page numbers */}
+                    <div className="flex items-center space-x-1">
+                      {(() => {
+                        const pages = [];
+                        const currentPage = pagination.page;
+                        const totalPages = pagination.pages;
+
+                        // Always show first page
+                        if (currentPage > 3) {
+                          pages.push(
+                            <Button
+                              key={1}
+                              variant={
+                                1 === currentPage ? 'default' : 'outline'
+                              }
+                              size="sm"
+                              onClick={() =>
+                                fetchPartners(1, search, sortConfig)
+                              }
+                              className="w-10"
+                            >
+                              1
+                            </Button>
+                          );
+
+                          if (currentPage > 4) {
+                            pages.push(
+                              <span key="ellipsis1" className="px-2">
+                                ...
+                              </span>
+                            );
+                          }
+                        }
+
+                        // Show pages around current page
+                        for (
+                          let i = Math.max(1, currentPage - 2);
+                          i <= Math.min(totalPages, currentPage + 2);
+                          i++
+                        ) {
+                          pages.push(
+                            <Button
+                              key={i}
+                              variant={
+                                i === currentPage ? 'default' : 'outline'
+                              }
+                              size="sm"
+                              onClick={() =>
+                                fetchPartners(i, search, sortConfig)
+                              }
+                              className="w-10"
+                            >
+                              {i}
+                            </Button>
+                          );
+                        }
+
+                        // Always show last page
+                        if (currentPage < totalPages - 2) {
+                          if (currentPage < totalPages - 3) {
+                            pages.push(
+                              <span key="ellipsis2" className="px-2">
+                                ...
+                              </span>
+                            );
+                          }
+
+                          pages.push(
+                            <Button
+                              key={totalPages}
+                              variant={
+                                totalPages === currentPage
+                                  ? 'default'
+                                  : 'outline'
+                              }
+                              size="sm"
+                              onClick={() =>
+                                fetchPartners(totalPages, search, sortConfig)
+                              }
+                              className="w-10"
+                            >
+                              {totalPages}
+                            </Button>
+                          );
+                        }
+
+                        return pages;
+                      })()}
+                    </div>
+
+                    {/* Next page */}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => fetchPartners(pagination.page + 1, search)}
+                      onClick={() =>
+                        fetchPartners(pagination.page + 1, search, sortConfig)
+                      }
                       disabled={pagination.page >= pagination.pages}
                     >
+                      <span className="hidden sm:inline mr-1">Next</span>
                       <ChevronRight className="h-4 w-4" />
                     </Button>
+
+                    {/* Last page */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        fetchPartners(pagination.pages, search, sortConfig)
+                      }
+                      disabled={pagination.page >= pagination.pages}
+                      className="hidden sm:inline-flex"
+                    >
+                      Last
+                    </Button>
                   </div>
+                </div>
+              )}
+
+              {/* Show pagination info even when only one page */}
+              {pagination.pages <= 1 && pagination.total > 0 && (
+                <div className="mt-4 text-sm text-muted-foreground text-center">
+                  Showing all {pagination.total} results
                 </div>
               )}
             </>
