@@ -22,7 +22,6 @@ import {
 import {
   Plus,
   Edit,
-  Trash2,
   Search,
   CheckCircle,
   XCircle,
@@ -34,15 +33,32 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-import CreatePartnerDialog from './create-partner-dialog';
-import EditPartnerDialog from './edit-partner-dialog';
-import DeletePartnerDialog from './delete-partner-dialog';
+import InviteUserDialog from './InviteUserDialog';
+import EditUserDialog from './EditUserDialog';
+import RoleBadge from './RoleBadge';
+import JobTitleBadge from './JobTitleBadge';
+import RegionBadge from './RegionBadge';
+import StatusBadge from './StatusBadge';
 
-interface CommunityPartner {
+interface User {
   id: string;
   name: string;
+  email: string;
+  role: 'admin' | 'user' | 'partner';
+  region?: string;
+  jobTitle?: string;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+interface UserSession {
+  id: string;
+  role: 'admin' | 'user' | 'partner';
+  email: string;
+  name: string;
 }
 
 interface PaginationInfo {
@@ -59,8 +75,12 @@ interface SortConfig {
   order: SortOrder;
 }
 
-export default function CommunityPartnersTable() {
-  const [partners, setPartners] = useState<CommunityPartner[]>([]);
+interface UsersTableProps {
+  currentUser: UserSession;
+}
+
+export default function UsersTable({ currentUser }: UsersTableProps) {
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -75,20 +95,18 @@ export default function CommunityPartnersTable() {
   });
 
   // Dialog states
-  const [createOpen, setCreateOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editingPartner, setEditingPartner] = useState<CommunityPartner | null>(
-    null
-  );
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deletingPartner, setDeletingPartner] =
-    useState<CommunityPartner | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // Fetch partners
-  const fetchPartners = useCallback(
+  // Check if current user is admin
+  const isAdmin = currentUser?.role === 'admin';
+
+  // Fetch users
+  const fetchUsers = useCallback(
     async (page = 1, searchTerm = '', sort = sortConfig) => {
       try {
         setLoading(true);
@@ -100,15 +118,15 @@ export default function CommunityPartnersTable() {
           ...(searchTerm && { search: searchTerm }),
         });
 
-        const response = await fetch(`/api/admin/community-partners?${params}`);
+        const response = await fetch(`/api/admin/users?${params}`);
         const data = await response.json();
 
         if (response.ok) {
-          setPartners(data.communityPartners);
+          setUsers(data.users);
           setPagination(data.pagination);
           setError('');
         } else {
-          setError(data.error || 'Failed to fetch community partners');
+          setError(data.error || 'Failed to fetch users');
         }
       } catch (error) {
         setError('Network error occurred');
@@ -120,13 +138,13 @@ export default function CommunityPartnersTable() {
   );
 
   useEffect(() => {
-    fetchPartners();
-  }, [fetchPartners]);
+    fetchUsers();
+  }, [fetchUsers]);
 
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchPartners(1, search, sortConfig);
+    fetchUsers(1, search, sortConfig);
   };
 
   // Handle sorting
@@ -135,24 +153,18 @@ export default function CommunityPartnersTable() {
       sortConfig.field === field && sortConfig.order === 'asc' ? 'desc' : 'asc';
     const newSortConfig = { field, order: newOrder };
     setSortConfig(newSortConfig);
-    fetchPartners(pagination.page, search, newSortConfig);
+    fetchUsers(pagination.page, search, newSortConfig);
   };
 
-  // Handle edit partner
-  const openEditPartner = (partner: CommunityPartner) => {
-    setEditingPartner(partner);
+  // Handle edit user
+  const openEditUser = (user: User) => {
+    setEditingUser(user);
     setEditOpen(true);
-  };
-
-  // Handle delete partner
-  const openDeletePartner = (partner: CommunityPartner) => {
-    setDeletingPartner(partner);
-    setDeleteOpen(true);
   };
 
   // Refresh data after CRUD operations
   const refreshData = () => {
-    fetchPartners(pagination.page, search, sortConfig);
+    fetchUsers(pagination.page, search, sortConfig);
   };
 
   // Handle success/error messages
@@ -185,17 +197,17 @@ export default function CommunityPartnersTable() {
         </Alert>
       )}
 
-      {/* Community Partners Data Table */}
+      {/* Users Data Table */}
       <Card>
         <CardHeader>
           <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Community Partners ({pagination.total})
+                Users ({pagination.total})
               </CardTitle>
               <CardDescription>
-                Manage and organize your community partners
+                Manage user accounts and permissions
               </CardDescription>
             </div>
 
@@ -204,7 +216,7 @@ export default function CommunityPartnersTable() {
               <div className="w-full md:w-80">
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <Input
-                    placeholder="Search by name..."
+                    placeholder="Search by name or email..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     className="flex-1"
@@ -215,10 +227,10 @@ export default function CommunityPartnersTable() {
                 </form>
               </div>
 
-              {/* Add Button */}
-              <Button onClick={() => setCreateOpen(true)}>
+              {/* Invite User Button */}
+              <Button onClick={() => setInviteOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Partner
+                Invite User
               </Button>
             </div>
           </div>
@@ -251,23 +263,44 @@ export default function CommunityPartnersTable() {
                           )}
                         </Button>
                       </TableHead>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleSort('email')}
+                          className="h-auto p-0 font-semibold hover:bg-transparent"
+                        >
+                          Email
+                          {sortConfig.field === 'email' ? (
+                            sortConfig.order === 'asc' ? (
+                              <ChevronUp className="ml-2 h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="ml-2 h-4 w-4" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                          )}
+                        </Button>
+                      </TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Job Title</TableHead>
+                      <TableHead>Region</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
-                      <TableHead>Updated</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {partners.length === 0 ? (
+                    {users.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8">
+                        <TableCell colSpan={8} className="text-center py-8">
                           {search ? (
                             <>
-                              No community partners found matching "{search}".
+                              No users found matching "{search}".
                               <Button
                                 variant="link"
                                 onClick={() => {
                                   setSearch('');
-                                  fetchPartners(1, '', sortConfig);
+                                  fetchUsers(1, '', sortConfig);
                                 }}
                                 className="ml-2"
                               >
@@ -275,39 +308,40 @@ export default function CommunityPartnersTable() {
                               </Button>
                             </>
                           ) : (
-                            'No community partners found.'
+                            'No users found.'
                           )}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      partners.map(partner => (
-                        <TableRow key={partner.id}>
+                      users.map(user => (
+                        <TableRow key={user.id}>
                           <TableCell className="font-medium">
-                            {partner.name}
+                            {user.name}
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <RoleBadge role={user.role} />
                           </TableCell>
                           <TableCell>
-                            {new Date(partner.createdAt).toLocaleDateString()}
+                            <JobTitleBadge jobTitle={user.jobTitle} />
                           </TableCell>
                           <TableCell>
-                            {new Date(partner.updatedAt).toLocaleDateString()}
+                            <RegionBadge region={user.region} />
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge isActive={user.isActive} />
+                          </TableCell>
+                          <TableCell>
+                            {new Date(user.createdAt).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditPartner(partner)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openDeletePartner(partner)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditUser(user)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
@@ -333,7 +367,7 @@ export default function CommunityPartnersTable() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => fetchPartners(1, search, sortConfig)}
+                      onClick={() => fetchUsers(1, search, sortConfig)}
                       disabled={pagination.page <= 1}
                       className="hidden sm:inline-flex"
                     >
@@ -345,7 +379,7 @@ export default function CommunityPartnersTable() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        fetchPartners(pagination.page - 1, search, sortConfig)
+                        fetchUsers(pagination.page - 1, search, sortConfig)
                       }
                       disabled={pagination.page <= 1}
                     >
@@ -369,9 +403,7 @@ export default function CommunityPartnersTable() {
                                 1 === currentPage ? 'default' : 'outline'
                               }
                               size="sm"
-                              onClick={() =>
-                                fetchPartners(1, search, sortConfig)
-                              }
+                              onClick={() => fetchUsers(1, search, sortConfig)}
                               className="w-10"
                             >
                               1
@@ -400,9 +432,7 @@ export default function CommunityPartnersTable() {
                                 i === currentPage ? 'default' : 'outline'
                               }
                               size="sm"
-                              onClick={() =>
-                                fetchPartners(i, search, sortConfig)
-                              }
+                              onClick={() => fetchUsers(i, search, sortConfig)}
                               className="w-10"
                             >
                               {i}
@@ -430,7 +460,7 @@ export default function CommunityPartnersTable() {
                               }
                               size="sm"
                               onClick={() =>
-                                fetchPartners(totalPages, search, sortConfig)
+                                fetchUsers(totalPages, search, sortConfig)
                               }
                               className="w-10"
                             >
@@ -448,7 +478,7 @@ export default function CommunityPartnersTable() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        fetchPartners(pagination.page + 1, search, sortConfig)
+                        fetchUsers(pagination.page + 1, search, sortConfig)
                       }
                       disabled={pagination.page >= pagination.pages}
                     >
@@ -461,7 +491,7 @@ export default function CommunityPartnersTable() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        fetchPartners(pagination.pages, search, sortConfig)
+                        fetchUsers(pagination.pages, search, sortConfig)
                       }
                       disabled={pagination.page >= pagination.pages}
                       className="hidden sm:inline-flex"
@@ -484,27 +514,20 @@ export default function CommunityPartnersTable() {
       </Card>
 
       {/* Dialogs */}
-      <CreatePartnerDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
+      <InviteUserDialog
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        isAdmin={isAdmin}
         onSuccess={showMessage}
         onError={showError}
         onRefresh={refreshData}
       />
 
-      <EditPartnerDialog
+      <EditUserDialog
         open={editOpen}
         onOpenChange={setEditOpen}
-        partner={editingPartner}
-        onSuccess={showMessage}
-        onError={showError}
-        onRefresh={refreshData}
-      />
-
-      <DeletePartnerDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        partner={deletingPartner}
+        user={editingUser}
+        isAdmin={isAdmin}
         onSuccess={showMessage}
         onError={showError}
         onRefresh={refreshData}

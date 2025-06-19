@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -19,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import {
   Plus,
   Edit,
@@ -28,19 +30,31 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  MapPin,
   Users,
+  Eye,
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
 } from 'lucide-react';
 
-import CreatePartnerDialog from './create-partner-dialog';
-import EditPartnerDialog from './edit-partner-dialog';
-import DeletePartnerDialog from './delete-partner-dialog';
+import DeleteSiteDialog from './DeleteSiteDialog';
+import BooleanBadge from './BooleanBadge';
 
-interface CommunityPartner {
+interface Site {
   id: string;
   name: string;
+  latitude: string;
+  longitude: string;
+  address: string;
+  numberOfTenants: number;
+  hasCommunityRoom: boolean;
+  hasCommunityPartner: boolean;
+  communityPartnerId: string | null;
+  communityPartnerName: string | null;
+  isSingleSeniorOnly: boolean;
+  userId: string;
+  userName: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -59,8 +73,9 @@ interface SortConfig {
   order: SortOrder;
 }
 
-export default function CommunityPartnersTable() {
-  const [partners, setPartners] = useState<CommunityPartner[]>([]);
+export default function SitesTable() {
+  const router = useRouter();
+  const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -74,21 +89,15 @@ export default function CommunityPartnersTable() {
     pages: 0,
   });
 
-  // Dialog states
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editingPartner, setEditingPartner] = useState<CommunityPartner | null>(
-    null
-  );
+  // Delete site state
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deletingPartner, setDeletingPartner] =
-    useState<CommunityPartner | null>(null);
+  const [deletingSite, setDeletingSite] = useState<Site | null>(null);
 
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // Fetch partners
-  const fetchPartners = useCallback(
+  // Fetch sites
+  const fetchSites = useCallback(
     async (page = 1, searchTerm = '', sort = sortConfig) => {
       try {
         setLoading(true);
@@ -100,15 +109,15 @@ export default function CommunityPartnersTable() {
           ...(searchTerm && { search: searchTerm }),
         });
 
-        const response = await fetch(`/api/admin/community-partners?${params}`);
+        const response = await fetch(`/api/admin/sites?${params}`);
         const data = await response.json();
 
         if (response.ok) {
-          setPartners(data.communityPartners);
+          setSites(data.sites);
           setPagination(data.pagination);
           setError('');
         } else {
-          setError(data.error || 'Failed to fetch community partners');
+          setError(data.error || 'Failed to fetch sites');
         }
       } catch (error) {
         setError('Network error occurred');
@@ -120,13 +129,24 @@ export default function CommunityPartnersTable() {
   );
 
   useEffect(() => {
-    fetchPartners();
-  }, [fetchPartners]);
+    fetchSites();
+  }, [fetchSites]);
+
+  // Clear messages after some time
+  useEffect(() => {
+    if (message || error) {
+      const timer = setTimeout(() => {
+        setMessage('');
+        setError('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message, error]);
 
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchPartners(1, search, sortConfig);
+    fetchSites(1, search, sortConfig);
   };
 
   // Handle sorting
@@ -135,24 +155,18 @@ export default function CommunityPartnersTable() {
       sortConfig.field === field && sortConfig.order === 'asc' ? 'desc' : 'asc';
     const newSortConfig = { field, order: newOrder };
     setSortConfig(newSortConfig);
-    fetchPartners(pagination.page, search, newSortConfig);
+    fetchSites(pagination.page, search, newSortConfig);
   };
 
-  // Handle edit partner
-  const openEditPartner = (partner: CommunityPartner) => {
-    setEditingPartner(partner);
-    setEditOpen(true);
-  };
-
-  // Handle delete partner
-  const openDeletePartner = (partner: CommunityPartner) => {
-    setDeletingPartner(partner);
+  // Handle delete site
+  const openDeleteSite = (site: Site) => {
+    setDeletingSite(site);
     setDeleteOpen(true);
   };
 
   // Refresh data after CRUD operations
   const refreshData = () => {
-    fetchPartners(pagination.page, search, sortConfig);
+    fetchSites(pagination.page, search, sortConfig);
   };
 
   // Handle success/error messages
@@ -185,17 +199,17 @@ export default function CommunityPartnersTable() {
         </Alert>
       )}
 
-      {/* Community Partners Data Table */}
+      {/* Sites Data Table */}
       <Card>
         <CardHeader>
           <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Community Partners ({pagination.total})
+                <MapPin className="h-5 w-5" />
+                Sites ({pagination.total})
               </CardTitle>
               <CardDescription>
-                Manage and organize your community partners
+                Manage and organize your sites and their properties
               </CardDescription>
             </div>
 
@@ -204,7 +218,7 @@ export default function CommunityPartnersTable() {
               <div className="w-full md:w-80">
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <Input
-                    placeholder="Search by name..."
+                    placeholder="Search by name, address, user, or community partner..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     className="flex-1"
@@ -215,10 +229,10 @@ export default function CommunityPartnersTable() {
                 </form>
               </div>
 
-              {/* Add Button */}
-              <Button onClick={() => setCreateOpen(true)}>
+              {/* Add Site Button */}
+              <Button onClick={() => router.push('/admin/sites/new')}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Partner
+                Add Site
               </Button>
             </div>
           </div>
@@ -230,90 +244,145 @@ export default function CommunityPartnersTable() {
           ) : (
             <>
               <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>
-                        <Button
-                          variant="ghost"
-                          onClick={() => handleSort('name')}
-                          className="h-auto p-0 font-semibold hover:bg-transparent"
-                        >
-                          Name
-                          {sortConfig.field === 'name' ? (
-                            sortConfig.order === 'asc' ? (
-                              <ChevronUp className="ml-2 h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="ml-2 h-4 w-4" />
-                            )
-                          ) : (
-                            <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-                          )}
-                        </Button>
-                      </TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Updated</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {partners.length === 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8">
-                          {search ? (
-                            <>
-                              No community partners found matching "{search}".
-                              <Button
-                                variant="link"
-                                onClick={() => {
-                                  setSearch('');
-                                  fetchPartners(1, '', sortConfig);
-                                }}
-                                className="ml-2"
-                              >
-                                Clear search
-                              </Button>
-                            </>
-                          ) : (
-                            'No community partners found.'
-                          )}
-                        </TableCell>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort('name')}
+                            className="h-auto p-0 font-semibold hover:bg-transparent"
+                          >
+                            Name
+                            {sortConfig.field === 'name' ? (
+                              sortConfig.order === 'asc' ? (
+                                <ChevronUp className="ml-2 h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="ml-2 h-4 w-4" />
+                              )
+                            ) : (
+                              <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                            )}
+                          </Button>
+                        </TableHead>
+                        <TableHead>Address</TableHead>
+                        <TableHead>Tenants</TableHead>
+                        <TableHead>Manager</TableHead>
+                        <TableHead>Community Room</TableHead>
+                        <TableHead>Community Partner</TableHead>
+                        <TableHead>Senior Only</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ) : (
-                      partners.map(partner => (
-                        <TableRow key={partner.id}>
-                          <TableCell className="font-medium">
-                            {partner.name}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(partner.createdAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(partner.updatedAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditPartner(partner)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openDeletePartner(partner)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                    </TableHeader>
+                    <TableBody>
+                      {sites.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8">
+                            {search ? (
+                              <>
+                                No sites found matching "{search}".
+                                <Button
+                                  variant="link"
+                                  onClick={() => {
+                                    setSearch('');
+                                    fetchSites(1, '', sortConfig);
+                                  }}
+                                  className="ml-2"
+                                >
+                                  Clear search
+                                </Button>
+                              </>
+                            ) : (
+                              'No sites found.'
+                            )}
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        sites.map(site => (
+                          <TableRow key={site.id}>
+                            <TableCell className="font-medium">
+                              {site.name}
+                            </TableCell>
+                            <TableCell>
+                              <div
+                                className="max-w-[200px] truncate"
+                                title={site.address}
+                              >
+                                {site.address}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className="flex items-center gap-1 w-fit"
+                              >
+                                <Users className="h-3 w-3" />
+                                {site.numberOfTenants}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">{site.userName}</div>
+                            </TableCell>
+                            <TableCell>
+                              <BooleanBadge
+                                value={site.hasCommunityRoom}
+                                trueText="Yes"
+                                falseText="No"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <BooleanBadge
+                                value={site.hasCommunityPartner}
+                                trueText="Yes"
+                                falseText="No"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <BooleanBadge
+                                value={site.isSingleSeniorOnly}
+                                trueText="Yes"
+                                falseText="No"
+                              />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    router.push(`/sites/${site.id}`)
+                                  }
+                                  title="View site"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    router.push(`/admin/sites/${site.id}/edit`)
+                                  }
+                                  title="Edit site"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openDeleteSite(site)}
+                                  title="Delete site"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
 
               {/* Enhanced Pagination */}
@@ -333,7 +402,7 @@ export default function CommunityPartnersTable() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => fetchPartners(1, search, sortConfig)}
+                      onClick={() => fetchSites(1, search, sortConfig)}
                       disabled={pagination.page <= 1}
                       className="hidden sm:inline-flex"
                     >
@@ -345,7 +414,7 @@ export default function CommunityPartnersTable() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        fetchPartners(pagination.page - 1, search, sortConfig)
+                        fetchSites(pagination.page - 1, search, sortConfig)
                       }
                       disabled={pagination.page <= 1}
                     >
@@ -360,7 +429,7 @@ export default function CommunityPartnersTable() {
                         const currentPage = pagination.page;
                         const totalPages = pagination.pages;
 
-                        // Always show first page if current page is far from start
+                        // Always show first page
                         if (currentPage > 3) {
                           pages.push(
                             <Button
@@ -369,9 +438,7 @@ export default function CommunityPartnersTable() {
                                 1 === currentPage ? 'default' : 'outline'
                               }
                               size="sm"
-                              onClick={() =>
-                                fetchPartners(1, search, sortConfig)
-                              }
+                              onClick={() => fetchSites(1, search, sortConfig)}
                               className="w-10"
                             >
                               1
@@ -400,9 +467,7 @@ export default function CommunityPartnersTable() {
                                 i === currentPage ? 'default' : 'outline'
                               }
                               size="sm"
-                              onClick={() =>
-                                fetchPartners(i, search, sortConfig)
-                              }
+                              onClick={() => fetchSites(i, search, sortConfig)}
                               className="w-10"
                             >
                               {i}
@@ -410,7 +475,7 @@ export default function CommunityPartnersTable() {
                           );
                         }
 
-                        // Always show last page if current page is far from end
+                        // Always show last page
                         if (currentPage < totalPages - 2) {
                           if (currentPage < totalPages - 3) {
                             pages.push(
@@ -430,7 +495,7 @@ export default function CommunityPartnersTable() {
                               }
                               size="sm"
                               onClick={() =>
-                                fetchPartners(totalPages, search, sortConfig)
+                                fetchSites(totalPages, search, sortConfig)
                               }
                               className="w-10"
                             >
@@ -448,7 +513,7 @@ export default function CommunityPartnersTable() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        fetchPartners(pagination.page + 1, search, sortConfig)
+                        fetchSites(pagination.page + 1, search, sortConfig)
                       }
                       disabled={pagination.page >= pagination.pages}
                     >
@@ -461,7 +526,7 @@ export default function CommunityPartnersTable() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        fetchPartners(pagination.pages, search, sortConfig)
+                        fetchSites(pagination.pages, search, sortConfig)
                       }
                       disabled={pagination.page >= pagination.pages}
                       className="hidden sm:inline-flex"
@@ -483,28 +548,11 @@ export default function CommunityPartnersTable() {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
-      <CreatePartnerDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSuccess={showMessage}
-        onError={showError}
-        onRefresh={refreshData}
-      />
-
-      <EditPartnerDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        partner={editingPartner}
-        onSuccess={showMessage}
-        onError={showError}
-        onRefresh={refreshData}
-      />
-
-      <DeletePartnerDialog
+      {/* Delete Site Dialog */}
+      <DeleteSiteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        partner={deletingPartner}
+        site={deletingSite}
         onSuccess={showMessage}
         onError={showError}
         onRefresh={refreshData}
