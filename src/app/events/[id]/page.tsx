@@ -27,12 +27,17 @@ import {
   MapPin,
   Activity,
   DollarSign,
-  User,
   Mail,
   Building,
   UserCheck,
   Check,
   X,
+  ArrowLeft,
+  Edit3,
+  CalendarDays,
+  Timer,
+  FileText,
+  Settings,
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import EditButton from './components/EditButton';
@@ -92,378 +97,307 @@ async function getEvent(eventId: string) {
   return event;
 }
 
-// Server Component for boolean display
-function BooleanDisplay({
-  value,
-  trueText,
-  falseText,
-}: {
-  value: boolean;
-  trueText: string;
-  falseText: string;
-}) {
-  return (
-    <Badge
-      variant={value ? 'default' : 'secondary'}
-      className="flex items-center gap-1 w-fit"
-    >
-      {value ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-      {value ? trueText : falseText}
-    </Badge>
-  );
-}
-
 export default async function EventPage({ params }: EventPageProps) {
   const session = await getServerSession(authOptions);
 
-  // Redirect unauthenticated users to login
   if (!session) {
     redirect('/login');
   }
 
-  // Fetch event data on the server
   const event = await getEvent(params.id);
 
-  // Return 404 if event not found
   if (!event) {
     notFound();
   }
 
-  // Check if current user is admin
   const isAdmin = session.user?.role === 'admin';
-
-  // Calculate total participants
   const totalParticipants = event.newParticipants + event.returningParticipants;
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <BackButton />
-          <div>
-            <h1 className="text-3xl font-bold">{event.title}</h1>
-            <p className="text-muted-foreground">Event Details</p>
+    <div className="min-h-screen bg-gray-50/50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <BackButton className="p-2 hover:bg-gray-100 rounded-lg transition-colors" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {event.title}
+                </h1>
+                <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                  <div className="flex items-center space-x-1">
+                    <CalendarDays className="h-4 w-4" />
+                    <span>
+                      {new Date(event.eventDate).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Timer className="h-4 w-4" />
+                    <span>{minutesToHumanReadable(event.eventDuration)}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Users className="h-4 w-4" />
+                    <Badge
+                      variant={
+                        event.eventIsYouthFocused ? 'default' : 'secondary'
+                      }
+                      className="text-xs"
+                    >
+                      {event.eventIsYouthFocused ? 'Youth-Focused' : 'General'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {isAdmin && <EditButton eventId={event.id} />}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">
+                  Participants
+                </p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  {totalParticipants}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {event.newParticipants} new, {event.returningParticipants}{' '}
+                  returning
+                </p>
+              </div>
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Cost</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  ${event.totalCost}
+                </p>
+              </div>
+              <div className="p-3 bg-green-50 rounded-lg">
+                <DollarSign className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Duration</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  {minutesToHumanReadable(event.eventDuration)}
+                </p>
+              </div>
+              <div className="p-3 bg-purple-50 rounded-lg">
+                <Clock className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Admin Time</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  {minutesToHumanReadable(event.adminDuration)}
+                </p>
+              </div>
+              <div className="p-3 bg-orange-50 rounded-lg">
+                <Timer className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
           </div>
         </div>
 
-        {isAdmin && <EditButton eventId={event.id} />}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Information */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Event Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Title
-                </h3>
-                <p className="text-lg font-medium">{event.title}</p>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Date
-                </h3>
-                <p className="text-sm">
-                  {new Date(event.eventDate).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Description */}
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-emerald-50 rounded-lg">
+                  <FileText className="h-5 w-5 text-emerald-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">
                   Description
-                </h3>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {event.description}
-                </p>
+                </h2>
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {event.description}
+              </p>
+            </div>
 
-          {/* Event Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Event Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                    Event Duration
-                  </h3>
-                  <p className="text-sm font-medium">
-                    {minutesToHumanReadable(event.eventDuration)}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                    Admin Duration
-                  </h3>
-                  <p className="text-sm font-medium">
-                    {minutesToHumanReadable(event.adminDuration)}
-                  </p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                    Participants
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        Total: {totalParticipants}
-                      </span>
-                    </div>
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      <div>New: {event.newParticipants}</div>
-                      <div>Returning: {event.returningParticipants}</div>
-                    </div>
+            {/* Details Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Location */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="p-2 bg-red-50 rounded-lg">
+                    <MapPin className="h-5 w-5 text-red-600" />
                   </div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Location
+                  </h2>
                 </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                    Cost
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg font-semibold">
-                      ${event.totalCost}
-                    </span>
+                <div className="space-y-2">
+                  <p className="font-medium text-gray-900">{event.siteName}</p>
+                  <p className="text-sm text-gray-600">{event.siteAddress}</p>
+                </div>
+              </div>
+
+              {/* Activity */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="p-2 bg-indigo-50 rounded-lg">
+                    <Activity className="h-5 w-5 text-indigo-600" />
                   </div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Activity
+                  </h2>
                 </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                  Event Type
-                </h3>
-                <BooleanDisplay
-                  value={event.eventIsYouthFocused}
-                  trueText="Youth-Focused Event"
-                  falseText="General Event"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Location & Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Location & Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Site
-                </h3>
-                <p className="font-medium">{event.siteName}</p>
-                <p className="text-sm text-muted-foreground">
-                  {event.siteAddress}
-                </p>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                  Activity Type
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{event.activityTypeName}</span>
-                </div>
-                <Badge variant="outline" className="mt-1">
-                  {event.programGoalName}
-                </Badge>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                  Co-Host
-                </h3>
-                {event.hasCoHost && event.communityPartnerName ? (
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-muted-foreground" />
-                    <Badge variant="default">
-                      {event.communityPartnerName}
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {event.activityTypeName}
+                    </p>
+                    <Badge variant="outline" className="mt-1">
+                      {event.programGoalName}
                     </Badge>
                   </div>
+                </div>
+              </div>
+
+              {/* Partnership */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm md:col-span-2">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="p-2 bg-teal-50 rounded-lg">
+                    <Building className="h-5 w-5 text-teal-600" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Partnership
+                  </h2>
+                </div>
+                {event.hasCoHost && event.communityPartnerName ? (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Co-hosted with</p>
+                    <p className="font-medium text-gray-900">
+                      {event.communityPartnerName}
+                    </p>
+                  </div>
                 ) : (
-                  <BooleanDisplay
-                    value={false}
-                    trueText="Has Co-Host"
-                    falseText="No Co-Host"
-                  />
+                  <p className="text-gray-600">No partnership for this event</p>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Event Organizer */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5" />
-                Event Organizer
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Name
-                </h3>
-                <p className="font-medium">{event.userName}</p>
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Organizer */}
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <UserCheck className="h-5 w-5 text-blue-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Organizer
+                </h2>
               </div>
+              <div className="space-y-3">
+                <p className="font-medium text-gray-900">{event.userName}</p>
+                <a
+                  href={`mailto:${event.userEmail}`}
+                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  <Mail className="h-4 w-4" />
+                  <span className="text-sm">{event.userEmail}</span>
+                </a>
+              </div>
+            </div>
 
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Email
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a
-                    href={`mailto:${event.userEmail}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    {event.userEmail}
-                  </a>
+            {/* Event Date */}
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-gray-50 rounded-lg">
+                  <Calendar className="h-5 w-5 text-gray-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Event Date
+                </h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Scheduled Date
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {new Date(event.eventDate).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Last Updated
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {new Date(event.updatedAt).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Event Statistics */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Quick Stats
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {totalParticipants}
+            {/* Actions */}
+            {isAdmin && (
+              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="p-2 bg-slate-50 rounded-lg">
+                    <Settings className="h-5 w-5 text-slate-600" />
                   </div>
-                  <div className="text-xs text-blue-600">
-                    Total Participants
-                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Actions
+                  </h2>
                 </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">
-                    {minutesToHumanReadable(event.eventDuration)}
-                  </div>
-                  <div className="text-xs text-green-600">Event Duration</div>
+                <div className="space-y-3">
+                  <EditButton
+                    eventId={event.id}
+                    className="w-full justify-start"
+                  />
+                  <BackButton
+                    href="/admin/events"
+                    variant="outline"
+                    className="w-full justify-start"
+                    text="Back to Events"
+                  />
                 </div>
               </div>
-
-              <div className="p-3 bg-orange-50 rounded-lg text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  ${event.totalCost}
-                </div>
-                <div className="text-xs text-orange-600">Total Cost</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Timestamps */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Created
-                </h3>
-                <p className="text-sm">
-                  {new Date(event.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Last Updated
-                </h3>
-                <p className="text-sm">
-                  {new Date(event.updatedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          {isAdmin && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <EditButton
-                  eventId={event.id}
-                  variant="outline"
-                  className="w-full justify-start"
-                />
-                <BackButton
-                  href="/admin/events"
-                  variant="outline"
-                  className="w-full justify-start"
-                  text="Back to Admin"
-                />
-              </CardContent>
-            </Card>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
