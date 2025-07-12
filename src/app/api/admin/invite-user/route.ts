@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 import { Resend } from 'resend';
 import crypto from 'crypto';
+import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -175,6 +176,13 @@ export async function POST(req: Request) {
       resetTokenExpiry,
       ...safeUser
     } = newUser;
+
+    // Log the activity
+    await ActivityFeedService.logUserInvited(
+      currentUser.id,
+      safeUser.email,
+      safeUser.role || 'Community Partner'
+    );
 
     return NextResponse.json({
       success: true,

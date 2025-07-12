@@ -1,3 +1,4 @@
+// 'use client';
 import { requireAuth } from '@/app/lib/auth-guard';
 import {
   Card,
@@ -27,9 +28,12 @@ import {
   activityTypes,
 } from '@/db';
 import { eq, sql } from 'drizzle-orm';
+import ActivityFeed from '@/components/ActivityFeed';
+// import { useActivityFeed } from '@/hooks/useActivityFeed';
 
 export default async function Dashboard() {
   const session = await requireAuth();
+  // const { activities } = useActivityFeed();
 
   // Check if current user is admin
   const isAdmin = session.user?.role === 'admin';
@@ -341,6 +345,9 @@ export default async function Dashboard() {
           </div>
         </div>
       )}
+      <div className="mt-8">
+        <ActivityFeed />
+      </div>
     </div>
   );
 }

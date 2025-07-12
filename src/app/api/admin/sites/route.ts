@@ -4,6 +4,7 @@ import { authOptions } from '@/app/lib/auth';
 import { db, users, sites, communityPartners } from '@/db';
 import { eq, ilike, or, count, desc, asc, sql } from 'drizzle-orm';
 import { createSiteSchema } from '@/app/lib/validations/sites';
+import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function GET(req: Request) {
   try {
@@ -249,6 +250,12 @@ export async function POST(req: Request) {
         updatedAt: new Date(),
       })
       .returning();
+
+    // Log the activity
+    await ActivityFeedService.logSiteCreated(currentUser.id, newSite.id, {
+      name: data.name,
+      tenantCount: Number(data.numberOfTenants),
+    });
 
     return NextResponse.json({
       success: true,

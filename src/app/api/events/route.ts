@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { eq } from 'drizzle-orm';
 import { authOptions } from '@/app/lib/auth';
-import { db, events } from '@/db';
+import { db, events, sites } from '@/db';
 import { createEventSchema } from '@/app/lib/validations/events';
+import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function POST(req: Request) {
   try {
@@ -48,6 +50,22 @@ export async function POST(req: Request) {
         updatedAt: new Date(),
       })
       .returning();
+
+    // Get site name for activity logging
+    const site = await db
+      .select({ name: sites.name })
+      .from(sites)
+      .where(eq(sites.id, data.siteId))
+      .limit(1);
+
+    // Log the activity
+    await ActivityFeedService.logEventCreated(session.user.id, newEvent.id, {
+      title: data.title,
+      siteName: site[0]?.name || 'Unknown Site',
+      totalParticipants: data.newParticipants + data.returningParticipants,
+      isYouthFocused: data.eventIsYouthFocused,
+      hasCoHost: data.hasCoHost,
+    });
 
     return NextResponse.json({
       success: true,

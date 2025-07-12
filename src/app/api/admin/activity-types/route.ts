@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { db, users, activityTypes, programGoals } from '@/db';
 import { eq, ilike, or, count, desc, asc } from 'drizzle-orm';
+import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function GET(req: Request) {
   try {
@@ -197,6 +198,15 @@ export async function POST(req: Request) {
         updatedAt: new Date(),
       })
       .returning();
+
+    await ActivityFeedService.logActivityTypeCreated(
+      currentUser.id,
+      newType.id,
+      {
+        name: newType.name,
+        programGoalName: programGoal.name,
+      }
+    );
 
     return NextResponse.json({
       success: true,
