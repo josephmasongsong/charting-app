@@ -109,7 +109,7 @@ export async function POST(req: Request) {
       lastName: lastName,
       email: email.toLowerCase(),
       hashedPassword,
-      role,
+      jobTitle,
       region,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -181,7 +181,7 @@ export async function POST(req: Request) {
     await ActivityFeedService.logUserInvited(
       currentUser.id,
       safeUser.email,
-      safeUser.role || 'Community Partner'
+      safeUser.jobTitle || 'Community Partner'
     );
 
     return NextResponse.json({

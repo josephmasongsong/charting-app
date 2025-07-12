@@ -30,8 +30,8 @@ interface User {
 }
 
 interface UserInvitedDetails {
-  invitedUser: string;
-  role: string;
+  invitedEmail: string;
+  title: string;
 }
 
 interface EventCreatedDetails {
@@ -183,9 +183,9 @@ const ActivityFeed: React.FC = () => {
             <p className="text-sm text-gray-900">
               <span className="font-medium">{userName}</span> invited{' '}
               <span className="font-medium text-blue-600">
-                {userDetails.invitedUser}
+                {userDetails.invitedEmail}
               </span>{' '}
-              as {userDetails.role}
+              as {userDetails.title}
             </p>
           </div>
         );
@@ -254,12 +254,12 @@ const ActivityFeed: React.FC = () => {
             <p className="text-sm text-gray-900">
               <span className="font-medium">{userName}</span> added partner{' '}
               <span className="font-medium text-orange-600">
-                {partnerDetails.name}
+                {partnerDetails.partnerName}
               </span>
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            {/* <p className="text-xs text-gray-500 mt-1">
               At: {partnerDetails.siteName}
-            </p>
+            </p> */}
           </div>
         );
       }

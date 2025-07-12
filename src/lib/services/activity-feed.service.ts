@@ -8,7 +8,7 @@ export class ActivityFeedService {
   static async logUserInvited(
     actorId: string,
     invitedEmail: string,
-    role: string
+    title: string
   ) {
     await db.insert(activityFeed).values({
       activityType: 'user_invited',
@@ -17,7 +17,7 @@ export class ActivityFeedService {
       targetId: crypto.randomUUID(), // Generate a temp ID for invitations
       metadata: {
         invitedEmail,
-        role,
+        title,
       },
     });
   }
