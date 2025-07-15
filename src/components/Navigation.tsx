@@ -13,6 +13,7 @@ import {
   Shield,
   LogOut,
   Plus,
+  BarChart3,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -67,7 +68,7 @@ export default function Navigation() {
           </Link>
 
           {/* Main Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden items-center space-x-4">
             <Link href="/dashboard">
               <Button variant="ghost" size="sm">
                 <Home className="h-4 w-4 mr-2" />
@@ -87,6 +88,14 @@ export default function Navigation() {
                 <Calendar className="h-4 w-4 mr-2" />
                 Events
               </Button>
+            </Link>
+
+            <Link
+              href="/reports/monthly"
+              className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Monthly Reports
             </Link>
 
             {isAdmin && (
@@ -149,6 +158,15 @@ export default function Navigation() {
                     <Link href="/admin" className="w-full">
                       <Shield className="h-4 w-4 mr-2" />
                       Admin Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/reports/monthly" className="w-full">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Monthly Reports
                     </Link>
                   </DropdownMenuItem>
                 )}
