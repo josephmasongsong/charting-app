@@ -32,7 +32,7 @@ import {
   eventDetailsSchema,
   eventAssociationsSchema,
   eventAssociationsBaseSchema,
-} from '@/app/lib/validations/events';
+} from '@/lib/validations/events';
 import StepOne from './StepOne';
 import StepTwo from './StepTwo';
 import StepThree from './StepThree';

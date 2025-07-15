@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { eq } from 'drizzle-orm';
-import { authOptions } from '@/app/lib/auth';
+import { authOptions } from '@/lib/auth';
 import { db, events, sites } from '@/db';
-import { createEventSchema } from '@/app/lib/validations/events';
+import { createEventSchema } from '@/lib/validations/events';
 import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function POST(req: Request) {

@@ -26,7 +26,7 @@ import { ArrowLeft, CheckCircle, XCircle, MapPin } from 'lucide-react';
 import {
   createSiteSchema,
   type CreateSiteInput,
-} from '@/app/lib/validations/sites';
+} from '@/lib/validations/sites';
 
 interface User {
   id: string;

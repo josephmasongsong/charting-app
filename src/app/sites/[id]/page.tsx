@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/lib/auth';
+import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { db, sites, users, communityPartners } from '@/db';
 import { eq, sql } from 'drizzle-orm';
@@ -105,7 +105,8 @@ export default async function SitePage({ params }: SitePageProps) {
   }
 
   // Fetch site data on the server
-  const site = await getSite(params.id);
+  const { id } = await params;
+  const site = await getSite(id);
 
   // Return 404 if site not found
   if (!site) {
@@ -357,7 +358,8 @@ export default async function SitePage({ params }: SitePageProps) {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: SitePageProps) {
-  const site = await getSite(params.id);
+  const { id } = await params;
+  const site = await getSite(id);
 
   if (!site) {
     return {

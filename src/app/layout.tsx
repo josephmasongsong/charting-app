@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import AuthProvider from '@/components/AuthProvider';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/lib/auth';
+import { authOptions } from '@/lib/auth';
 import ClientAuthGuard from '@/components/ClientAuthGuard';
 import Navigation from '@/components/Navigation';
 

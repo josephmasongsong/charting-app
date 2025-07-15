@@ -1,7 +1,7 @@
 // app/api/admin/events/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/lib/auth';
+import { authOptions } from '@/lib/auth';
 import {
   db,
   users,
@@ -11,7 +11,7 @@ import {
   communityPartners,
 } from '@/db';
 import { eq, sql } from 'drizzle-orm';
-import { updateEventSchema } from '@/app/lib/validations/events';
+import { updateEventSchema } from '@/lib/validations/events';
 
 export async function GET(
   req: Request,

@@ -56,18 +56,14 @@ export default function Navigation() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo/Brand */}
-          <Link
-            href="/dashboard"
-            className="font-medium text-lg flex items-center"
-          >
+          <Link href="/dashboard" className="flex items-center">
             <Image
               src="/logo.jpg"
               width={40}
               height={40}
               alt="BCH Tenant Engagement"
-              className="h-10 w-10 mr-4"
+              className="h-10 w-10"
             />
-            Tenant Engagement
           </Link>
 
           {/* Main Navigation */}

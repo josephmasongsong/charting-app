@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getProgramGoals } from '@/app/lib/data/program-goals';
+import { getProgramGoals } from '@/lib/data/program-goals';
 import ActivityTypesTable from './components/activity-types-table';
 
 export default async function AdminActivityTypesPage() {

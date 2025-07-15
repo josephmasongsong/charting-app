@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getSitesCount } from '@/app/lib/data/sites';
+import { getSitesCount } from '@/lib/data/sites';
 import SitesTable from './components/SitesTable';
 
 function SitesTableSkeleton() {

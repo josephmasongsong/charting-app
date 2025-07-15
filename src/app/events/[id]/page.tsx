@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/lib/auth';
+import { authOptions } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import {
   db,
@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import EditButton from './components/EditButton';
-import { minutesToHumanReadable } from '@/app/lib/validations/events';
+import { minutesToHumanReadable } from '@/lib/validations/events';
 
 interface EventPageProps {
   params: {

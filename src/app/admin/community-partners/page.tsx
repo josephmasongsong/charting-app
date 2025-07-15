@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getCommunityPartnersCount } from '@/app/lib/data/community-partners';
+import { getCommunityPartnersCount } from '@/lib/data/community-partners';
 import CommunityPartnersTable from './components/community-partners-table';
 
 function CommunityPartnersTableSkeleton() {

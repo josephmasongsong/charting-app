@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getUsersData } from '@/app/lib/data/users';
+import { getUsersData } from '@/lib/data/users';
 import UsersTable from './components/UsersTable';
 
 function UsersTableSkeleton() {

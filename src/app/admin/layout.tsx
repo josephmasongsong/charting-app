@@ -1,4 +1,4 @@
-import { requireAdmin } from '@/app/lib/role-guard';
+import { requireAdmin } from '@/lib/role-guard';
 import {
   Card,
   CardContent,

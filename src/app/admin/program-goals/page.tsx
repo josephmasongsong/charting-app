@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getProgramGoalsCount } from '@/app/lib/data/program-goals';
+import { getProgramGoalsCount } from '@/lib/data/program-goals';
 import ProgramGoalsTable from './components/program-goals-table';
 
 function ProgramGoalsTableSkeleton() {

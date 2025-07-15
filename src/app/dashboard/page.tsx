@@ -1,5 +1,5 @@
 // 'use client';
-import { requireAuth } from '@/app/lib/auth-guard';
+import { requireAuth } from '@/lib/auth-guard';
 import {
   Card,
   CardContent,

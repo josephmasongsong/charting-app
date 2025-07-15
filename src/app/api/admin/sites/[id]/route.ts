@@ -1,10 +1,10 @@
 // app/api/admin/sites/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/lib/auth';
+import { authOptions } from '@/lib/auth';
 import { db, users, sites, communityPartners } from '@/db';
 import { eq, sql } from 'drizzle-orm';
-import { updateSiteSchema } from '@/app/lib/validations/sites';
+import { updateSiteSchema } from '@/lib/validations/sites';
 
 export async function GET(
   req: Request,
