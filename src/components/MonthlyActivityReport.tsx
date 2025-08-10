@@ -18,6 +18,7 @@ import {
   DollarSign,
   CalendarCheck2,
 } from 'lucide-react';
+import { ProgramGoalsPieChart } from '@/components/ProgramGoalsPieChart';
 
 interface ActivityTypeByRegion {
   activityTypeId: string;
@@ -29,15 +30,24 @@ interface ActivityTypeByRegion {
   totalCost: number;
 }
 
+interface ProgramGoalSummary {
+  id: string;
+  name: string;
+  activityCount: number;
+  color: string;
+}
+
 interface MonthlyActivityReportData {
   reportMonth: string;
   totalEvents: number;
   totalParticipants: number;
   totalCost: number;
-  totalEventDuration: number; // Add this line
+  totalEventDuration: number;
+  totalAdminDuration: number;
   activityTypesByRegion: ActivityTypeByRegion[];
+  programGoals: ProgramGoalSummary[];
   regions: string[];
-  availableDateRange: { minDate: string; maxDate: string }; // Add this if missing
+  availableDateRange: { minDate: string; maxDate: string };
 }
 
 interface MonthlyActivityReportProps {
@@ -55,18 +65,18 @@ function MetricCard({
   value,
   icon: Icon,
   formatter = (val: number) => val.toLocaleString(),
-  subMetric,
+  subMetrics = [],
   className = '',
 }: {
   title: string;
   value: number;
   icon: any;
   formatter?: (val: number) => string;
-  subMetric?: {
+  subMetrics?: Array<{
     label: string;
     value: string | number;
     formatter?: (val: string | number) => string;
-  };
+  }>;
   className?: string;
 }) {
   return (
@@ -83,14 +93,18 @@ function MetricCard({
       </CardHeader>
       <CardContent className="pt-0">
         <div className="text-3xl font-normal">{formatter(value)}</div>
-        {subMetric && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            {subMetric.label}:{' '}
-            <span className="font-medium text-foreground">
-              {subMetric.formatter
-                ? subMetric.formatter(subMetric.value)
-                : subMetric.value}
-            </span>
+        {subMetrics.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {subMetrics.map((subMetric, index) => (
+              <div key={index} className="text-xs text-muted-foreground">
+                {subMetric.label}:{' '}
+                <span className="font-medium text-foreground">
+                  {subMetric.formatter
+                    ? subMetric.formatter(subMetric.value)
+                    : subMetric.value}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>
@@ -177,7 +191,6 @@ function DateRangeSelector({
     });
   };
 
-  // VARIANT 2: Right-side Larger Width
   return (
     <Card className="w-96 gap-0">
       <CardHeader className="pb-4">
@@ -481,10 +494,6 @@ export function MonthlyActivityReport({
             <Download className="h-4 w-4 mr-2" />
             Export XLXS
           </Button>
-          {/* <Button variant="outline" size="sm" onClick={handleExportCSV}>
-            <FileText className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button> */}
         </div>
       </div>
 
@@ -494,65 +503,87 @@ export function MonthlyActivityReport({
           title="Total Events"
           value={data.totalEvents}
           icon={CalendarDays}
-          subMetric={{
-            label: 'Programming Hours',
-            value: Math.round(data.totalEventDuration / 60),
-            formatter: val => `${val}h`,
-          }}
+          subMetrics={[
+            {
+              label: 'Programming Hours',
+              value: Math.round(data.totalEventDuration / 60),
+              formatter: val => `${val}h`,
+            },
+            {
+              label: 'Admin Hours',
+              value: Math.round(data.totalAdminDuration / 60),
+              formatter: val => `${val}h`,
+            },
+          ]}
         />
         <MetricCard
           title="Total Participants"
           value={data.totalParticipants}
           icon={Users}
-          subMetric={{
-            label: 'Avg per Event',
-            value:
-              data.totalEvents > 0
-                ? data.totalParticipants / data.totalEvents
-                : 0,
-            formatter: val => `${Math.round(Number(val))}`,
-          }}
+          subMetrics={[
+            {
+              label: 'Avg per Event',
+              value:
+                data.totalEvents > 0
+                  ? data.totalParticipants / data.totalEvents
+                  : 0,
+              formatter: val => `${Math.round(Number(val))}`,
+            },
+          ]}
         />
         <MetricCard
           title="Total Cost"
           value={data.totalCost}
           icon={DollarSign}
           formatter={val => `$${val.toFixed(2)}`}
-          subMetric={{
-            label: 'Avg per Event',
-            value: data.totalEvents > 0 ? data.totalCost / data.totalEvents : 0,
-            formatter: val => `$${Number(val).toFixed(2)}`,
-          }}
+          subMetrics={[
+            {
+              label: 'Avg per Event',
+              value:
+                data.totalEvents > 0 ? data.totalCost / data.totalEvents : 0,
+              formatter: val => `$${Number(val).toFixed(2)}`,
+            },
+            {
+              label: 'Avg per Participant',
+              value:
+                data.totalParticipants > 0
+                  ? data.totalCost / data.totalParticipants
+                  : 0,
+              formatter: val => `$${Number(val).toFixed(2)}`,
+            },
+          ]}
         />
         <MetricCard
           title="Activity Types"
           value={data.activityTypesByRegion.length}
           icon={BarChart3}
-          subMetric={{
-            label: 'Most Popular',
-            value: (() => {
-              const activityTypeCounts = data.activityTypesByRegion.reduce(
-                (acc, item) => {
-                  acc[item.activityTypeName] =
-                    (acc[item.activityTypeName] || 0) + item.eventCount;
-                  return acc;
-                },
-                {} as Record<string, number>
-              );
-              const mostPopular =
-                Object.entries(activityTypeCounts).sort(
-                  ([, a], [, b]) => b - a
-                )[0]?.[0] || 'None';
-              return mostPopular.length > 20
-                ? mostPopular.substring(0, 20) + '...'
-                : mostPopular;
-            })(),
-            formatter: val => val.toString(),
-          }}
+          subMetrics={[
+            {
+              label: 'Most Popular',
+              value: (() => {
+                const activityTypeCounts = data.activityTypesByRegion.reduce(
+                  (acc, item) => {
+                    acc[item.activityTypeName] =
+                      (acc[item.activityTypeName] || 0) + item.eventCount;
+                    return acc;
+                  },
+                  {} as Record<string, number>
+                );
+                const mostPopular =
+                  Object.entries(activityTypeCounts).sort(
+                    ([, a], [, b]) => b - a
+                  )[0]?.[0] || 'None';
+                return mostPopular.length > 20
+                  ? mostPopular.substring(0, 20) + '...'
+                  : mostPopular;
+              })(),
+              formatter: val => val.toString(),
+            },
+          ]}
         />
       </div>
 
-      {/* VARIANT 2: Tables on Left, Date Controls on Right */}
+      {/* Tables on Left, Date Controls on Right */}
       <div className="flex gap-6">
         {/* Tables - Left Side (takes remaining space) */}
         <div className="flex-1">
@@ -574,12 +605,13 @@ export function MonthlyActivityReport({
           )}
         </div>
 
-        {/* Date Controls - Right Side (fixed width) */}
-        <div className="flex-shrink-0">
+        {/* Date Controls and Program Goals - Right Side (fixed width) */}
+        <div className="flex-shrink-0 space-y-6">
           <DateRangeSelector
             currentParams={currentParams}
             availableDateRange={data.availableDateRange}
           />
+          <ProgramGoalsPieChart data={data.programGoals} />
         </div>
       </div>
     </div>

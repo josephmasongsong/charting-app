@@ -15,13 +15,22 @@ interface ActivityTypeByRegion {
   totalCost: number;
 }
 
+interface ProgramGoalSummary {
+  id: string;
+  name: string;
+  activityCount: number;
+  color: string;
+}
+
 interface MonthlyActivityReportData {
   reportMonth: string;
   totalEvents: number;
   totalParticipants: number;
   totalCost: number;
-  totalEventDuration: number; // Add this
+  totalEventDuration: number;
+  totalAdminDuration: number;
   activityTypesByRegion: ActivityTypeByRegion[];
+  programGoals: ProgramGoalSummary[];
   regions: string[];
   availableDateRange: {
     minDate: string;
@@ -29,7 +38,21 @@ interface MonthlyActivityReportData {
   };
 }
 
-// Updated generateMonthlyActivityReport function to include date range info
+// Color palette for program goals
+const PROGRAM_GOAL_COLORS = [
+  '#3b82f6', // blue
+  '#10b981', // green
+  '#f59e0b', // yellow
+  '#8b5cf6', // purple
+  '#ef4444', // red
+  '#06b6d4', // cyan
+  '#f97316', // orange
+  '#84cc16', // lime
+  '#ec4899', // pink
+  '#6366f1', // indigo
+];
+
+// Updated generateMonthlyActivityReport function to include program goals
 export async function generateMonthlyActivityReport(
   startYear: number,
   startMonth: number,
@@ -103,13 +126,39 @@ export async function generateMonthlyActivityReport(
     .having(sql`count(${events.id}) > 0`)
     .orderBy(users.region, activityTypes.name);
 
-  // Get total metrics
+  // Get program goals summary - only program goals with activities in the date range
+  const programGoalsData = await db
+    .select({
+      programGoalId: programGoals.id,
+      programGoalName: programGoals.name,
+      activityCount: sql<number>`count(${events.id})`,
+    })
+    .from(events)
+    .leftJoin(activityTypes, eq(events.activityTypeId, activityTypes.id))
+    .leftJoin(programGoals, eq(activityTypes.programGoalId, programGoals.id))
+    .leftJoin(users, eq(events.userId, users.id))
+    .where(
+      and(
+        session.user.role === 'admin'
+          ? sql`true`
+          : eq(events.userId, session.user.id),
+        gte(events.eventDate, startOfPeriod.toISOString().split('T')[0]),
+        lt(events.eventDate, endOfPeriod.toISOString().split('T')[0]),
+        sql`${programGoals.id} IS NOT NULL`
+      )
+    )
+    .groupBy(programGoals.id, programGoals.name)
+    .having(sql`count(${events.id}) > 0`)
+    .orderBy(sql`count(${events.id}) DESC`); // Order by activity count descending
+
+  // Get total metrics - including admin duration
   const totalMetrics = await db
     .select({
       totalEvents: sql<number>`count(*)`,
       totalParticipants: sql<number>`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0)`,
       totalCost: sql<number>`coalesce(sum(${events.totalCost}), 0)`,
-      totalEventDuration: sql<number>`coalesce(sum(${events.eventDuration}), 0)`, // Add this
+      totalEventDuration: sql<number>`coalesce(sum(${events.eventDuration}), 0)`,
+      totalAdminDuration: sql<number>`coalesce(sum(${events.adminDuration}), 0)`,
     })
     .from(events)
     .leftJoin(users, eq(events.userId, users.id))
@@ -166,12 +215,23 @@ export async function generateMonthlyActivityReport(
     reportMonth = `${monthNames[startMonth - 1]} ${startYear}`;
   }
 
+  // Map program goals with colors
+  const programGoalsWithColors: ProgramGoalSummary[] = programGoalsData.map(
+    (goal, index) => ({
+      id: goal.programGoalId,
+      name: goal.programGoalName,
+      activityCount: Number(goal.activityCount),
+      color: PROGRAM_GOAL_COLORS[index % PROGRAM_GOAL_COLORS.length],
+    })
+  );
+
   return {
     reportMonth,
     totalEvents: totalMetrics[0]?.totalEvents || 0,
     totalParticipants: totalMetrics[0]?.totalParticipants || 0,
     totalCost: Number(totalMetrics[0]?.totalCost || 0),
-    totalEventDuration: Number(totalMetrics[0]?.totalEventDuration || 0), // Add this
+    totalEventDuration: Number(totalMetrics[0]?.totalEventDuration || 0),
+    totalAdminDuration: Number(totalMetrics[0]?.totalAdminDuration || 0),
     activityTypesByRegion: activityTypeByRegionData.map(item => ({
       activityTypeId: item.activityTypeId,
       activityTypeName: item.activityTypeName,
@@ -181,6 +241,7 @@ export async function generateMonthlyActivityReport(
       participantsServed: Number(item.participantsServed),
       totalCost: Number(item.totalCost),
     })),
+    programGoals: programGoalsWithColors,
     regions: activeRegions.map(r => r.region).filter(Boolean),
     availableDateRange: {
       minDate: dateRange[0]?.minDate || '',
