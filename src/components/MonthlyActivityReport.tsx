@@ -7,6 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
   CalendarDays,
   Users,
   BarChart3,
@@ -17,6 +25,7 @@ import {
   Loader2,
   DollarSign,
   CalendarCheck2,
+  Calendar,
 } from 'lucide-react';
 import { ProgramGoalsPieChart } from '@/components/ProgramGoalsPieChart';
 
@@ -112,7 +121,7 @@ function MetricCard({
   );
 }
 
-function DateRangeSelector({
+function DateRangeDialog({
   currentParams,
   availableDateRange,
 }: {
@@ -124,6 +133,7 @@ function DateRangeSelector({
   const [isRange, setIsRange] = useState(
     !!(currentParams.endYear && currentParams.endMonth)
   );
+  const [open, setOpen] = useState(false);
 
   // Calculate available years and months based on actual data
   const minDate = new Date(availableDateRange.minDate);
@@ -188,18 +198,26 @@ function DateRangeSelector({
 
     startTransition(() => {
       router.push(`/reports/monthly?${params.toString()}`);
+      setOpen(false);
     });
   };
 
   return (
-    <Card className="w-96 gap-0">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <CalendarCheck2 className="h-5 w-5 text-primary" />
-          <CardTitle className="font-semibold">Report Period</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Calendar className="h-4 w-4 mr-2" />
+          Change Period
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Select Report Period</DialogTitle>
+          <DialogDescription>
+            Choose the date range for your monthly activity report.
+          </DialogDescription>
+        </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center gap-3">
             <input
@@ -339,8 +357,8 @@ function DateRangeSelector({
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -490,6 +508,10 @@ export function MonthlyActivityReport({
           </p>
         </div>
         <div className="flex gap-2">
+          <DateRangeDialog
+            currentParams={currentParams}
+            availableDateRange={data.availableDateRange}
+          />
           <Button variant="outline" size="sm" onClick={handleExportPDF}>
             <Download className="h-4 w-4 mr-2" />
             Export XLXS
@@ -583,7 +605,7 @@ export function MonthlyActivityReport({
         />
       </div>
 
-      {/* Tables on Left, Date Controls on Right */}
+      {/* Main Content Area */}
       <div className="flex gap-6">
         {/* Tables - Left Side (takes remaining space) */}
         <div className="flex-1">
@@ -605,12 +627,8 @@ export function MonthlyActivityReport({
           )}
         </div>
 
-        {/* Date Controls and Program Goals - Right Side (fixed width) */}
-        <div className="flex-shrink-0 space-y-6">
-          <DateRangeSelector
-            currentParams={currentParams}
-            availableDateRange={data.availableDateRange}
-          />
+        {/* Program Goals Chart - Right Side (fixed width) */}
+        <div className="flex-shrink-0">
           <ProgramGoalsPieChart data={data.programGoals} />
         </div>
       </div>
