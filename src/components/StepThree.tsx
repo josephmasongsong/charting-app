@@ -68,12 +68,7 @@ export default function StepThree({
               disabled={loading}
             >
               {selectedActivityType ? (
-                <div className="flex items-center gap-2">
-                  <span>{selectedActivityType.name}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {selectedActivityType.programGoalName}
-                  </Badge>
-                </div>
+                <span>{selectedActivityType.name}</span>
               ) : (
                 'Select activity type...'
               )}
@@ -101,12 +96,7 @@ export default function StepThree({
                           : 'opacity-0'
                       }`}
                     />
-                    <div className="flex flex-col">
-                      <span>{type.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {type.programGoalName}
-                      </span>
-                    </div>
+                    <span>{type.name}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -134,12 +124,7 @@ export default function StepThree({
               disabled={loading}
             >
               {selectedSite ? (
-                <div className="flex flex-col items-start">
-                  <span>{selectedSite.name}</span>
-                  <span className="text-xs text-muted-foreground truncate">
-                    {selectedSite.address}
-                  </span>
-                </div>
+                <span>{selectedSite.name}</span>
               ) : (
                 'Select site...'
               )}
@@ -167,12 +152,7 @@ export default function StepThree({
                           : 'opacity-0'
                       }`}
                     />
-                    <div className="flex flex-col">
-                      <span>{site.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {site.address}
-                      </span>
-                    </div>
+                    <span>{site.name}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>

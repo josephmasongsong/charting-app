@@ -379,48 +379,36 @@ export default function EventForm({
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="mb-4">
-            <Progress value={progressPercentage} className="w-full" />
-          </div>
-          <div className="flex justify-between text-sm">
-            {STEPS.map(step => (
-              <button
-                key={step.id}
-                onClick={() => goToStep(step.id)}
-                className={`flex flex-col items-center gap-1 px-2 py-1 rounded transition-colors ${
+      {/* Progress Bar - No Card Wrapper */}
+      <div className="mb-6">
+        <div className="mb-6">
+          <Progress
+            value={progressPercentage}
+            className="w-full h-2 bg-blue-100 [&>div]:bg-blue-600"
+          />
+        </div>
+        <div className="flex justify-between">
+          {STEPS.map(step => (
+            <button
+              key={step.id}
+              onClick={() => goToStep(step.id)}
+              className="flex items-center justify-center transition-all duration-200 hover:scale-105"
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
                   step.id === currentStep
-                    ? 'text-blue-600 font-medium'
+                    ? 'bg-blue-600 text-white shadow-md'
                     : step.id < currentStep
-                      ? 'text-green-600'
-                      : 'text-muted-foreground'
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'bg-blue-100 text-blue-400 border border-blue-200'
                 }`}
               >
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${
-                    step.id === currentStep
-                      ? 'border-blue-600 bg-blue-50'
-                      : step.id < currentStep
-                        ? 'border-green-600 bg-green-50'
-                        : 'border-gray-300'
-                  }`}
-                >
-                  {step.id < currentStep ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <span className="text-xs">{step.id}</span>
-                  )}
-                </div>
-                <span className="text-center hidden md:block">
-                  {step.title}
-                </span>
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                <span className="text-sm font-medium">{step.id}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Error Message */}
       {error && (

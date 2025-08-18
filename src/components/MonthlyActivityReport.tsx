@@ -28,6 +28,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { ProgramGoalsPieChart } from '@/components/ProgramGoalsPieChart';
+import { ActivityTypesParticipationChart } from '@/components/ActivityTypesParticipationChart';
 
 interface ActivityTypeByRegion {
   activityTypeId: string;
@@ -46,15 +47,26 @@ interface ProgramGoalSummary {
   color: string;
 }
 
+interface ActivityTypeParticipation {
+  id: string;
+  name: string;
+  participantCount: number;
+  eventCount: number;
+  color: string;
+}
+
 interface MonthlyActivityReportData {
   reportMonth: string;
   totalEvents: number;
   totalParticipants: number;
+  totalNewParticipants: number;
+  totalReturningParticipants: number;
   totalCost: number;
   totalEventDuration: number;
   totalAdminDuration: number;
   activityTypesByRegion: ActivityTypeByRegion[];
   programGoals: ProgramGoalSummary[];
+  activityTypesParticipation: ActivityTypeParticipation[];
   regions: string[];
   availableDateRange: { minDate: string; maxDate: string };
 }
@@ -551,6 +563,14 @@ export function MonthlyActivityReport({
                   : 0,
               formatter: val => `${Math.round(Number(val))}`,
             },
+            {
+              label: 'Returning vs New',
+              value:
+                data.totalParticipants > 0
+                  ? `${Math.round((data.totalReturningParticipants / data.totalParticipants) * 100)}% returning`
+                  : '0% returning',
+              formatter: val => val.toString(),
+            },
           ]}
         />
         <MetricCard
@@ -627,9 +647,12 @@ export function MonthlyActivityReport({
           )}
         </div>
 
-        {/* Program Goals Chart - Right Side (fixed width) */}
-        <div className="flex-shrink-0">
+        {/* Charts - Right Side (fixed width) */}
+        <div className="flex-shrink-0 space-y-6">
           <ProgramGoalsPieChart data={data.programGoals} />
+          <ActivityTypesParticipationChart
+            data={data.activityTypesParticipation}
+          />
         </div>
       </div>
     </div>
