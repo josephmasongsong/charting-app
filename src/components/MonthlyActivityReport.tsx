@@ -24,11 +24,12 @@ import {
   Search,
   Loader2,
   DollarSign,
-  CalendarCheck2,
+  Clock,
   Calendar,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from 'lucide-react';
-import { ProgramGoalsPieChart } from '@/components/ProgramGoalsPieChart';
-import { ActivityTypesParticipationChart } from '@/components/ActivityTypesParticipationChart';
 
 interface ActivityTypeByRegion {
   activityTypeId: string;
@@ -37,6 +38,9 @@ interface ActivityTypeByRegion {
   region: string;
   eventCount: number;
   participantsServed: number;
+  newParticipants: number;
+  returningParticipants: number;
+  totalAdminDuration: number;
   totalCost: number;
 }
 
@@ -55,6 +59,37 @@ interface ActivityTypeParticipation {
   color: string;
 }
 
+interface MonthlyParticipantGrowth {
+  region: string;
+  currentMonthParticipants: number;
+  previousMonthParticipants: number;
+  growthRate: number;
+  growthType: 'growth' | 'decline' | 'stable';
+}
+
+interface MonthlyEventGrowth {
+  region: string;
+  currentMonthEvents: number;
+  previousMonthEvents: number;
+  growthRate: number;
+  growthType: 'growth' | 'decline' | 'stable';
+}
+
+interface MonthlyCostGrowth {
+  currentMonthCost: number;
+  previousMonthCost: number;
+  growthRate: number;
+  growthType: 'growth' | 'decline' | 'stable';
+}
+
+interface RegionalCostGrowth {
+  region: string;
+  currentMonthCost: number;
+  previousMonthCost: number;
+  growthRate: number;
+  growthType: 'growth' | 'decline' | 'stable';
+}
+
 interface MonthlyActivityReportData {
   reportMonth: string;
   totalEvents: number;
@@ -67,6 +102,10 @@ interface MonthlyActivityReportData {
   activityTypesByRegion: ActivityTypeByRegion[];
   programGoals: ProgramGoalSummary[];
   activityTypesParticipation: ActivityTypeParticipation[];
+  monthlyParticipantGrowth: MonthlyParticipantGrowth[];
+  monthlyEventGrowth: MonthlyEventGrowth[];
+  monthlyCostGrowth: MonthlyCostGrowth;
+  regionalCostGrowth: RegionalCostGrowth[];
   regions: string[];
   availableDateRange: { minDate: string; maxDate: string };
 }
@@ -80,6 +119,51 @@ interface MonthlyActivityReportProps {
     endMonth?: number;
   };
 }
+
+// Helper functions for growth indicators
+const getGrowthIcon = (growthType: string) => {
+  switch (growthType) {
+    case 'growth':
+      return <TrendingUp className="h-4 w-4 text-green-600" />;
+    case 'decline':
+      return <TrendingDown className="h-4 w-4 text-red-600" />;
+    default:
+      return <Minus className="h-4 w-4 text-gray-500" />;
+  }
+};
+
+const getGrowthColor = (growthType: string) => {
+  switch (growthType) {
+    case 'growth':
+      return 'text-green-600';
+    case 'decline':
+      return 'text-red-600';
+    default:
+      return 'text-gray-500';
+  }
+};
+
+const getCostGrowthIcon = (growthType: string) => {
+  switch (growthType) {
+    case 'growth':
+      return <TrendingUp className="h-4 w-4 text-red-600" />;
+    case 'decline':
+      return <TrendingDown className="h-4 w-4 text-green-600" />;
+    default:
+      return <Minus className="h-4 w-4 text-gray-500" />;
+  }
+};
+
+const getCostGrowthColor = (growthType: string) => {
+  switch (growthType) {
+    case 'growth':
+      return 'text-red-600';
+    case 'decline':
+      return 'text-green-600';
+    default:
+      return 'text-gray-500';
+  }
+};
 
 function MetricCard({
   title,
@@ -95,7 +179,7 @@ function MetricCard({
   formatter?: (val: number) => string;
   subMetrics?: Array<{
     label: string;
-    value: string | number;
+    value: string | number | React.ReactNode;
     formatter?: (val: string | number) => string;
   }>;
   className?: string;
@@ -120,9 +204,11 @@ function MetricCard({
               <div key={index} className="text-xs text-muted-foreground">
                 {subMetric.label}:{' '}
                 <span className="font-medium text-foreground">
-                  {subMetric.formatter
-                    ? subMetric.formatter(subMetric.value)
-                    : subMetric.value}
+                  {React.isValidElement(subMetric.value)
+                    ? subMetric.value
+                    : subMetric.formatter
+                      ? subMetric.formatter(subMetric.value)
+                      : subMetric.value}
                 </span>
               </div>
             ))}
@@ -146,8 +232,20 @@ function DateRangeDialog({
     !!(currentParams.endYear && currentParams.endMonth)
   );
   const [open, setOpen] = useState(false);
+  const [selectedStartYear, setSelectedStartYear] = useState(
+    currentParams.startYear
+  );
+  const [selectedStartMonth, setSelectedStartMonth] = useState(
+    currentParams.startMonth
+  );
+  const [selectedEndYear, setSelectedEndYear] = useState(
+    currentParams.endYear || currentParams.startYear
+  );
+  const [selectedEndMonth, setSelectedEndMonth] = useState(
+    currentParams.endMonth || currentParams.startMonth
+  );
+  const [validationError, setValidationError] = useState('');
 
-  // Calculate available years and months based on actual data
   const minDate = new Date(availableDateRange.minDate);
   const maxDate = new Date(availableDateRange.maxDate);
 
@@ -176,7 +274,6 @@ function DateRangeDialog({
     { value: 12, label: 'December' },
   ];
 
-  // Filter months based on selected year
   const getAvailableMonths = (year: number) => {
     return months.filter(month => {
       if (year === minYear && year === maxYear) {
@@ -190,22 +287,63 @@ function DateRangeDialog({
     });
   };
 
+  const validateDateRange = (
+    startYear: number,
+    startMonth: number,
+    endYear: number,
+    endMonth: number
+  ) => {
+    if (!isRange) return true;
+    const startDate = new Date(startYear, startMonth - 1);
+    const endDate = new Date(endYear, endMonth - 1);
+    return startDate <= endDate;
+  };
+
+  React.useEffect(() => {
+    if (
+      isRange &&
+      !validateDateRange(
+        selectedStartYear,
+        selectedStartMonth,
+        selectedEndYear,
+        selectedEndMonth
+      )
+    ) {
+      setValidationError('Start date must be before or equal to end date');
+    } else {
+      setValidationError('');
+    }
+  }, [
+    selectedStartYear,
+    selectedStartMonth,
+    selectedEndYear,
+    selectedEndMonth,
+    isRange,
+  ]);
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
-    const startYear = formData.get('startYear') as string;
-    const startMonth = formData.get('startMonth') as string;
-    const endYear = formData.get('endYear') as string;
-    const endMonth = formData.get('endMonth') as string;
+    if (
+      isRange &&
+      !validateDateRange(
+        selectedStartYear,
+        selectedStartMonth,
+        selectedEndYear,
+        selectedEndMonth
+      )
+    ) {
+      setValidationError('Start date must be before or equal to end date');
+      return;
+    }
 
     const params = new URLSearchParams();
-    params.set('startYear', startYear);
-    params.set('startMonth', startMonth);
+    params.set('startYear', selectedStartYear.toString());
+    params.set('startMonth', selectedStartMonth.toString());
 
-    if (isRange && endYear && endMonth) {
-      params.set('endYear', endYear);
-      params.set('endMonth', endMonth);
+    if (isRange) {
+      params.set('endYear', selectedEndYear.toString());
+      params.set('endMonth', selectedEndMonth.toString());
     }
 
     startTransition(() => {
@@ -245,7 +383,12 @@ function DateRangeDialog({
           </div>
 
           <div className="space-y-4">
-            {/* Start Date */}
+            {validationError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-700">{validationError}</p>
+              </div>
+            )}
+
             <div>
               <Label className="text-sm font-medium text-muted-foreground mb-2 block">
                 {isRange ? 'Start Date' : 'Month & Year'}
@@ -261,11 +404,14 @@ function DateRangeDialog({
                   <select
                     id="startMonth"
                     name="startMonth"
-                    defaultValue={currentParams.startMonth}
+                    value={selectedStartMonth}
+                    onChange={e =>
+                      setSelectedStartMonth(parseInt(e.target.value))
+                    }
                     className="w-full p-2 text-sm border rounded"
                     required
                   >
-                    {getAvailableMonths(currentParams.startYear).map(month => (
+                    {getAvailableMonths(selectedStartYear).map(month => (
                       <option key={month.value} value={month.value}>
                         {month.label}
                       </option>
@@ -282,7 +428,10 @@ function DateRangeDialog({
                   <select
                     id="startYear"
                     name="startYear"
-                    defaultValue={currentParams.startYear}
+                    value={selectedStartYear}
+                    onChange={e =>
+                      setSelectedStartYear(parseInt(e.target.value))
+                    }
                     className="w-full p-2 text-sm border rounded"
                     required
                   >
@@ -296,7 +445,6 @@ function DateRangeDialog({
               </div>
             </div>
 
-            {/* End Date (if range mode) */}
             {isRange && (
               <div>
                 <Label className="text-sm font-medium text-muted-foreground mb-2 block">
@@ -313,14 +461,13 @@ function DateRangeDialog({
                     <select
                       id="endMonth"
                       name="endMonth"
-                      defaultValue={
-                        currentParams.endMonth || currentParams.startMonth
+                      value={selectedEndMonth}
+                      onChange={e =>
+                        setSelectedEndMonth(parseInt(e.target.value))
                       }
                       className="w-full p-2 text-sm border rounded"
                     >
-                      {getAvailableMonths(
-                        currentParams.endYear || currentParams.startYear
-                      ).map(month => (
+                      {getAvailableMonths(selectedEndYear).map(month => (
                         <option key={month.value} value={month.value}>
                           {month.label}
                         </option>
@@ -337,8 +484,9 @@ function DateRangeDialog({
                     <select
                       id="endYear"
                       name="endYear"
-                      defaultValue={
-                        currentParams.endYear || currentParams.startYear
+                      value={selectedEndYear}
+                      onChange={e =>
+                        setSelectedEndYear(parseInt(e.target.value))
                       }
                       className="w-full p-2 text-sm border rounded"
                     >
@@ -353,8 +501,11 @@ function DateRangeDialog({
               </div>
             )}
 
-            {/* Generate Button */}
-            <Button type="submit" disabled={isPending} className="w-full">
+            <Button
+              type="submit"
+              disabled={isPending || !!validationError}
+              className="w-full"
+            >
               {isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -374,7 +525,17 @@ function DateRangeDialog({
   );
 }
 
-function ActivityTypeByRegionTable({ data }: { data: ActivityTypeByRegion[] }) {
+function ActivityTypeByRegionTable({
+  data,
+  participantGrowthData,
+  eventGrowthData,
+  costGrowthData,
+}: {
+  data: ActivityTypeByRegion[];
+  participantGrowthData: MonthlyParticipantGrowth[];
+  eventGrowthData: MonthlyEventGrowth[];
+  costGrowthData: RegionalCostGrowth[];
+}) {
   const groupedByRegion = useMemo(() => {
     return data.reduce(
       (acc, item) => {
@@ -393,16 +554,42 @@ function ActivityTypeByRegionTable({ data }: { data: ActivityTypeByRegion[] }) {
       (totals, activity) => ({
         events: totals.events + activity.eventCount,
         participants: totals.participants + activity.participantsServed,
+        newParticipants: totals.newParticipants + activity.newParticipants,
+        returningParticipants:
+          totals.returningParticipants + activity.returningParticipants,
+        adminDuration: totals.adminDuration + activity.totalAdminDuration,
         cost: totals.cost + activity.totalCost,
       }),
-      { events: 0, participants: 0, cost: 0 }
+      {
+        events: 0,
+        participants: 0,
+        newParticipants: 0,
+        returningParticipants: 0,
+        adminDuration: 0,
+        cost: 0,
+      }
     );
+  };
+
+  const getRegionParticipantGrowth = (region: string) => {
+    return participantGrowthData.find(growth => growth.region === region);
+  };
+
+  const getRegionEventGrowth = (region: string) => {
+    return eventGrowthData.find(growth => growth.region === region);
+  };
+
+  const getRegionCostGrowth = (region: string) => {
+    return costGrowthData.find(growth => growth.region === region);
   };
 
   return (
     <div className="space-y-6">
       {Object.entries(groupedByRegion).map(([region, activities]) => {
         const regionTotals = getRegionTotals(activities);
+        const regionParticipantGrowth = getRegionParticipantGrowth(region);
+        const regionEventGrowth = getRegionEventGrowth(region);
+        const regionCostGrowth = getRegionCostGrowth(region);
 
         return (
           <Card key={region}>
@@ -426,9 +613,6 @@ function ActivityTypeByRegionTable({ data }: { data: ActivityTypeByRegion[] }) {
                         <th className="h-12 px-4 text-left align-middle text-xs uppercase text-muted-foreground">
                           Activity Type
                         </th>
-                        <th className="h-12 px-4 text-left align-middle text-xs uppercase text-muted-foreground">
-                          Program Goal
-                        </th>
                         <th className="h-12 px-4 text-center align-middle text-xs uppercase text-muted-foreground">
                           Events
                         </th>
@@ -449,14 +633,6 @@ function ActivityTypeByRegionTable({ data }: { data: ActivityTypeByRegion[] }) {
                           <td className="p-4 align-middle font-normal text-sm">
                             {activity.activityTypeName}
                           </td>
-                          <td className="p-4 align-middle">
-                            <Badge
-                              variant="secondary"
-                              className="text-xs font-medium"
-                            >
-                              {activity.programGoalName}
-                            </Badge>
-                          </td>
                           <td className="p-4 align-middle text-center font-normal text-sm">
                             {activity.eventCount}
                           </td>
@@ -472,15 +648,59 @@ function ActivityTypeByRegionTable({ data }: { data: ActivityTypeByRegion[] }) {
                         <td className="p-4 align-middle font-medium text-primary text-sm">
                           {region} Region Total
                         </td>
-                        <td className="p-4 align-middle"></td>
                         <td className="p-4 align-middle text-center font-medium text-primary text-sm">
-                          {regionTotals.events}
+                          <div className="flex items-center justify-center gap-2">
+                            <span>{regionTotals.events}</span>
+                            {regionEventGrowth && (
+                              <div
+                                className={`flex items-center gap-1 ${getGrowthColor(regionEventGrowth.growthType)}`}
+                              >
+                                {getGrowthIcon(regionEventGrowth.growthType)}
+                                <span className="text-xs font-medium">
+                                  {regionEventGrowth.growthRate > 0 ? '+' : ''}
+                                  {regionEventGrowth.growthRate}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="p-4 align-middle text-center font-medium text-primary text-sm">
-                          {regionTotals.participants.toLocaleString()}
+                          <div className="flex items-center justify-center gap-2">
+                            <span>
+                              {regionTotals.participants.toLocaleString()}
+                            </span>
+                            {regionParticipantGrowth && (
+                              <div
+                                className={`flex items-center gap-1 ${getGrowthColor(regionParticipantGrowth.growthType)}`}
+                              >
+                                {getGrowthIcon(
+                                  regionParticipantGrowth.growthType
+                                )}
+                                <span className="text-xs font-medium">
+                                  {regionParticipantGrowth.growthRate > 0
+                                    ? '+'
+                                    : ''}
+                                  {regionParticipantGrowth.growthRate}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="p-4 align-middle text-center font-medium text-primary text-sm">
-                          ${regionTotals.cost.toFixed(2)}
+                          <div className="flex items-center justify-center gap-2">
+                            <span>${regionTotals.cost.toFixed(2)}</span>
+                            {regionCostGrowth && (
+                              <div
+                                className={`flex items-center gap-1 ${getCostGrowthColor(regionCostGrowth.growthType)}`}
+                              >
+                                {getCostGrowthIcon(regionCostGrowth.growthType)}
+                                <span className="text-xs font-medium">
+                                  {regionCostGrowth.growthRate > 0 ? '+' : ''}
+                                  {regionCostGrowth.growthRate}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     </tbody>
@@ -500,14 +720,71 @@ export function MonthlyActivityReport({
   currentParams,
 }: MonthlyActivityReportProps) {
   const handleExportPDF = () => {
-    // TODO: Implement PDF export
     console.log('Export PDF clicked');
   };
 
   const handleExportCSV = () => {
-    // TODO: Implement CSV export
     console.log('Export CSV clicked');
   };
+
+  // Calculate overall growth for participant metric card
+  const totalCurrentParticipants = data.monthlyParticipantGrowth.reduce(
+    (sum, item) => sum + item.currentMonthParticipants,
+    0
+  );
+  const totalPreviousParticipants = data.monthlyParticipantGrowth.reduce(
+    (sum, item) => sum + item.previousMonthParticipants,
+    0
+  );
+  const overallParticipantGrowthRate =
+    totalPreviousParticipants > 0
+      ? Math.round(
+          ((totalCurrentParticipants - totalPreviousParticipants) /
+            totalPreviousParticipants) *
+            100
+        )
+      : 0;
+
+  const overallParticipantGrowthType =
+    overallParticipantGrowthRate > 2
+      ? 'growth'
+      : overallParticipantGrowthRate < -2
+        ? 'decline'
+        : 'stable';
+
+  // Calculate overall growth for events metric card
+  const totalCurrentEvents =
+    data.monthlyEventGrowth?.reduce(
+      (sum, item) => sum + item.currentMonthEvents,
+      0
+    ) || 0;
+  const totalPreviousEvents =
+    data.monthlyEventGrowth?.reduce(
+      (sum, item) => sum + item.previousMonthEvents,
+      0
+    ) || 0;
+  const overallEventGrowthRate =
+    totalPreviousEvents > 0
+      ? Math.round(
+          ((totalCurrentEvents - totalPreviousEvents) / totalPreviousEvents) *
+            100
+        )
+      : 0;
+
+  const overallEventGrowthType =
+    overallEventGrowthRate > 2
+      ? 'growth'
+      : overallEventGrowthRate < -2
+        ? 'decline'
+        : 'stable';
+
+  // Calculate admin hours for metric card
+  const currentPeriodAdminHours = Math.round(data.totalAdminDuration / 60);
+
+  // Calculate admin hours growth (similar to cost growth logic)
+  // This would ideally come from server, but we can estimate from existing patterns
+  const adminHoursGrowthRate = 0; // Placeholder - should come from server
+  const adminHoursGrowthType = 'stable';
 
   return (
     <div className="space-y-6">
@@ -515,9 +792,7 @@ export function MonthlyActivityReport({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold">Monthly Activity Report</h2>
-          <p className="text-muted-foreground mt-1">
-            {data.reportMonth} • Activity breakdown by region and type
-          </p>
+          <p className="text-muted-foreground mt-1">{data.reportMonth}</p>
         </div>
         <div className="flex gap-2">
           <DateRangeDialog
@@ -526,27 +801,35 @@ export function MonthlyActivityReport({
           />
           <Button variant="outline" size="sm" onClick={handleExportPDF}>
             <Download className="h-4 w-4 mr-2" />
-            Export XLXS
+            Export XLS
           </Button>
         </div>
       </div>
 
       {/* Metric Cards - Top Row */}
-      <div className="grid gap-4 grid-cols-4">
+      <div className="grid gap-4 grid-cols-3">
         <MetricCard
           title="Total Events"
           value={data.totalEvents}
           icon={CalendarDays}
           subMetrics={[
             {
-              label: 'Programming Hours',
-              value: Math.round(data.totalEventDuration / 60),
-              formatter: val => `${val}h`,
-            },
-            {
-              label: 'Admin Hours',
-              value: Math.round(data.totalAdminDuration / 60),
-              formatter: val => `${val}h`,
+              label: 'vs Previous Period',
+              value:
+                data.monthlyEventGrowth &&
+                data.monthlyEventGrowth.length > 0 ? (
+                  <div
+                    className={`flex items-center gap-1 ${getGrowthColor(overallEventGrowthType)}`}
+                  >
+                    {getGrowthIcon(overallEventGrowthType)}
+                    <span>
+                      {overallEventGrowthRate > 0 ? '+' : ''}
+                      {overallEventGrowthRate}%
+                    </span>
+                  </div>
+                ) : (
+                  'N/A'
+                ),
             },
           ]}
         />
@@ -556,20 +839,18 @@ export function MonthlyActivityReport({
           icon={Users}
           subMetrics={[
             {
-              label: 'Avg per Event',
-              value:
-                data.totalEvents > 0
-                  ? data.totalParticipants / data.totalEvents
-                  : 0,
-              formatter: val => `${Math.round(Number(val))}`,
-            },
-            {
-              label: 'Returning vs New',
-              value:
-                data.totalParticipants > 0
-                  ? `${Math.round((data.totalReturningParticipants / data.totalParticipants) * 100)}% returning`
-                  : '0% returning',
-              formatter: val => val.toString(),
+              label: 'vs Previous Period',
+              value: (
+                <div
+                  className={`flex items-center gap-1 ${getGrowthColor(overallParticipantGrowthType)}`}
+                >
+                  {getGrowthIcon(overallParticipantGrowthType)}
+                  <span>
+                    {overallParticipantGrowthRate > 0 ? '+' : ''}
+                    {overallParticipantGrowthRate}%
+                  </span>
+                </div>
+              ),
             },
           ]}
         />
@@ -580,80 +861,46 @@ export function MonthlyActivityReport({
           formatter={val => `$${val.toFixed(2)}`}
           subMetrics={[
             {
-              label: 'Avg per Event',
-              value:
-                data.totalEvents > 0 ? data.totalCost / data.totalEvents : 0,
-              formatter: val => `$${Number(val).toFixed(2)}`,
-            },
-            {
-              label: 'Avg per Participant',
-              value:
-                data.totalParticipants > 0
-                  ? data.totalCost / data.totalParticipants
-                  : 0,
-              formatter: val => `$${Number(val).toFixed(2)}`,
-            },
-          ]}
-        />
-        <MetricCard
-          title="Activity Types"
-          value={data.activityTypesByRegion.length}
-          icon={BarChart3}
-          subMetrics={[
-            {
-              label: 'Most Popular',
-              value: (() => {
-                const activityTypeCounts = data.activityTypesByRegion.reduce(
-                  (acc, item) => {
-                    acc[item.activityTypeName] =
-                      (acc[item.activityTypeName] || 0) + item.eventCount;
-                    return acc;
-                  },
-                  {} as Record<string, number>
-                );
-                const mostPopular =
-                  Object.entries(activityTypeCounts).sort(
-                    ([, a], [, b]) => b - a
-                  )[0]?.[0] || 'None';
-                return mostPopular.length > 20
-                  ? mostPopular.substring(0, 20) + '...'
-                  : mostPopular;
-              })(),
-              formatter: val => val.toString(),
+              label: 'vs Previous Period',
+              value: (
+                <div
+                  className={`flex items-center gap-1 ${getCostGrowthColor(data.monthlyCostGrowth.growthType)}`}
+                >
+                  {getCostGrowthIcon(data.monthlyCostGrowth.growthType)}
+                  <span>
+                    {data.monthlyCostGrowth.growthRate > 0 ? '+' : ''}
+                    {data.monthlyCostGrowth.growthRate}%
+                  </span>
+                </div>
+              ),
             },
           ]}
         />
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex gap-6">
-        {/* Tables - Left Side (takes remaining space) */}
-        <div className="flex-1">
-          <ActivityTypeByRegionTable data={data.activityTypesByRegion} />
+      {/* Main Content Area - Full Width Tables */}
+      <div className="w-full">
+        <ActivityTypeByRegionTable
+          data={data.activityTypesByRegion}
+          participantGrowthData={data.monthlyParticipantGrowth}
+          eventGrowthData={data.monthlyEventGrowth || []}
+          costGrowthData={data.regionalCostGrowth || []}
+        />
 
-          {data.activityTypesByRegion.length === 0 && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
-                  No Activities Found
-                </h3>
-                <p className="text-muted-foreground text-center">
-                  No events were recorded for {data.reportMonth}.<br />
-                  Try selecting a different period or check your data.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Charts - Right Side (fixed width) */}
-        <div className="flex-shrink-0 space-y-6">
-          <ProgramGoalsPieChart data={data.programGoals} />
-          <ActivityTypesParticipationChart
-            data={data.activityTypesParticipation}
-          />
-        </div>
+        {data.activityTypesByRegion.length === 0 && (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                No Activities Found
+              </h3>
+              <p className="text-muted-foreground text-center">
+                No events were recorded for {data.reportMonth}.<br />
+                Try selecting a different period or check your data.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

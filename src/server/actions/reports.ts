@@ -1,4 +1,4 @@
-// Get program goals summary - only program goals with activities in the date range'use server';
+'use server';
 
 import { db, events, activityTypes, programGoals, users } from '@/db';
 import { sql, eq, and, gte, lt } from 'drizzle-orm';
@@ -12,6 +12,9 @@ interface ActivityTypeByRegion {
   region: string;
   eventCount: number;
   participantsServed: number;
+  newParticipants: number;
+  returningParticipants: number;
+  totalAdminDuration: number;
   totalCost: number;
 }
 
@@ -30,6 +33,37 @@ interface ActivityTypeParticipation {
   color: string;
 }
 
+interface MonthlyParticipantGrowth {
+  region: string;
+  currentMonthParticipants: number;
+  previousMonthParticipants: number;
+  growthRate: number;
+  growthType: 'growth' | 'decline' | 'stable';
+}
+
+interface MonthlyEventGrowth {
+  region: string;
+  currentMonthEvents: number;
+  previousMonthEvents: number;
+  growthRate: number;
+  growthType: 'growth' | 'decline' | 'stable';
+}
+
+interface MonthlyCostGrowth {
+  currentMonthCost: number;
+  previousMonthCost: number;
+  growthRate: number;
+  growthType: 'growth' | 'decline' | 'stable';
+}
+
+interface RegionalCostGrowth {
+  region: string;
+  currentMonthCost: number;
+  previousMonthCost: number;
+  growthRate: number;
+  growthType: 'growth' | 'decline' | 'stable';
+}
+
 interface MonthlyActivityReportData {
   reportMonth: string;
   totalEvents: number;
@@ -42,6 +76,10 @@ interface MonthlyActivityReportData {
   activityTypesByRegion: ActivityTypeByRegion[];
   programGoals: ProgramGoalSummary[];
   activityTypesParticipation: ActivityTypeParticipation[];
+  monthlyParticipantGrowth: MonthlyParticipantGrowth[];
+  monthlyEventGrowth: MonthlyEventGrowth[];
+  monthlyCostGrowth: MonthlyCostGrowth;
+  regionalCostGrowth: RegionalCostGrowth[];
   regions: string[];
   availableDateRange: {
     minDate: string;
@@ -63,7 +101,7 @@ const PROGRAM_GOAL_COLORS = [
   '#6366f1', // indigo
 ];
 
-// Updated generateMonthlyActivityReport function to include program goals
+// Updated generateMonthlyActivityReport function to include program goals, event growth, and cost growth
 export async function generateMonthlyActivityReport(
   startYear: number,
   startMonth: number,
@@ -111,6 +149,9 @@ export async function generateMonthlyActivityReport(
       region: users.region,
       eventCount: sql<number>`count(${events.id})`,
       participantsServed: sql<number>`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0)`,
+      newParticipants: sql<number>`coalesce(sum(${events.newParticipants}), 0)`,
+      returningParticipants: sql<number>`coalesce(sum(${events.returningParticipants}), 0)`,
+      totalAdminDuration: sql<number>`coalesce(sum(${events.adminDuration}), 0)`,
       totalCost: sql<number>`coalesce(sum(${events.totalCost}), 0)`,
     })
     .from(events)
@@ -163,6 +204,7 @@ export async function generateMonthlyActivityReport(
     .orderBy(
       sql`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0) DESC`
     ); // Order by participant count descending
+
   const programGoalsData = await db
     .select({
       programGoalId: programGoals.id,
@@ -209,6 +251,334 @@ export async function generateMonthlyActivityReport(
         lt(events.eventDate, endOfPeriod.toISOString().split('T')[0])
       )
     );
+
+  // Get month-over-month participant growth by region
+  const currentPeriodStart = startOfPeriod;
+  const currentPeriodEnd = endOfPeriod;
+
+  // Calculate previous period (same duration as current period)
+  const periodDurationMs =
+    currentPeriodEnd.getTime() - currentPeriodStart.getTime();
+  const previousPeriodEnd = new Date(currentPeriodStart.getTime());
+  const previousPeriodStart = new Date(
+    currentPeriodStart.getTime() - periodDurationMs
+  );
+
+  // Get current period participants by region
+  const currentPeriodParticipantsData = await db
+    .select({
+      region: users.region,
+      participants: sql<number>`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0)`,
+    })
+    .from(events)
+    .leftJoin(users, eq(events.userId, users.id))
+    .where(
+      and(
+        session.user.role === 'admin'
+          ? sql`true`
+          : eq(events.userId, session.user.id),
+        gte(events.eventDate, currentPeriodStart.toISOString().split('T')[0]),
+        lt(events.eventDate, currentPeriodEnd.toISOString().split('T')[0]),
+        sql`${users.region} IS NOT NULL`
+      )
+    )
+    .groupBy(users.region);
+
+  // Get previous period participants by region
+  const previousPeriodParticipantsData = await db
+    .select({
+      region: users.region,
+      participants: sql<number>`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0)`,
+    })
+    .from(events)
+    .leftJoin(users, eq(events.userId, users.id))
+    .where(
+      and(
+        session.user.role === 'admin'
+          ? sql`true`
+          : eq(events.userId, session.user.id),
+        gte(events.eventDate, previousPeriodStart.toISOString().split('T')[0]),
+        lt(events.eventDate, previousPeriodEnd.toISOString().split('T')[0]),
+        sql`${users.region} IS NOT NULL`
+      )
+    )
+    .groupBy(users.region);
+
+  // Get current period events by region
+  const currentPeriodEventsData = await db
+    .select({
+      region: users.region,
+      eventCount: sql<number>`count(${events.id})`,
+    })
+    .from(events)
+    .leftJoin(users, eq(events.userId, users.id))
+    .where(
+      and(
+        session.user.role === 'admin'
+          ? sql`true`
+          : eq(events.userId, session.user.id),
+        gte(events.eventDate, currentPeriodStart.toISOString().split('T')[0]),
+        lt(events.eventDate, currentPeriodEnd.toISOString().split('T')[0]),
+        sql`${users.region} IS NOT NULL`
+      )
+    )
+    .groupBy(users.region);
+
+  // Get previous period events by region
+  const previousPeriodEventsData = await db
+    .select({
+      region: users.region,
+      eventCount: sql<number>`count(${events.id})`,
+    })
+    .from(events)
+    .leftJoin(users, eq(events.userId, users.id))
+    .where(
+      and(
+        session.user.role === 'admin'
+          ? sql`true`
+          : eq(events.userId, session.user.id),
+        gte(events.eventDate, previousPeriodStart.toISOString().split('T')[0]),
+        lt(events.eventDate, previousPeriodEnd.toISOString().split('T')[0]),
+        sql`${users.region} IS NOT NULL`
+      )
+    )
+    .groupBy(users.region);
+
+  // Get current period total cost by region
+  const currentPeriodRegionalCostData = await db
+    .select({
+      region: users.region,
+      totalCost: sql<number>`coalesce(sum(${events.totalCost}), 0)`,
+    })
+    .from(events)
+    .leftJoin(users, eq(events.userId, users.id))
+    .where(
+      and(
+        session.user.role === 'admin'
+          ? sql`true`
+          : eq(events.userId, session.user.id),
+        gte(events.eventDate, currentPeriodStart.toISOString().split('T')[0]),
+        lt(events.eventDate, currentPeriodEnd.toISOString().split('T')[0]),
+        sql`${users.region} IS NOT NULL`
+      )
+    )
+    .groupBy(users.region);
+
+  // Get previous period total cost by region
+  const previousPeriodRegionalCostData = await db
+    .select({
+      region: users.region,
+      totalCost: sql<number>`coalesce(sum(${events.totalCost}), 0)`,
+    })
+    .from(events)
+    .leftJoin(users, eq(events.userId, users.id))
+    .where(
+      and(
+        session.user.role === 'admin'
+          ? sql`true`
+          : eq(events.userId, session.user.id),
+        gte(events.eventDate, previousPeriodStart.toISOString().split('T')[0]),
+        lt(events.eventDate, previousPeriodEnd.toISOString().split('T')[0]),
+        sql`${users.region} IS NOT NULL`
+      )
+    )
+    .groupBy(users.region);
+
+  // Calculate overall cost growth
+  const totalCurrentCost = currentPeriodRegionalCostData.reduce(
+    (sum, item) => sum + Number(item.totalCost),
+    0
+  );
+  const totalPreviousCost = previousPeriodRegionalCostData.reduce(
+    (sum, item) => sum + Number(item.totalCost),
+    0
+  );
+
+  let costGrowthRate = 0;
+  let costGrowthType: 'growth' | 'decline' | 'stable' = 'stable';
+
+  if (totalPreviousCost > 0) {
+    costGrowthRate = Math.round(
+      ((totalCurrentCost - totalPreviousCost) / totalPreviousCost) * 100
+    );
+  } else if (totalCurrentCost > 0) {
+    costGrowthRate = 100; // 100% increase from 0
+  }
+
+  if (costGrowthRate > 2) costGrowthType = 'growth';
+  else if (costGrowthRate < -2) costGrowthType = 'decline';
+  else costGrowthType = 'stable';
+
+  const monthlyCostGrowth: MonthlyCostGrowth = {
+    currentMonthCost: totalCurrentCost,
+    previousMonthCost: totalPreviousCost,
+    growthRate: costGrowthRate,
+    growthType: costGrowthType,
+  };
+
+  // Calculate regional cost growth
+  const regionalCostGrowthData: RegionalCostGrowth[] = [];
+  const currentPeriodRegionalCostMap = new Map(
+    currentPeriodRegionalCostData.map(item => [
+      item.region,
+      Number(item.totalCost),
+    ])
+  );
+  const previousPeriodRegionalCostMap = new Map(
+    previousPeriodRegionalCostData.map(item => [
+      item.region,
+      Number(item.totalCost),
+    ])
+  );
+
+  // Get all regions from both periods for costs
+  const allCostRegions = new Set([
+    ...currentPeriodRegionalCostMap.keys(),
+    ...previousPeriodRegionalCostMap.keys(),
+  ]);
+
+  allCostRegions.forEach(region => {
+    const currentCost = currentPeriodRegionalCostMap.get(region) || 0;
+    const previousCost = previousPeriodRegionalCostMap.get(region) || 0;
+
+    let growthRate = 0;
+    let growthType: 'growth' | 'decline' | 'stable' = 'stable';
+
+    if (previousCost > 0) {
+      growthRate = Math.round(
+        ((currentCost - previousCost) / previousCost) * 100
+      );
+    } else if (currentCost > 0) {
+      growthRate = 100; // 100% growth from 0
+    }
+
+    if (growthRate > 2) growthType = 'growth';
+    else if (growthRate < -2) growthType = 'decline';
+    else growthType = 'stable';
+
+    // Only include regions that have activity in current period
+    if (currentCost > 0) {
+      regionalCostGrowthData.push({
+        region,
+        currentMonthCost: currentCost,
+        previousMonthCost: previousCost,
+        growthRate,
+        growthType,
+      });
+    }
+  });
+
+  // Sort by current cost (descending)
+  regionalCostGrowthData.sort(
+    (a, b) => b.currentMonthCost - a.currentMonthCost
+  );
+
+  // Calculate participant growth rates
+  const monthlyParticipantGrowthData: MonthlyParticipantGrowth[] = [];
+  const currentPeriodParticipantsMap = new Map(
+    currentPeriodParticipantsData.map(item => [
+      item.region,
+      Number(item.participants),
+    ])
+  );
+  const previousPeriodParticipantsMap = new Map(
+    previousPeriodParticipantsData.map(item => [
+      item.region,
+      Number(item.participants),
+    ])
+  );
+
+  // Calculate event growth rates
+  const monthlyEventGrowthData: MonthlyEventGrowth[] = [];
+  const currentPeriodEventsMap = new Map(
+    currentPeriodEventsData.map(item => [item.region, Number(item.eventCount)])
+  );
+  const previousPeriodEventsMap = new Map(
+    previousPeriodEventsData.map(item => [item.region, Number(item.eventCount)])
+  );
+
+  // Get all regions from both periods for participants
+  const allParticipantRegions = new Set([
+    ...currentPeriodParticipantsMap.keys(),
+    ...previousPeriodParticipantsMap.keys(),
+  ]);
+
+  allParticipantRegions.forEach(region => {
+    const currentParticipants = currentPeriodParticipantsMap.get(region) || 0;
+    const previousParticipants = previousPeriodParticipantsMap.get(region) || 0;
+
+    let growthRate = 0;
+    let growthType: 'growth' | 'decline' | 'stable' = 'stable';
+
+    if (previousParticipants > 0) {
+      growthRate = Math.round(
+        ((currentParticipants - previousParticipants) / previousParticipants) *
+          100
+      );
+    } else if (currentParticipants > 0) {
+      growthRate = 100; // 100% growth from 0
+    }
+
+    if (growthRate > 2) growthType = 'growth';
+    else if (growthRate < -2) growthType = 'decline';
+    else growthType = 'stable';
+
+    // Only include regions that have activity in current period
+    if (currentParticipants > 0) {
+      monthlyParticipantGrowthData.push({
+        region,
+        currentMonthParticipants: currentParticipants,
+        previousMonthParticipants: previousParticipants,
+        growthRate,
+        growthType,
+      });
+    }
+  });
+
+  // Get all regions from both periods for events
+  const allEventRegions = new Set([
+    ...currentPeriodEventsMap.keys(),
+    ...previousPeriodEventsMap.keys(),
+  ]);
+
+  allEventRegions.forEach(region => {
+    const currentEvents = currentPeriodEventsMap.get(region) || 0;
+    const previousEvents = previousPeriodEventsMap.get(region) || 0;
+
+    let growthRate = 0;
+    let growthType: 'growth' | 'decline' | 'stable' = 'stable';
+
+    if (previousEvents > 0) {
+      growthRate = Math.round(
+        ((currentEvents - previousEvents) / previousEvents) * 100
+      );
+    } else if (currentEvents > 0) {
+      growthRate = 100; // 100% growth from 0
+    }
+
+    if (growthRate > 2) growthType = 'growth';
+    else if (growthRate < -2) growthType = 'decline';
+    else growthType = 'stable';
+
+    // Only include regions that have activity in current period
+    if (currentEvents > 0) {
+      monthlyEventGrowthData.push({
+        region,
+        currentMonthEvents: currentEvents,
+        previousMonthEvents: previousEvents,
+        growthRate,
+        growthType,
+      });
+    }
+  });
+
+  // Sort by current values (descending)
+  monthlyParticipantGrowthData.sort(
+    (a, b) => b.currentMonthParticipants - a.currentMonthParticipants
+  );
+  monthlyEventGrowthData.sort(
+    (a, b) => b.currentMonthEvents - a.currentMonthEvents
+  );
 
   // Get active regions
   const activeRegions = await db
@@ -290,10 +660,17 @@ export async function generateMonthlyActivityReport(
       region: item.region,
       eventCount: Number(item.eventCount),
       participantsServed: Number(item.participantsServed),
+      newParticipants: Number(item.newParticipants),
+      returningParticipants: Number(item.returningParticipants),
+      totalAdminDuration: Number(item.totalAdminDuration),
       totalCost: Number(item.totalCost),
     })),
     programGoals: programGoalsWithColors,
     activityTypesParticipation: activityTypesParticipationWithColors,
+    monthlyParticipantGrowth: monthlyParticipantGrowthData,
+    monthlyEventGrowth: monthlyEventGrowthData,
+    monthlyCostGrowth: monthlyCostGrowth,
+    regionalCostGrowth: regionalCostGrowthData,
     regions: activeRegions.map(r => r.region).filter(Boolean),
     availableDateRange: {
       minDate: dateRange[0]?.minDate || '',
