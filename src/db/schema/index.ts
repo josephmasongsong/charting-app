@@ -3,6 +3,7 @@ export * from './community-partners.schema';
 export * from './events.schema';
 export * from './program-goals.schema';
 export * from './sites.schema';
+export * from './supplies.schema';
 export * from './users.schema';
 import { activityTypes, activityTypesRelations } from './activity-types.schema';
 import { communityPartners } from './community-partners.schema';
@@ -10,6 +11,7 @@ import { events, eventsRelations } from './events.schema';
 import { programGoals, programGoalsRelations } from './program-goals.schema';
 import { sites, sitesRelations } from './sites.schema';
 import { users, usersRelations } from './users.schema';
+import { supplies } from './supplies.schema';
 
 export const schema = {
   activityTypes,
@@ -21,6 +23,7 @@ export const schema = {
   programGoalsRelations,
   sites,
   sitesRelations,
+  supplies,
   users,
   usersRelations,
 };
