@@ -1,7 +1,14 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { db, sites, users, communityPartners } from '@/db';
+import {
+  db,
+  sites,
+  users,
+  communityPartners,
+  siteSupplies,
+  supplies,
+} from '@/db';
 import { eq, sql } from 'drizzle-orm';
 import {
   Card,
@@ -25,6 +32,8 @@ import {
   Building,
   UserCheck,
   XCircle,
+  Package,
+  DollarSign,
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import EditButton from './components/EditButton';
@@ -70,6 +79,26 @@ async function getSite(siteId: string) {
   return site;
 }
 
+// Server function to fetch site supplies
+async function getSiteSupplies(siteId: string) {
+  const siteSuppliesData = await db
+    .select({
+      id: siteSupplies.id,
+      supplyId: siteSupplies.supplyId,
+      supplyName: supplies.name,
+      quantity: siteSupplies.quantity,
+      costPerUnit: supplies.costPerUnit,
+      totalValue: sql<number>`${siteSupplies.quantity} * ${supplies.costPerUnit}`,
+      lastUpdated: siteSupplies.updatedAt,
+    })
+    .from(siteSupplies)
+    .innerJoin(supplies, eq(siteSupplies.supplyId, supplies.id))
+    .where(eq(siteSupplies.siteId, siteId))
+    .orderBy(supplies.name);
+
+  return siteSuppliesData;
+}
+
 // Server Component for boolean display
 function BooleanDisplay({
   value,
@@ -96,6 +125,95 @@ function BooleanDisplay({
   );
 }
 
+// Supply Inventory Component
+function SupplyInventoryCard({ supplies }: { supplies: any[] }) {
+  const totalValue = supplies.reduce(
+    (sum, supply) => sum + Number(supply.totalValue),
+    0
+  );
+  const totalItems = supplies.reduce((sum, supply) => sum + supply.quantity, 0);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          Supply Inventory
+        </CardTitle>
+        <CardDescription>Current supplies at this site</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {supplies.length > 0 ? (
+          <>
+            {/* Summary */}
+            <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Total Items</p>
+                <p className="text-lg font-semibold">
+                  {totalItems.toLocaleString()}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Total Value</p>
+                <p className="text-lg font-semibold">
+                  ${totalValue.toFixed(2)}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Supply List */}
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {supplies.map(supply => (
+                <div
+                  key={supply.id}
+                  className="flex items-center justify-between p-2 border rounded-lg"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {supply.supplyName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      ${supply.costPerUnit} per unit
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="outline" className="text-xs">
+                      {supply.quantity}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      ${Number(supply.totalValue).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {supplies.length > 5 && (
+              <div className="text-center">
+                <Button variant="outline" size="sm" className="text-xs">
+                  View All Supplies
+                </Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-6">
+            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground">
+              No supplies at this site
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Add supplies when editing the site
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function SitePage({ params }: SitePageProps) {
   const session = await getServerSession(authOptions);
 
@@ -104,9 +222,10 @@ export default async function SitePage({ params }: SitePageProps) {
     redirect('/login');
   }
 
-  // Fetch site data on the server
+  // Fetch site data and supplies on the server
   const { id } = await params;
   const site = await getSite(id);
+  const siteSuppliesData = await getSiteSupplies(id);
 
   // Return 404 if site not found
   if (!site) {
@@ -255,6 +374,9 @@ export default async function SitePage({ params }: SitePageProps) {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Supply Inventory */}
+          <SupplyInventoryCard supplies={siteSuppliesData} />
+
           {/* Site Manager */}
           <Card>
             <CardHeader>
