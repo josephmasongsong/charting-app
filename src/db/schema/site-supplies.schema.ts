@@ -8,7 +8,9 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
-import { sites, supplies } from '@/db';
+// import { sites, supplies } from '@/db';
+import { sites } from './sites.schema';
+import { supplies } from './supplies.schema';
 
 // Site Supplies - Inventory at each site
 export const siteSupplies = pgTable(

@@ -9,7 +9,10 @@ import {
   check,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
-import { events, siteSupplies, supplies } from '@/db';
+// import { events, siteSupplies, supplies } from '@/db';
+import { events } from './events.schema';
+import { siteSupplies } from './site-supplies.schema';
+import { supplies } from './supplies.schema';
 
 // Event Supply Distributions - Track what was given out at events
 export const eventSupplyDistributions = pgTable(
