@@ -1,9 +1,15 @@
-// app/api/admin/sites/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db, users, sites, communityPartners } from '@/db';
-import { eq, sql } from 'drizzle-orm';
+import {
+  db,
+  users,
+  sites,
+  communityPartners,
+  supplies,
+  siteSupplies,
+} from '@/db';
+import { eq, sql, and } from 'drizzle-orm';
 import { updateSiteSchema } from '@/lib/validations/sites';
 
 export async function GET(
@@ -33,6 +39,7 @@ export async function GET(
 
     const { id } = params;
 
+    // Get site details
     const [site] = await db
       .select({
         id: sites.id,
@@ -67,7 +74,26 @@ export async function GET(
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ site });
+    // Get site supplies
+    const siteSuppliesData = await db
+      .select({
+        id: siteSupplies.id,
+        supplyId: siteSupplies.supplyId,
+        supplyName: supplies.name,
+        quantity: siteSupplies.quantity,
+        costPerUnit: supplies.costPerUnit,
+        totalValue: sql<number>`${siteSupplies.quantity} * ${supplies.costPerUnit}`,
+        lastUpdated: siteSupplies.updatedAt,
+      })
+      .from(siteSupplies)
+      .innerJoin(supplies, eq(siteSupplies.supplyId, supplies.id))
+      .where(eq(siteSupplies.siteId, id))
+      .orderBy(supplies.name);
+
+    return NextResponse.json({
+      site,
+      siteSupplies: siteSuppliesData,
+    });
   } catch (error) {
     console.error('Site fetch error:', error);
     return NextResponse.json(
@@ -104,9 +130,10 @@ export async function PATCH(
 
     const { id } = params;
     const body = await req.json();
+    const { supplies: siteSuppliesInput, ...siteData } = body;
 
     // Validate with Zod
-    const validation = updateSiteSchema.safeParse(body);
+    const validation = updateSiteSchema.safeParse(siteData);
 
     if (!validation.success) {
       return NextResponse.json(
@@ -129,6 +156,56 @@ export async function PATCH(
 
     if (!existingSite) {
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
+    }
+
+    // Validate supplies if provided
+    if (siteSuppliesInput && Array.isArray(siteSuppliesInput)) {
+      for (const supplyInput of siteSuppliesInput) {
+        if (!supplyInput.supplyId || supplyInput.quantity <= 0) {
+          return NextResponse.json(
+            {
+              error:
+                'All supplies must have a valid supply ID and positive quantity',
+            },
+            { status: 400 }
+          );
+        }
+
+        // Check if supply exists
+        const [supply] = await db
+          .select()
+          .from(supplies)
+          .where(eq(supplies.id, supplyInput.supplyId))
+          .limit(1);
+
+        if (!supply) {
+          return NextResponse.json(
+            { error: `Supply with ID ${supplyInput.supplyId} does not exist` },
+            { status: 400 }
+          );
+        }
+
+        // Check if supply is already at this site
+        const [existingSupplyAtSite] = await db
+          .select()
+          .from(siteSupplies)
+          .where(
+            and(
+              eq(siteSupplies.siteId, id),
+              eq(siteSupplies.supplyId, supplyInput.supplyId)
+            )
+          )
+          .limit(1);
+
+        if (existingSupplyAtSite) {
+          return NextResponse.json(
+            {
+              error: `Supply "${supply[0]?.name}" is already at this site. Use the inventory management interface to adjust quantities.`,
+            },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     // Check if user exists
@@ -175,31 +252,61 @@ export async function PATCH(
       );
     }
 
-    // Update site
-    const [updatedSite] = await db
-      .update(sites)
-      .set({
-        name: data.name,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        address: data.address,
-        numberOfTenants: Number(data.numberOfTenants),
-        hasCommunityRoom: data.hasCommunityRoom,
-        hasCommunityPartner: data.hasCommunityPartner,
-        communityPartnerId: data.hasCommunityPartner
-          ? data.communityPartnerId
-          : null,
-        isSingleSeniorOnly: data.isSingleSeniorOnly,
-        userId: data.userId,
-        updatedAt: new Date(),
-      })
-      .where(eq(sites.id, id))
-      .returning();
+    // Use transaction to update site and manage supplies
+    const result = await db.transaction(async tx => {
+      // Update site
+      const [updatedSite] = await tx
+        .update(sites)
+        .set({
+          name: data.name,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          address: data.address,
+          numberOfTenants: Number(data.numberOfTenants),
+          hasCommunityRoom: data.hasCommunityRoom,
+          hasCommunityPartner: data.hasCommunityPartner,
+          communityPartnerId: data.hasCommunityPartner
+            ? data.communityPartnerId
+            : null,
+          isSingleSeniorOnly: data.isSingleSeniorOnly,
+          userId: data.userId,
+          updatedAt: new Date(),
+        })
+        .where(eq(sites.id, id))
+        .returning();
+
+      // Handle new supply additions if provided
+      if (
+        siteSuppliesInput &&
+        Array.isArray(siteSuppliesInput) &&
+        siteSuppliesInput.length > 0
+      ) {
+        for (const supplyInput of siteSuppliesInput) {
+          // Add to site inventory
+          await tx.insert(siteSupplies).values({
+            siteId: id,
+            supplyId: supplyInput.supplyId,
+            quantity: supplyInput.quantity,
+          });
+
+          // Update main supply quantity
+          await tx
+            .update(supplies)
+            .set({
+              quantity: sql`${supplies.quantity} + ${supplyInput.quantity}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(supplies.id, supplyInput.supplyId));
+        }
+      }
+
+      return updatedSite;
+    });
 
     return NextResponse.json({
       success: true,
       message: 'Site updated successfully',
-      site: updatedSite,
+      site: result,
     });
   } catch (error) {
     console.error('Site update error:', error);
@@ -248,8 +355,34 @@ export async function DELETE(
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
     }
 
-    // Delete site
-    await db.delete(sites).where(eq(sites.id, id));
+    // Use transaction to handle deletion and supply adjustments
+    await db.transaction(async tx => {
+      // Get all site supplies before deletion
+      const siteSuppliesData = await tx
+        .select({
+          supplyId: siteSupplies.supplyId,
+          quantity: siteSupplies.quantity,
+        })
+        .from(siteSupplies)
+        .where(eq(siteSupplies.siteId, id));
+
+      // Return supplies to main inventory
+      for (const siteSupply of siteSuppliesData) {
+        await tx
+          .update(supplies)
+          .set({
+            quantity: sql`${supplies.quantity} - ${siteSupply.quantity}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(supplies.id, siteSupply.supplyId));
+      }
+
+      // Delete site supplies first (due to foreign key)
+      await tx.delete(siteSupplies).where(eq(siteSupplies.siteId, id));
+
+      // Delete site
+      await tx.delete(sites).where(eq(sites.id, id));
+    });
 
     return NextResponse.json({
       success: true,

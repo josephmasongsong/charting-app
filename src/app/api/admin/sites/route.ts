@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db, users, sites, communityPartners } from '@/db';
-import { eq, ilike, or, count, desc, asc, sql } from 'drizzle-orm';
+import {
+  db,
+  users,
+  sites,
+  communityPartners,
+  supplies,
+  siteSupplies,
+} from '@/db';
+import { eq, ilike, or, count, desc, asc, sql, and } from 'drizzle-orm';
 import { createSiteSchema } from '@/lib/validations/sites';
 import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
@@ -170,9 +177,10 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
+    const { supplies: siteSuppliesInput, ...siteData } = body;
 
     // Validate with Zod
-    const validation = createSiteSchema.safeParse(body);
+    const validation = createSiteSchema.safeParse(siteData);
 
     if (!validation.success) {
       return NextResponse.json(
@@ -185,6 +193,35 @@ export async function POST(req: Request) {
     }
 
     const data = validation.data;
+
+    // Validate supplies if provided
+    if (siteSuppliesInput && Array.isArray(siteSuppliesInput)) {
+      for (const supplyInput of siteSuppliesInput) {
+        if (!supplyInput.supplyId || supplyInput.quantity <= 0) {
+          return NextResponse.json(
+            {
+              error:
+                'All supplies must have a valid supply ID and positive quantity',
+            },
+            { status: 400 }
+          );
+        }
+
+        // Check if supply exists
+        const [supply] = await db
+          .select()
+          .from(supplies)
+          .where(eq(supplies.id, supplyInput.supplyId))
+          .limit(1);
+
+        if (!supply) {
+          return NextResponse.json(
+            { error: `Supply with ID ${supplyInput.supplyId} does not exist` },
+            { status: 400 }
+          );
+        }
+      }
+    }
 
     // Check if user exists
     const [user] = await db
@@ -230,29 +267,59 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create site
-    const [newSite] = await db
-      .insert(sites)
-      .values({
-        name: data.name,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        address: data.address,
-        numberOfTenants: Number(data.numberOfTenants),
-        hasCommunityRoom: data.hasCommunityRoom,
-        hasCommunityPartner: data.hasCommunityPartner,
-        communityPartnerId: data.hasCommunityPartner
-          ? data.communityPartnerId
-          : null,
-        isSingleSeniorOnly: data.isSingleSeniorOnly,
-        userId: data.userId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
+    // Use transaction to create site and manage supplies
+    const result = await db.transaction(async tx => {
+      // Create site
+      const [newSite] = await tx
+        .insert(sites)
+        .values({
+          name: data.name,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          address: data.address,
+          numberOfTenants: Number(data.numberOfTenants),
+          hasCommunityRoom: data.hasCommunityRoom,
+          hasCommunityPartner: data.hasCommunityPartner,
+          communityPartnerId: data.hasCommunityPartner
+            ? data.communityPartnerId
+            : null,
+          isSingleSeniorOnly: data.isSingleSeniorOnly,
+          userId: data.userId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      // Handle supply additions if provided
+      if (
+        siteSuppliesInput &&
+        Array.isArray(siteSuppliesInput) &&
+        siteSuppliesInput.length > 0
+      ) {
+        for (const supplyInput of siteSuppliesInput) {
+          // Add to site inventory
+          await tx.insert(siteSupplies).values({
+            siteId: newSite.id,
+            supplyId: supplyInput.supplyId,
+            quantity: supplyInput.quantity,
+          });
+
+          // Update main supply quantity
+          await tx
+            .update(supplies)
+            .set({
+              quantity: sql`${supplies.quantity} + ${supplyInput.quantity}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(supplies.id, supplyInput.supplyId));
+        }
+      }
+
+      return newSite;
+    });
 
     // Log the activity
-    await ActivityFeedService.logSiteCreated(currentUser.id, newSite.id, {
+    await ActivityFeedService.logSiteCreated(currentUser.id, result.id, {
       name: data.name,
       tenantCount: Number(data.numberOfTenants),
     });
@@ -260,7 +327,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message: 'Site created successfully',
-      site: newSite,
+      site: result,
     });
   } catch (error) {
     console.error('Site creation error:', error);

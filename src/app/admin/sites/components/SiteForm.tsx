@@ -22,7 +22,15 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, CheckCircle, XCircle, MapPin } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle,
+  XCircle,
+  MapPin,
+  Package,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import {
   createSiteSchema,
   type CreateSiteInput,
@@ -39,9 +47,22 @@ interface CommunityPartner {
   name: string;
 }
 
+interface Supply {
+  id: string;
+  name: string;
+  costPerUnit: string;
+  quantity: number;
+}
+
+interface SiteSupplyInput {
+  supplyId: string;
+  quantity: number;
+}
+
 interface Options {
   users: User[];
   communityPartners: CommunityPartner[];
+  supplies: Supply[];
 }
 
 interface SiteFormProps {
@@ -55,6 +76,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
   const [options, setOptions] = useState<Options>({
     users: [],
     communityPartners: [],
+    supplies: [],
   });
   const [loading, setLoading] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
@@ -72,6 +94,10 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
     isSingleSeniorOnly: initialData?.isSingleSeniorOnly ?? true,
     userId: initialData?.userId || '',
   });
+
+  // Supply management state
+  const [siteSupplies, setSiteSupplies] = useState<SiteSupplyInput[]>([]);
+  const [existingSupplies, setExistingSupplies] = useState<any[]>([]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
@@ -119,6 +145,11 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
               isSingleSeniorOnly: site.isSingleSeniorOnly,
               userId: site.userId,
             });
+
+            // Fetch existing site supplies
+            if (data.siteSupplies) {
+              setExistingSupplies(data.siteSupplies);
+            }
           }
         } catch (error) {
           console.error('Failed to fetch site:', error);
@@ -128,6 +159,39 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
       fetchSite();
     }
   }, [mode, siteId]);
+
+  // Supply management functions
+  const addSupplyRow = () => {
+    setSiteSupplies([...siteSupplies, { supplyId: '', quantity: 0 }]);
+  };
+
+  const removeSupplyRow = (index: number) => {
+    setSiteSupplies(siteSupplies.filter((_, i) => i !== index));
+  };
+
+  const updateSupplyRow = (
+    index: number,
+    field: keyof SiteSupplyInput,
+    value: string | number
+  ) => {
+    const updated = [...siteSupplies];
+    updated[index] = { ...updated[index], [field]: value };
+    setSiteSupplies(updated);
+  };
+
+  const getAvailableSupplies = (currentIndex: number) => {
+    const selectedSupplyIds = siteSupplies
+      .map((s, i) => (i !== currentIndex ? s.supplyId : null))
+      .filter(Boolean);
+
+    const existingSupplyIds = existingSupplies.map(s => s.supplyId);
+
+    return options.supplies.filter(
+      supply =>
+        !selectedSupplyIds.includes(supply.id) &&
+        !existingSupplyIds.includes(supply.id)
+    );
+  };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,16 +216,30 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
       return;
     }
 
+    // Validate supplies
+    const validSupplies = siteSupplies.filter(
+      s => s.supplyId && s.quantity > 0
+    );
+    if (siteSupplies.some(s => s.supplyId && s.quantity <= 0)) {
+      setError('All supply quantities must be greater than 0');
+      setLoading(false);
+      return;
+    }
+
     try {
       const url =
         mode === 'create' ? '/api/admin/sites' : `/api/admin/sites/${siteId}`;
-
       const method = mode === 'create' ? 'POST' : 'PATCH';
+
+      const requestBody = {
+        ...validation.data,
+        supplies: validSupplies,
+      };
 
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validation.data),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -396,7 +474,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
           </CardContent>
         </Card>
 
-        {/* Properties */}
+        {/* Site Properties */}
         <Card>
           <CardHeader>
             <CardTitle>Site Properties</CardTitle>
@@ -505,6 +583,132 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                       {errors.communityPartnerId}
                     </p>
                   )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Supply Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Supply Management
+            </CardTitle>
+            <CardDescription>
+              Add supplies to this site. Quantities will be added to both site
+              inventory and main supply counts.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Existing Supplies (Edit Mode) */}
+            {mode === 'edit' && existingSupplies.length > 0 && (
+              <div className="space-y-2">
+                <Label>Current Site Inventory</Label>
+                <div className="rounded-md border">
+                  <div className="p-4 space-y-2">
+                    {existingSupplies.map((supply, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between py-2 border-b last:border-b-0"
+                      >
+                        <span className="font-medium">{supply.supplyName}</span>
+                        <span className="text-sm text-muted-foreground">
+                          Quantity: {supply.quantity} | Cost: $
+                          {supply.costPerUnit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Add New Supplies */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Add Supplies to Site</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addSupplyRow}
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Supply
+                </Button>
+              </div>
+
+              {siteSupplies.map((supply, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-lg"
+                >
+                  <div className="space-y-2">
+                    <Label>Supply</Label>
+                    <Select
+                      value={supply.supplyId}
+                      onValueChange={value =>
+                        updateSupplyRow(index, 'supplyId', value)
+                      }
+                      disabled={loading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a supply" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableSupplies(index).map(availableSupply => (
+                          <SelectItem
+                            key={availableSupply.id}
+                            value={availableSupply.id}
+                          >
+                            {availableSupply.name} (Current:{' '}
+                            {availableSupply.quantity})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Quantity to Add</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={supply.quantity || ''}
+                      onChange={e =>
+                        updateSupplyRow(
+                          index,
+                          'quantity',
+                          parseInt(e.target.value) || 0
+                        )
+                      }
+                      placeholder="Enter quantity"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeSupplyRow(index)}
+                    disabled={loading}
+                    className="flex items-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remove
+                  </Button>
+                </div>
+              ))}
+
+              {siteSupplies.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No supplies added. Click "Add Supply" to start adding supplies
+                  to this site.
                 </div>
               )}
             </div>

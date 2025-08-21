@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db, users, communityPartners } from '@/db';
+import { db, users, communityPartners, supplies } from '@/db';
 import { eq, sql } from 'drizzle-orm';
 
 export async function GET() {
@@ -48,9 +48,21 @@ export async function GET() {
       .from(communityPartners)
       .orderBy(communityPartners.name);
 
+    // Get all supplies for site supply management
+    const allSupplies = await db
+      .select({
+        id: supplies.id,
+        name: supplies.name,
+        costPerUnit: supplies.costPerUnit,
+        quantity: supplies.quantity,
+      })
+      .from(supplies)
+      .orderBy(supplies.name);
+
     return NextResponse.json({
       users: usersData,
       communityPartners: partnersData,
+      supplies: allSupplies,
     });
   } catch (error) {
     console.error('Options fetch error:', error);
