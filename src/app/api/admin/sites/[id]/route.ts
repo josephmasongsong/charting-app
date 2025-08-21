@@ -130,7 +130,8 @@ export async function PATCH(
 
     const { id } = params;
     const body = await req.json();
-    const { supplies: siteSuppliesInput, ...siteData } = body;
+    const { newSupplies, existingSupplies, removedSupplies, ...siteData } =
+      body;
 
     // Validate with Zod
     const validation = updateSiteSchema.safeParse(siteData);
@@ -158,14 +159,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
     }
 
-    // Validate supplies if provided
-    if (siteSuppliesInput && Array.isArray(siteSuppliesInput)) {
-      for (const supplyInput of siteSuppliesInput) {
+    // Validate new supplies if provided
+    if (newSupplies && Array.isArray(newSupplies)) {
+      for (const supplyInput of newSupplies) {
         if (!supplyInput.supplyId || supplyInput.quantity <= 0) {
           return NextResponse.json(
             {
               error:
-                'All supplies must have a valid supply ID and positive quantity',
+                'All new supplies must have a valid supply ID and positive quantity',
             },
             { status: 400 }
           );
@@ -202,6 +203,55 @@ export async function PATCH(
             {
               error: `Supply "${supply[0]?.name}" is already at this site. Use the inventory management interface to adjust quantities.`,
             },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    // Validate existing supplies updates if provided
+    if (existingSupplies && Array.isArray(existingSupplies)) {
+      for (const supplyUpdate of existingSupplies) {
+        if (!supplyUpdate.siteSupplyId || supplyUpdate.quantity <= 0) {
+          return NextResponse.json(
+            {
+              error:
+                'All existing supply updates must have a valid site supply ID and positive quantity',
+            },
+            { status: 400 }
+          );
+        }
+
+        // Check if site supply exists
+        const [siteSupply] = await db
+          .select()
+          .from(siteSupplies)
+          .where(eq(siteSupplies.id, supplyUpdate.siteSupplyId))
+          .limit(1);
+
+        if (!siteSupply) {
+          return NextResponse.json(
+            {
+              error: `Site supply with ID ${supplyUpdate.siteSupplyId} does not exist`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    // Validate removed supplies if provided
+    if (removedSupplies && Array.isArray(removedSupplies)) {
+      for (const siteSupplyId of removedSupplies) {
+        const [siteSupply] = await db
+          .select()
+          .from(siteSupplies)
+          .where(eq(siteSupplies.id, siteSupplyId))
+          .limit(1);
+
+        if (!siteSupply) {
+          return NextResponse.json(
+            { error: `Site supply with ID ${siteSupplyId} does not exist` },
             { status: 400 }
           );
         }
@@ -275,13 +325,88 @@ export async function PATCH(
         .where(eq(sites.id, id))
         .returning();
 
-      // Handle new supply additions if provided
+      // Handle supply operations
+
+      // 1. Remove supplies first
       if (
-        siteSuppliesInput &&
-        Array.isArray(siteSuppliesInput) &&
-        siteSuppliesInput.length > 0
+        removedSupplies &&
+        Array.isArray(removedSupplies) &&
+        removedSupplies.length > 0
       ) {
-        for (const supplyInput of siteSuppliesInput) {
+        for (const siteSupplyId of removedSupplies) {
+          // Get the supply details before deletion to adjust main inventory
+          const [siteSupply] = await tx
+            .select({
+              supplyId: siteSupplies.supplyId,
+              quantity: siteSupplies.quantity,
+            })
+            .from(siteSupplies)
+            .where(eq(siteSupplies.id, siteSupplyId));
+
+          if (siteSupply) {
+            // Decrease main supply quantity
+            await tx
+              .update(supplies)
+              .set({
+                quantity: sql`${supplies.quantity} - ${siteSupply.quantity}`,
+                updatedAt: new Date(),
+              })
+              .where(eq(supplies.id, siteSupply.supplyId));
+
+            // Remove from site
+            await tx
+              .delete(siteSupplies)
+              .where(eq(siteSupplies.id, siteSupplyId));
+          }
+        }
+      }
+
+      // 2. Update existing supplies
+      if (
+        existingSupplies &&
+        Array.isArray(existingSupplies) &&
+        existingSupplies.length > 0
+      ) {
+        for (const supplyUpdate of existingSupplies) {
+          // Get current quantity to calculate difference
+          const [currentSiteSupply] = await tx
+            .select({
+              supplyId: siteSupplies.supplyId,
+              currentQuantity: siteSupplies.quantity,
+            })
+            .from(siteSupplies)
+            .where(eq(siteSupplies.id, supplyUpdate.siteSupplyId));
+
+          if (currentSiteSupply) {
+            const quantityDifference =
+              supplyUpdate.quantity - currentSiteSupply.currentQuantity;
+
+            // Update site supply quantity
+            await tx
+              .update(siteSupplies)
+              .set({
+                quantity: supplyUpdate.quantity,
+                updatedAt: new Date(),
+              })
+              .where(eq(siteSupplies.id, supplyUpdate.siteSupplyId));
+
+            // Adjust main supply quantity
+            if (quantityDifference !== 0) {
+              await tx
+                .update(supplies)
+                .set({
+                  quantity: sql`${supplies.quantity} + ${quantityDifference}`,
+                  updatedAt: new Date(),
+                })
+                .where(eq(supplies.id, currentSiteSupply.supplyId));
+            }
+          }
+        }
+      }
+
+      // 3. Add new supplies
+      if (newSupplies && Array.isArray(newSupplies) && newSupplies.length > 0) {
+        for (const supplyInput of newSupplies) {
           // Add to site inventory
           await tx.insert(siteSupplies).values({
             siteId: id,

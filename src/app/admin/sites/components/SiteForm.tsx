@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
@@ -59,6 +60,14 @@ interface SiteSupplyInput {
   quantity: number;
 }
 
+interface ExistingSupplyEdit {
+  siteSupplyId: string;
+  supplyId: string;
+  supplyName: string;
+  quantity: number;
+  costPerUnit: string;
+}
+
 interface Options {
   users: User[];
   communityPartners: CommunityPartner[];
@@ -97,7 +106,10 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
   // Supply management state
   const [siteSupplies, setSiteSupplies] = useState<SiteSupplyInput[]>([]);
-  const [existingSupplies, setExistingSupplies] = useState<any[]>([]);
+  const [existingSupplies, setExistingSupplies] = useState<
+    ExistingSupplyEdit[]
+  >([]);
+  const [removedSupplies, setRemovedSupplies] = useState<string[]>([]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
@@ -148,7 +160,16 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
             // Fetch existing site supplies
             if (data.siteSupplies) {
-              setExistingSupplies(data.siteSupplies);
+              const formattedSupplies = data.siteSupplies.map(
+                (supply: any) => ({
+                  siteSupplyId: supply.id,
+                  supplyId: supply.supplyId,
+                  supplyName: supply.supplyName,
+                  quantity: supply.quantity,
+                  costPerUnit: supply.costPerUnit,
+                })
+              );
+              setExistingSupplies(formattedSupplies);
             }
           }
         } catch (error) {
@@ -179,12 +200,35 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
     setSiteSupplies(updated);
   };
 
+  // Existing supply management functions
+  const updateExistingSupply = (siteSupplyId: string, newQuantity: number) => {
+    setExistingSupplies(prev =>
+      prev.map(supply =>
+        supply.siteSupplyId === siteSupplyId
+          ? { ...supply, quantity: newQuantity }
+          : supply
+      )
+    );
+  };
+
+  const removeExistingSupply = (siteSupplyId: string) => {
+    setRemovedSupplies(prev => [...prev, siteSupplyId]);
+    setExistingSupplies(prev =>
+      prev.filter(supply => supply.siteSupplyId !== siteSupplyId)
+    );
+  };
+
   const getAvailableSupplies = (currentIndex: number) => {
     const selectedSupplyIds = siteSupplies
       .map((s, i) => (i !== currentIndex ? s.supplyId : null))
       .filter(Boolean);
 
     const existingSupplyIds = existingSupplies.map(s => s.supplyId);
+
+    // Safety check to ensure options.supplies exists
+    if (!options.supplies || !Array.isArray(options.supplies)) {
+      return [];
+    }
 
     return options.supplies.filter(
       supply =>
@@ -226,6 +270,13 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
       return;
     }
 
+    // Validate existing supplies (edit mode)
+    if (mode === 'edit' && existingSupplies.some(s => s.quantity <= 0)) {
+      setError('All existing supply quantities must be greater than 0');
+      setLoading(false);
+      return;
+    }
+
     try {
       const url =
         mode === 'create' ? '/api/admin/sites' : `/api/admin/sites/${siteId}`;
@@ -233,7 +284,15 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
       const requestBody = {
         ...validation.data,
-        supplies: validSupplies,
+        newSupplies: validSupplies, // new supplies to add
+        existingSupplies:
+          mode === 'edit'
+            ? existingSupplies.map(s => ({
+                siteSupplyId: s.siteSupplyId,
+                quantity: s.quantity,
+              }))
+            : undefined,
+        removedSupplies: mode === 'edit' ? removedSupplies : undefined,
       };
 
       const response = await fetch(url, {
@@ -597,38 +656,108 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
               Supply Management
             </CardTitle>
             <CardDescription>
-              Add supplies to this site. Quantities will be added to both site
-              inventory and main supply counts.
+              {mode === 'edit'
+                ? 'Manage supplies at this site. Update quantities, remove supplies, or add new ones.'
+                : 'Add supplies to this site. Quantities will be added to both site inventory and main supply counts.'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             {/* Existing Supplies (Edit Mode) */}
-            {mode === 'edit' && existingSupplies.length > 0 && (
-              <div className="space-y-2">
-                <Label>Current Site Inventory</Label>
-                <div className="rounded-md border">
-                  <div className="p-4 space-y-2">
-                    {existingSupplies.map((supply, index) => (
+            {mode === 'edit' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium">
+                    Current Inventory
+                  </Label>
+                  {existingSupplies.length > 0 && (
+                    <Badge variant="secondary">
+                      {existingSupplies.length}{' '}
+                      {existingSupplies.length === 1 ? 'item' : 'items'}
+                    </Badge>
+                  )}
+                </div>
+
+                {existingSupplies.length > 0 ? (
+                  <div className="space-y-3">
+                    {existingSupplies.map(supply => (
                       <div
-                        key={index}
-                        className="flex items-center justify-between py-2 border-b last:border-b-0"
+                        key={supply.siteSupplyId}
+                        className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center p-4 border rounded-lg bg-muted/20"
                       >
-                        <span className="font-medium">{supply.supplyName}</span>
-                        <span className="text-sm text-muted-foreground">
-                          Quantity: {supply.quantity} | Cost: $
-                          {supply.costPerUnit}
-                        </span>
+                        <div className="space-y-1">
+                          <p className="font-medium text-sm">
+                            {supply.supplyName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            ${supply.costPerUnit} per unit
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs">Quantity</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={supply.quantity || ''}
+                            onChange={e =>
+                              updateExistingSupply(
+                                supply.siteSupplyId,
+                                parseInt(e.target.value) || 0
+                              )
+                            }
+                            placeholder="Enter quantity"
+                            disabled={loading}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">
+                            Total Value
+                          </p>
+                          <p className="font-medium text-sm">
+                            $
+                            {(
+                              parseFloat(supply.costPerUnit) * supply.quantity
+                            ).toFixed(2)}
+                          </p>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            removeExistingSupply(supply.siteSupplyId)
+                          }
+                          disabled={loading}
+                          className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Remove
+                        </Button>
                       </div>
                     ))}
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center py-6 border-2 border-dashed rounded-lg">
+                    <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      No supplies at this site
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Add New Supplies */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>Add Supplies to Site</Label>
+                <Label className="text-base font-medium">
+                  {mode === 'edit'
+                    ? 'Add New Supplies'
+                    : 'Add Supplies to Site'}
+                </Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -665,7 +794,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                             key={availableSupply.id}
                             value={availableSupply.id}
                           >
-                            {availableSupply.name} (Current:{' '}
+                            {availableSupply.name} (Available:{' '}
                             {availableSupply.quantity})
                           </SelectItem>
                         ))}
@@ -707,8 +836,11 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
               {siteSupplies.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  No supplies added. Click "Add Supply" to start adding supplies
-                  to this site.
+                  <p className="text-sm">
+                    {mode === 'edit'
+                      ? 'No new supplies to add. Click "Add Supply" to add more supplies to this site.'
+                      : 'No supplies added. Click "Add Supply" to start adding supplies to this site.'}
+                  </p>
                 </div>
               )}
             </div>
