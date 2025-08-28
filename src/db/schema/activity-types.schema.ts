@@ -22,13 +22,16 @@ export const activityTypes = pgTable(
 );
 
 // Define relations
-export const activityTypesRelations = relations(activityTypes, ({ one, many }) => ({
-  programGoal: one(programGoals, {
-    fields: [activityTypes.programGoalId],
-    references: [programGoals.id],
-  }),
-  events: many(events)
-}));
+export const activityTypesRelations = relations(
+  activityTypes,
+  ({ one, many }) => ({
+    programGoal: one(programGoals, {
+      fields: [activityTypes.programGoalId],
+      references: [programGoals.id],
+    }),
+    events: many(events),
+  })
+);
 
 // Export types for this model
 export type ActivityType = typeof activityTypes.$inferSelect;
