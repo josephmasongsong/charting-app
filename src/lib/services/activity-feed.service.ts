@@ -131,6 +131,109 @@ export class ActivityFeedService {
     });
   }
 
+  // Create activity when supply is created
+  static async logSupplyCreated(
+    actorId: string,
+    supplyId: string,
+    supplyData: {
+      name: string;
+      costPerUnit: string;
+      quantity: number;
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'supply_created',
+      actorId,
+      targetType: 'supply',
+      targetId: supplyId,
+      metadata: {
+        supplyName: supplyData.name,
+        costPerUnit: supplyData.costPerUnit,
+        quantity: supplyData.quantity,
+      },
+    });
+  }
+
+  // Create activity when supplies are added to a site
+  static async logSuppliesAddedToSite(
+    actorId: string,
+    siteId: string,
+    siteSupplyData: {
+      siteName: string;
+      supplies: Array<{
+        name: string;
+        quantity: number;
+        costPerUnit: string;
+      }>;
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'supplies_added_to_site',
+      actorId,
+      targetType: 'site',
+      targetId: siteId,
+      metadata: {
+        siteName: siteSupplyData.siteName,
+        supplies: siteSupplyData.supplies,
+        totalItems: siteSupplyData.supplies.length,
+      },
+    });
+  }
+
+  // Create activity when supplies are removed from a site
+  static async logSuppliesRemovedFromSite(
+    actorId: string,
+    siteId: string,
+    siteSupplyData: {
+      siteName: string;
+      supplies: Array<{
+        name: string;
+        quantity: number;
+        costPerUnit: string;
+      }>;
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'supplies_removed_from_site',
+      actorId,
+      targetType: 'site',
+      targetId: siteId,
+      metadata: {
+        siteName: siteSupplyData.siteName,
+        supplies: siteSupplyData.supplies,
+        totalItems: siteSupplyData.supplies.length,
+      },
+    });
+  }
+
+  // Create activity when site supply quantities are updated
+  static async logSiteSupplyUpdated(
+    actorId: string,
+    siteId: string,
+    updateData: {
+      siteName: string;
+      supplyName: string;
+      oldQuantity: number;
+      newQuantity: number;
+      costPerUnit: string;
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'site_supply_updated',
+      actorId,
+      targetType: 'site',
+      targetId: siteId,
+      metadata: {
+        siteName: updateData.siteName,
+        supplyName: updateData.supplyName,
+        oldQuantity: updateData.oldQuantity,
+        newQuantity: updateData.newQuantity,
+        quantityChange: updateData.newQuantity - updateData.oldQuantity,
+        costPerUnit: updateData.costPerUnit,
+      },
+    });
+  }
+
   // Get recent activity feed
   static async getRecentActivity(
     limit: number = 20

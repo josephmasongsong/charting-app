@@ -11,6 +11,7 @@ import {
 } from '@/db';
 import { eq, sql, and } from 'drizzle-orm';
 import { updateSiteSchema } from '@/lib/validations/sites';
+import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function GET(
   req: Request,
@@ -157,6 +158,60 @@ export async function PATCH(
 
     if (!existingSite) {
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
+    }
+
+    // ===== NEW: Prepare data for activity logging BEFORE making changes =====
+    let removedSupplyDetails = [];
+    if (
+      removedSupplies &&
+      Array.isArray(removedSupplies) &&
+      removedSupplies.length > 0
+    ) {
+      // Get supply details before deletion
+      for (const siteSupplyId of removedSupplies) {
+        const [supplyInfo] = await db
+          .select({
+            name: supplies.name,
+            quantity: siteSupplies.quantity,
+            costPerUnit: supplies.costPerUnit,
+          })
+          .from(siteSupplies)
+          .innerJoin(supplies, eq(siteSupplies.supplyId, supplies.id))
+          .where(eq(siteSupplies.id, siteSupplyId))
+          .limit(1);
+
+        if (supplyInfo) {
+          removedSupplyDetails.push(supplyInfo);
+        }
+      }
+    }
+
+    let existingSupplyUpdates = [];
+    if (
+      existingSupplies &&
+      Array.isArray(existingSupplies) &&
+      existingSupplies.length > 0
+    ) {
+      // Get current quantities before updates
+      for (const supplyUpdate of existingSupplies) {
+        const [supplyInfo] = await db
+          .select({
+            supplyName: supplies.name,
+            costPerUnit: supplies.costPerUnit,
+            oldQuantity: siteSupplies.quantity,
+          })
+          .from(siteSupplies)
+          .innerJoin(supplies, eq(siteSupplies.supplyId, supplies.id))
+          .where(eq(siteSupplies.id, supplyUpdate.siteSupplyId))
+          .limit(1);
+
+        if (supplyInfo && supplyInfo.oldQuantity !== supplyUpdate.quantity) {
+          existingSupplyUpdates.push({
+            ...supplyInfo,
+            newQuantity: supplyUpdate.quantity,
+          });
+        }
+      }
     }
 
     // Validate new supplies if provided
@@ -428,6 +483,54 @@ export async function PATCH(
       return updatedSite;
     });
 
+    // ===== NEW: Activity Logging After Successful Transaction =====
+
+    // 1. Log removed supplies
+    if (removedSupplyDetails.length > 0) {
+      await ActivityFeedService.logSuppliesRemovedFromSite(currentUser.id, id, {
+        siteName: data.name,
+        supplies: removedSupplyDetails,
+      });
+    }
+
+    // 2. Log supply quantity updates
+    for (const updateInfo of existingSupplyUpdates) {
+      await ActivityFeedService.logSiteSupplyUpdated(currentUser.id, id, {
+        siteName: data.name,
+        supplyName: updateInfo.supplyName,
+        oldQuantity: updateInfo.oldQuantity,
+        newQuantity: updateInfo.newQuantity,
+        costPerUnit: updateInfo.costPerUnit,
+      });
+    }
+
+    // 3. Log new supplies added
+    if (newSupplies && Array.isArray(newSupplies) && newSupplies.length > 0) {
+      const newSuppliesForLogging = [];
+      for (const supplyInput of newSupplies) {
+        const [supply] = await db
+          .select({ name: supplies.name, costPerUnit: supplies.costPerUnit })
+          .from(supplies)
+          .where(eq(supplies.id, supplyInput.supplyId))
+          .limit(1);
+
+        if (supply) {
+          newSuppliesForLogging.push({
+            name: supply.name,
+            quantity: supplyInput.quantity,
+            costPerUnit: supply.costPerUnit,
+          });
+        }
+      }
+
+      if (newSuppliesForLogging.length > 0) {
+        await ActivityFeedService.logSuppliesAddedToSite(currentUser.id, id, {
+          siteName: data.name,
+          supplies: newSuppliesForLogging,
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Site updated successfully',
@@ -480,6 +583,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
     }
 
+    // ===== NEW: Get supplies data before deletion for activity logging =====
+    const siteSuppliesForLogging = await db
+      .select({
+        name: supplies.name,
+        quantity: siteSupplies.quantity,
+        costPerUnit: supplies.costPerUnit,
+      })
+      .from(siteSupplies)
+      .innerJoin(supplies, eq(siteSupplies.supplyId, supplies.id))
+      .where(eq(siteSupplies.siteId, id));
+
     // Use transaction to handle deletion and supply adjustments
     await db.transaction(async tx => {
       // Get all site supplies before deletion
@@ -508,6 +622,14 @@ export async function DELETE(
       // Delete site
       await tx.delete(sites).where(eq(sites.id, id));
     });
+
+    // ===== NEW: Log supplies removed when site is deleted =====
+    if (siteSuppliesForLogging.length > 0) {
+      await ActivityFeedService.logSuppliesRemovedFromSite(currentUser.id, id, {
+        siteName: existingSite.name,
+        supplies: siteSuppliesForLogging,
+      });
+    }
 
     return NextResponse.json({
       success: true,

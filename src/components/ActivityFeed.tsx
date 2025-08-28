@@ -12,6 +12,10 @@ import {
   UserPlus,
   Mail,
   Clock,
+  Package,
+  PackagePlus,
+  PackageMinus,
+  PackageCheck,
 } from 'lucide-react';
 import { useActivityFeed } from '@/hooks/useActivityFeed';
 
@@ -22,7 +26,11 @@ type ActivityType =
   | 'activity_type_created'
   | 'site_created'
   | 'community_partner_added'
-  | 'program_goal_created';
+  | 'program_goal_created'
+  | 'supply_created'
+  | 'supplies_added_to_site'
+  | 'supplies_removed_from_site'
+  | 'site_supply_updated';
 
 interface User {
   firstName: string;
@@ -61,13 +69,52 @@ interface ProgramGoalCreatedDetails {
   programGoalName: string;
 }
 
+interface SupplyCreatedDetails {
+  supplyName: string;
+  costPerUnit: string;
+  quantity: number;
+}
+
+interface SuppliesAddedToSiteDetails {
+  siteName: string;
+  supplies: Array<{
+    name: string;
+    quantity: number;
+    costPerUnit: string;
+  }>;
+  totalItems: number;
+}
+
+interface SuppliesRemovedFromSiteDetails {
+  siteName: string;
+  supplies: Array<{
+    name: string;
+    quantity: number;
+    costPerUnit: string;
+  }>;
+  totalItems: number;
+}
+
+interface SiteSupplyUpdatedDetails {
+  siteName: string;
+  supplyName: string;
+  oldQuantity: number;
+  newQuantity: number;
+  quantityChange: number;
+  costPerUnit: string;
+}
+
 type ActivityDetails =
   | UserInvitedDetails
   | EventCreatedDetails
   | ActivityTypeCreatedDetails
   | SiteCreatedDetails
   | CommunityPartnerAddedDetails
-  | ProgramGoalCreatedDetails;
+  | ProgramGoalCreatedDetails
+  | SupplyCreatedDetails
+  | SuppliesAddedToSiteDetails
+  | SuppliesRemovedFromSiteDetails
+  | SiteSupplyUpdatedDetails;
 
 interface Activity {
   id: number;
@@ -77,86 +124,7 @@ interface Activity {
   details: ActivityDetails;
 }
 
-// type Props = { activities: Activity[] };
-
 const ActivityFeed: React.FC = () => {
-  // const activities: Activity[] = [
-  //   {
-  //     id: 1,
-  //     type: 'user_invited',
-  //     user: { firstName: 'Admin', lastName: 'User' },
-  //     timestamp: '30 minutes ago',
-  //     details: {
-  //       invitedUser: 'jennifer.martinez@email.com',
-  //       role: 'Site Coordinator',
-  //     } as UserInvitedDetails,
-  //   },
-  //   {
-  //     id: 2,
-  //     type: 'event_created',
-  //     user: { firstName: 'Sarah', lastName: 'Chen' },
-  //     timestamp: '2 hours ago',
-  //     details: {
-  //       eventTitle: 'Art Therapy Workshop',
-  //       siteName: 'Riverside Gardens',
-  //       totalParticipants: 18,
-  //       isYouthFocused: false,
-  //     } as EventCreatedDetails,
-  //   },
-  //   {
-  //     id: 3,
-  //     type: 'activity_type_created',
-  //     user: { firstName: 'Michael', lastName: 'Roberts' },
-  //     timestamp: '4 hours ago',
-  //     details: {
-  //       activityTypeName: 'Digital Photography',
-  //       programGoal: 'Creative Arts',
-  //     } as ActivityTypeCreatedDetails,
-  //   },
-  //   {
-  //     id: 4,
-  //     type: 'site_created',
-  //     user: { firstName: 'Lisa', lastName: 'Wong' },
-  //     timestamp: '6 hours ago',
-  //     details: {
-  //       siteName: 'Harmony Heights',
-  //       tenantCount: 62,
-  //     } as SiteCreatedDetails,
-  //   },
-  //   {
-  //     id: 5,
-  //     type: 'community_partner_added',
-  //     user: { firstName: 'James', lastName: 'Kim' },
-  //     timestamp: '1 day ago',
-  //     details: {
-  //       partnerName: 'Local Arts Council',
-  //       siteName: 'Sunset Manor',
-  //     } as CommunityPartnerAddedDetails,
-  //   },
-  //   {
-  //     id: 6,
-  //     type: 'event_created',
-  //     user: { firstName: 'Emma', lastName: 'Taylor' },
-  //     timestamp: '1 day ago',
-  //     details: {
-  //       eventTitle: 'Youth Gaming Tournament',
-  //       siteName: 'Metro Plaza',
-  //       totalParticipants: 24,
-  //       isYouthFocused: true,
-  //       hasCoHost: true,
-  //     } as EventCreatedDetails,
-  //   },
-  //   {
-  //     id: 7,
-  //     type: 'program_goal_created',
-  //     user: { firstName: 'David', lastName: 'Miller' },
-  //     timestamp: '2 days ago',
-  //     details: {
-  //       programGoalName: 'Mental Health & Wellness',
-  //     } as ProgramGoalCreatedDetails,
-  //   },
-  // ];
-
   const { activities } = useActivityFeed();
 
   const getActivityIcon = (type: ActivityType): React.ReactNode => {
@@ -167,6 +135,10 @@ const ActivityFeed: React.FC = () => {
       site_created: <Building className="h-4 w-4" />,
       community_partner_added: <Users className="h-4 w-4" />,
       program_goal_created: <Target className="h-4 w-4" />,
+      supply_created: <Package className="h-4 w-4" />,
+      supplies_added_to_site: <PackagePlus className="h-4 w-4" />,
+      supplies_removed_from_site: <PackageMinus className="h-4 w-4" />,
+      site_supply_updated: <PackageCheck className="h-4 w-4" />,
     };
     return icons[type] || <CalendarDays className="h-4 w-4" />;
   };
@@ -257,9 +229,6 @@ const ActivityFeed: React.FC = () => {
                 {partnerDetails.partnerName}
               </span>
             </p>
-            {/* <p className="text-xs text-gray-500 mt-1">
-              At: {partnerDetails.siteName}
-            </p> */}
           </div>
         );
       }
@@ -275,6 +244,112 @@ const ActivityFeed: React.FC = () => {
                 {goalDetails.programGoalName}
               </span>
             </p>
+          </div>
+        );
+      }
+
+      case 'supply_created': {
+        const supplyDetails = details as SupplyCreatedDetails;
+        return (
+          <div>
+            <p className="text-sm text-gray-900">
+              <span className="font-medium">{userName}</span> added supply{' '}
+              <span className="font-medium text-emerald-600">
+                {supplyDetails.supplyName}
+              </span>
+            </p>
+            <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <Package className="h-3 w-3" />
+                {supplyDetails.quantity} units
+              </span>
+              <span>${supplyDetails.costPerUnit} per unit</span>
+            </div>
+          </div>
+        );
+      }
+
+      case 'supplies_added_to_site': {
+        const siteSupplyDetails = details as SuppliesAddedToSiteDetails;
+        return (
+          <div>
+            <p className="text-sm text-gray-900">
+              <span className="font-medium">{userName}</span> added{' '}
+              <span className="font-medium text-green-600">
+                {siteSupplyDetails.totalItems} supply item
+                {siteSupplyDetails.totalItems !== 1 ? 's' : ''}
+              </span>{' '}
+              to{' '}
+              <span className="font-medium">{siteSupplyDetails.siteName}</span>
+            </p>
+            <div className="mt-1 text-xs text-gray-500">
+              {siteSupplyDetails.supplies.slice(0, 2).map((supply, index) => (
+                <span key={index} className="block">
+                  {supply.name}: {supply.quantity} units
+                </span>
+              ))}
+              {siteSupplyDetails.supplies.length > 2 && (
+                <span className="text-gray-400">
+                  +{siteSupplyDetails.supplies.length - 2} more items
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      case 'supplies_removed_from_site': {
+        const siteSupplyDetails = details as SuppliesRemovedFromSiteDetails;
+        return (
+          <div>
+            <p className="text-sm text-gray-900">
+              <span className="font-medium">{userName}</span> removed{' '}
+              <span className="font-medium text-red-600">
+                {siteSupplyDetails.totalItems} supply item
+                {siteSupplyDetails.totalItems !== 1 ? 's' : ''}
+              </span>{' '}
+              from{' '}
+              <span className="font-medium">{siteSupplyDetails.siteName}</span>
+            </p>
+            <div className="mt-1 text-xs text-gray-500">
+              {siteSupplyDetails.supplies.slice(0, 2).map((supply, index) => (
+                <span key={index} className="block">
+                  {supply.name}: {supply.quantity} units
+                </span>
+              ))}
+              {siteSupplyDetails.supplies.length > 2 && (
+                <span className="text-gray-400">
+                  +{siteSupplyDetails.supplies.length - 2} more items
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      case 'site_supply_updated': {
+        const updateDetails = details as SiteSupplyUpdatedDetails;
+        const isIncrease = updateDetails.quantityChange > 0;
+        return (
+          <div>
+            <p className="text-sm text-gray-900">
+              <span className="font-medium">{userName}</span> updated{' '}
+              <span className="font-medium text-blue-600">
+                {updateDetails.supplyName}
+              </span>{' '}
+              quantity at{' '}
+              <span className="font-medium">{updateDetails.siteName}</span>
+            </p>
+            <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <PackageCheck className="h-3 w-3" />
+                {updateDetails.oldQuantity} → {updateDetails.newQuantity} units
+              </span>
+              <span className={isIncrease ? 'text-green-600' : 'text-red-600'}>
+                {isIncrease ? '+' : ''}
+                {updateDetails.quantityChange}
+              </span>
+            </div>
           </div>
         );
       }

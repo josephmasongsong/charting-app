@@ -1,0 +1,1 @@
+DROP TABLE "event_supply_distributions" CASCADE;

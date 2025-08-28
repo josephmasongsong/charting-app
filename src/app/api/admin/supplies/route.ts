@@ -196,11 +196,11 @@ export async function POST(req: Request) {
       .returning();
 
     // Log the activity
-    // await ActivityFeedService.logSupplyCreated(currentUser.id, newSupply.id, {
-    //   name: newSupply.name,
-    //   costPerUnit: newSupply.costPerUnit,
-    //   quantity: newSupply.quantity,
-    // });
+    await ActivityFeedService.logSupplyCreated(currentUser.id, newSupply.id, {
+      name: newSupply.name,
+      costPerUnit: newSupply.costPerUnit,
+      quantity: newSupply.quantity,
+    });
 
     return NextResponse.json({
       success: true,

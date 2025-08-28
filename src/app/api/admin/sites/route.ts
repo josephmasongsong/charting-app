@@ -318,11 +318,48 @@ export async function POST(req: Request) {
       return newSite;
     });
 
-    // Log the activity
+    // Log the site creation activity
     await ActivityFeedService.logSiteCreated(currentUser.id, result.id, {
       name: data.name,
       tenantCount: Number(data.numberOfTenants),
     });
+
+    // ===== NEW: Log supplies added to site =====
+    if (
+      siteSuppliesInput &&
+      Array.isArray(siteSuppliesInput) &&
+      siteSuppliesInput.length > 0
+    ) {
+      // Get supply details for activity logging
+      const suppliesForLogging = [];
+      for (const supplyInput of siteSuppliesInput) {
+        const [supply] = await db
+          .select({ name: supplies.name, costPerUnit: supplies.costPerUnit })
+          .from(supplies)
+          .where(eq(supplies.id, supplyInput.supplyId))
+          .limit(1);
+
+        if (supply) {
+          suppliesForLogging.push({
+            name: supply.name,
+            quantity: supplyInput.quantity,
+            costPerUnit: supply.costPerUnit,
+          });
+        }
+      }
+
+      // Log supplies added to site
+      if (suppliesForLogging.length > 0) {
+        await ActivityFeedService.logSuppliesAddedToSite(
+          currentUser.id,
+          result.id,
+          {
+            siteName: data.name,
+            supplies: suppliesForLogging,
+          }
+        );
+      }
+    }
 
     return NextResponse.json({
       success: true,
