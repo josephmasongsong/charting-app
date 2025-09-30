@@ -91,7 +91,7 @@ export async function GET(req: Request) {
     const sortFunction = sortOrder === 'asc' ? asc : desc;
 
     // Build main query
-    let query = db
+    const baseQuery = db
       .select({
         id: users.id,
         name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as(
@@ -107,16 +107,10 @@ export async function GET(req: Request) {
       })
       .from(users);
 
-    // Add search filter if provided
-    if (searchCondition) {
-      query = query.where(searchCondition);
-    }
-
-    // Get paginated results with sorting
-    const allUsers = await query
-      .limit(limit)
-      .offset(offset)
-      .orderBy(sortFunction(sortColumn));
+    // Add search filter if provided and apply sorting and pagination
+    const query = searchCondition ? baseQuery.where(searchCondition) : baseQuery;
+    const orderedQuery = query.orderBy(sortFunction(sortColumn));
+    const allUsers = await orderedQuery.limit(limit).offset(offset);
 
     return NextResponse.json({
       users: allUsers,

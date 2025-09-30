@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, supplies, users, siteSupplies, sites } from '@/db';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function GET(
@@ -111,7 +111,7 @@ export async function PATCH(
       quantity !== undefined ? parseInt(quantity) : undefined;
     if (
       quantity !== undefined &&
-      (!Number.isInteger(totalQuantity) || totalQuantity < 0)
+      (totalQuantity === undefined || !Number.isInteger(totalQuantity) || totalQuantity < 0)
     ) {
       return NextResponse.json(
         { error: 'Quantity must be a valid non-negative integer' },
@@ -123,7 +123,7 @@ export async function PATCH(
     const assignedQuantity = siteQuantity ? parseInt(siteQuantity) : undefined;
     if (
       siteQuantity !== undefined &&
-      (!Number.isInteger(assignedQuantity) || assignedQuantity < 0)
+      (assignedQuantity === undefined || !Number.isInteger(assignedQuantity) || assignedQuantity < 0)
     ) {
       return NextResponse.json(
         { error: 'Site quantity must be a valid non-negative integer' },
@@ -196,8 +196,12 @@ export async function PATCH(
         const [existingSiteSupply] = await tx
           .select()
           .from(siteSupplies)
-          .where(eq(siteSupplies.supplyId, id))
-          .where(eq(siteSupplies.siteId, siteId))
+          .where(
+            and(
+              eq(siteSupplies.supplyId, id),
+              eq(siteSupplies.siteId, siteId)
+            )
+          )
           .limit(1);
 
         if (existingSiteSupply) {

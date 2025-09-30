@@ -74,7 +74,7 @@ export async function GET(req: Request) {
 
     const sortFunction = sortOrder === 'asc' ? asc : desc;
 
-    // Get paginated results with calculated quantities
+    // Build base query
     let suppliesQuery = db
       .select({
         id: supplies.id,
@@ -94,23 +94,25 @@ export async function GET(req: Request) {
         supplies.costPerUnit,
         supplies.createdAt,
         supplies.updatedAt
-      )
-      .limit(limit)
-      .offset(offset);
+      );
 
-    // Handle different sort scenarios
+    // Handle different sort scenarios and apply pagination
+    let orderedQuery;
     if (sortBy === 'quantity') {
-      suppliesQuery = suppliesQuery.orderBy(
+      orderedQuery = suppliesQuery.orderBy(
         sortFunction(sql`COALESCE(SUM(${siteSupplies.quantity}), 0)`)
       );
     } else {
-      suppliesQuery = suppliesQuery.orderBy(sortFunction(sortColumn));
+      orderedQuery = suppliesQuery.orderBy(sortFunction(sortColumn));
     }
+
+    // Apply pagination
+    const paginatedQuery = orderedQuery.limit(limit).offset(offset);
 
     // Apply search condition if it exists
     const allSupplies = searchCondition
-      ? await suppliesQuery.where(searchCondition)
-      : await suppliesQuery;
+      ? await paginatedQuery.where(searchCondition)
+      : await paginatedQuery;
 
     return NextResponse.json({
       supplies: allSupplies,
@@ -208,6 +210,7 @@ export async function POST(req: Request) {
     await ActivityFeedService.logSupplyCreated(currentUser.id, newSupply.id, {
       name: newSupply.name,
       costPerUnit: newSupply.costPerUnit,
+      quantity: newSupply.quantity,
     });
 
     return NextResponse.json({

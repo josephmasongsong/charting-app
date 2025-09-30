@@ -84,6 +84,12 @@ interface SortConfig {
   order: SortOrder;
 }
 
+interface FilterConfig {
+  siteId?: string;
+  distributionType?: string;
+  userId?: string;
+}
+
 interface DistributionsTableProps {
   message?: string;
   error?: string;
@@ -204,7 +210,7 @@ const DistributionsTable = forwardRef<
 
     // Fetch distributions
     const fetchDistributions = useCallback(
-      async (page = 1, searchTerm = '', sort = sortConfig, filters = {}) => {
+      async (page = 1, searchTerm = '', sort = sortConfig, filters: FilterConfig = {}) => {
         try {
           setLoading(true);
           const params = new URLSearchParams({

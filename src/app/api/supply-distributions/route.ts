@@ -243,7 +243,13 @@ export async function POST(req: Request) {
 
     // Validate distribution items and check inventory
     let totalCost = 0;
-    const validatedItems = [];
+    const validatedItems: Array<{
+      supplyId: string;
+      supplyName: string;
+      quantity: number;
+      unitCostAtTime: string;
+      lineTotal: string;
+    }> = [];
 
     for (const item of distributionItems) {
       if (!item.supplyId || !item.quantity || item.quantity <= 0) {

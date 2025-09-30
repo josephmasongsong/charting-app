@@ -58,6 +58,8 @@ async function getSupplyData(supplyId: string) {
     return {
       supply: {
         ...supply,
+        createdAt: String(supply.createdAt),
+        updatedAt: String(supply.updatedAt),
         totalValue,
         distributedQuantity,
         availableQuantity,

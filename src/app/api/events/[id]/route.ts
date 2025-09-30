@@ -191,9 +191,9 @@ export async function PATCH(
 
     // Handle eventDate - it might be a Date object or string depending on the database driver
     const existingEventDateStr =
-      existingEvent.eventDate instanceof Date
-        ? existingEvent.eventDate.toISOString().split('T')[0]
-        : String(existingEvent.eventDate).split('T')[0];
+      typeof existingEvent.eventDate === 'string'
+        ? existingEvent.eventDate.split('T')[0]
+        : (existingEvent.eventDate as Date).toISOString().split('T')[0];
 
     if (data.eventDate !== existingEventDateStr) {
       changes.eventDate = {

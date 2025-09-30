@@ -86,14 +86,6 @@ export default function Navigation() {
                   aria-label="User menu"
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={session.user?.image || undefined}
-                      alt={
-                        session.user?.name ||
-                        session.user?.email ||
-                        'User avatar'
-                      }
-                    />
                     <AvatarFallback className="text-sm">
                       {userInitials}
                     </AvatarFallback>

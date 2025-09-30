@@ -519,11 +519,11 @@ export default async function EventPage({ params }: EventPageProps) {
               <CardContent className="space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Created</span>
-                  <span>{formatDateTime(event.createdAt)}</span>
+                  <span>{formatDateTime(String(event.createdAt))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Last Updated</span>
-                  <span>{formatDateTime(event.updatedAt)}</span>
+                  <span>{formatDateTime(String(event.updatedAt))}</span>
                 </div>
               </CardContent>
             </Card>

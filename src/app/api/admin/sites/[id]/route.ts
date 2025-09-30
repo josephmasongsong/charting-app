@@ -257,7 +257,7 @@ export async function PATCH(
         if (existingSupplyAtSite) {
           return NextResponse.json(
             {
-              error: `Supply "${supply[0]?.name}" is already at this site. Use the inventory management interface to adjust quantities.`,
+              error: `Supply "${supply?.name}" is already at this site. Use the inventory management interface to adjust quantities.`,
             },
             { status: 400 }
           );

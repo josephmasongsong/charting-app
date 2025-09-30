@@ -226,7 +226,7 @@ function MetricCard({
                 <span className="font-medium text-foreground">
                   {React.isValidElement(subMetric.value)
                     ? subMetric.value
-                    : subMetric.formatter
+                    : subMetric.formatter && (typeof subMetric.value === 'string' || typeof subMetric.value === 'number')
                       ? subMetric.formatter(subMetric.value)
                       : subMetric.value}
                 </span>

@@ -59,7 +59,7 @@ export function MetricCard({
                 ) : (
                   <>
                     <span className="inline-flex items-center">
-                      {subMetric.formatter
+                      {subMetric.formatter && (typeof subMetric.value === 'string' || typeof subMetric.value === 'number')
                         ? subMetric.formatter(subMetric.value)
                         : subMetric.value}
                     </span>{' '}

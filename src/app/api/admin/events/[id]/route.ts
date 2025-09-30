@@ -267,11 +267,13 @@ export async function PATCH(
     if (data.title !== existingEvent.title) {
       changes.title = { old: existingEvent.title, new: data.title };
     }
-    if (
-      data.eventDate !== existingEvent.eventDate.toISOString().split('T')[0]
-    ) {
+    const existingEventDate = typeof existingEvent.eventDate === 'string'
+      ? existingEvent.eventDate.split('T')[0]
+      : (existingEvent.eventDate as Date).toISOString().split('T')[0];
+
+    if (data.eventDate !== existingEventDate) {
       changes.eventDate = {
-        old: existingEvent.eventDate.toISOString().split('T')[0],
+        old: existingEventDate,
         new: data.eventDate,
       };
     }
@@ -298,7 +300,7 @@ export async function PATCH(
       .update(events)
       .set({
         title: data.title,
-        eventDate: new Date(data.eventDate),
+        eventDate: data.eventDate,
         description: data.description,
         eventDuration: data.eventDuration,
         adminDuration: data.adminDuration,

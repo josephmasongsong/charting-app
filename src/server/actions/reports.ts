@@ -500,6 +500,9 @@ export async function generateMonthlyActivityReport(
   ]);
 
   allCostRegions.forEach(region => {
+    // Skip null regions
+    if (!region) return;
+
     const currentCost = currentPeriodRegionalCostMap.get(region) || 0;
     const previousCost = previousPeriodRegionalCostMap.get(region) || 0;
 
@@ -566,6 +569,9 @@ export async function generateMonthlyActivityReport(
   ]);
 
   allParticipantRegions.forEach(region => {
+    // Skip null regions
+    if (!region) return;
+
     const currentParticipants = currentPeriodParticipantsMap.get(region) || 0;
     const previousParticipants = previousPeriodParticipantsMap.get(region) || 0;
 
@@ -604,6 +610,9 @@ export async function generateMonthlyActivityReport(
   ]);
 
   allEventRegions.forEach(region => {
+    // Skip null regions
+    if (!region) return;
+
     const currentEvents = currentPeriodEventsMap.get(region) || 0;
     const previousEvents = previousPeriodEventsMap.get(region) || 0;
 
@@ -685,25 +694,29 @@ export async function generateMonthlyActivityReport(
     reportMonth = `${monthNames[startMonth - 1]} ${startYear}`;
   }
 
-  // Map program goals with colors
-  const programGoalsWithColors: ProgramGoalSummary[] = programGoalsData.map(
-    (goal, index) => ({
-      id: goal.programGoalId,
-      name: goal.programGoalName,
-      activityCount: Number(goal.activityCount),
-      color: PROGRAM_GOAL_COLORS[index % PROGRAM_GOAL_COLORS.length],
-    })
-  );
+  // Map program goals with colors, filtering out nulls
+  const programGoalsWithColors: ProgramGoalSummary[] = programGoalsData
+    .filter(goal => goal.programGoalId && goal.programGoalName)
+    .map(
+      (goal, index) => ({
+        id: goal.programGoalId!,
+        name: goal.programGoalName!,
+        activityCount: Number(goal.activityCount),
+        color: PROGRAM_GOAL_COLORS[index % PROGRAM_GOAL_COLORS.length],
+      })
+    );
 
-  // Map activity types participation with colors (different palette to avoid conflicts)
+  // Map activity types participation with colors (different palette to avoid conflicts), filtering out nulls
   const activityTypesParticipationWithColors: ActivityTypeParticipation[] =
-    activityTypesParticipationData.map((activity, index) => ({
-      id: activity.activityTypeId,
-      name: activity.activityTypeName,
-      participantCount: Number(activity.participantCount),
-      eventCount: Number(activity.eventCount),
-      color: PROGRAM_GOAL_COLORS[(index + 3) % PROGRAM_GOAL_COLORS.length], // Offset by 3 to avoid exact same colors as program goals
-    }));
+    activityTypesParticipationData
+      .filter(activity => activity.activityTypeId && activity.activityTypeName)
+      .map((activity, index) => ({
+        id: activity.activityTypeId!,
+        name: activity.activityTypeName!,
+        participantCount: Number(activity.participantCount),
+        eventCount: Number(activity.eventCount),
+        color: PROGRAM_GOAL_COLORS[(index + 3) % PROGRAM_GOAL_COLORS.length], // Offset by 3 to avoid exact same colors as program goals
+      }));
 
   // Map supply distribution data
   const supplyDistributionsWithNumbers: SupplyDistributionSummary[] =
@@ -786,18 +799,20 @@ export async function generateMonthlyActivityReport(
     totalCost: Number(totalMetrics[0]?.totalCost || 0),
     totalEventDuration: Number(totalMetrics[0]?.totalEventDuration || 0),
     totalAdminDuration: Number(totalMetrics[0]?.totalAdminDuration || 0),
-    activityTypesByRegion: activityTypeByRegionData.map(item => ({
-      activityTypeId: item.activityTypeId,
-      activityTypeName: item.activityTypeName,
-      programGoalName: item.programGoalName,
-      region: item.region,
-      eventCount: Number(item.eventCount),
-      participantsServed: Number(item.participantsServed),
-      newParticipants: Number(item.newParticipants),
-      returningParticipants: Number(item.returningParticipants),
-      totalAdminDuration: Number(item.totalAdminDuration),
-      totalCost: Number(item.totalCost),
-    })),
+    activityTypesByRegion: activityTypeByRegionData
+      .filter(item => item.activityTypeId && item.activityTypeName && item.programGoalName && item.region)
+      .map(item => ({
+        activityTypeId: item.activityTypeId!,
+        activityTypeName: item.activityTypeName!,
+        programGoalName: item.programGoalName!,
+        region: item.region!,
+        eventCount: Number(item.eventCount),
+        participantsServed: Number(item.participantsServed),
+        newParticipants: Number(item.newParticipants),
+        returningParticipants: Number(item.returningParticipants),
+        totalAdminDuration: Number(item.totalAdminDuration),
+        totalCost: Number(item.totalCost),
+      })),
     programGoals: programGoalsWithColors,
     activityTypesParticipation: activityTypesParticipationWithColors,
     monthlyParticipantGrowth: monthlyParticipantGrowthData,
@@ -806,7 +821,7 @@ export async function generateMonthlyActivityReport(
     regionalCostGrowth: regionalCostGrowthData,
     supplyDistributions: supplyDistributionsWithNumbers,
     monthlySupplyDistributionGrowth: monthlySupplyDistributionGrowth,
-    regions: activeRegions.map(r => r.region).filter(Boolean),
+    regions: activeRegions.map(r => r.region).filter((r): r is string => Boolean(r)),
     availableDateRange: {
       minDate: dateRange[0]?.minDate || '',
       maxDate: dateRange[0]?.maxDate || '',
