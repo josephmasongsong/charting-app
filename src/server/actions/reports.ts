@@ -1,6 +1,15 @@
 'use server';
 
-import { db, events, activityTypes, programGoals, users } from '@/db';
+import {
+  db,
+  events,
+  activityTypes,
+  programGoals,
+  users,
+  supplyDistributions,
+  supplyDistributionItems,
+  supplies,
+} from '@/db';
 import { sql, eq, and, gte, lt } from 'drizzle-orm';
 import { authOptions } from '@/lib/auth';
 import { getServerSession } from 'next-auth';
@@ -64,6 +73,21 @@ interface RegionalCostGrowth {
   growthType: 'growth' | 'decline' | 'stable';
 }
 
+interface MonthlySupplyDistributionGrowth {
+  currentMonthQuantity: number;
+  previousMonthQuantity: number;
+  growthRate: number;
+  growthType: 'growth' | 'decline' | 'stable';
+}
+
+interface SupplyDistributionSummary {
+  supplyId: string;
+  supplyName: string;
+  totalQuantityDistributed: number;
+  totalCost: number;
+  distributionCount: number;
+}
+
 interface MonthlyActivityReportData {
   reportMonth: string;
   totalEvents: number;
@@ -80,6 +104,8 @@ interface MonthlyActivityReportData {
   monthlyEventGrowth: MonthlyEventGrowth[];
   monthlyCostGrowth: MonthlyCostGrowth;
   regionalCostGrowth: RegionalCostGrowth[];
+  monthlySupplyDistributionGrowth: MonthlySupplyDistributionGrowth;
+  supplyDistributions: SupplyDistributionSummary[];
   regions: string[];
   availableDateRange: {
     minDate: string;
@@ -101,7 +127,7 @@ const PROGRAM_GOAL_COLORS = [
   '#6366f1', // indigo
 ];
 
-// Updated generateMonthlyActivityReport function to include program goals, event growth, and cost growth
+// Updated generateMonthlyActivityReport function to include supply distributions
 export async function generateMonthlyActivityReport(
   startYear: number,
   startMonth: number,
@@ -139,6 +165,42 @@ export async function generateMonthlyActivityReport(
   } else {
     endOfPeriod = new Date(startYear, startMonth, 1);
   }
+
+  // Get supply distribution data for the period
+  const supplyDistributionData = await db
+    .select({
+      supplyId: supplies.id,
+      supplyName: supplies.name,
+      totalQuantityDistributed: sql<number>`coalesce(sum(${supplyDistributionItems.quantityDistributed}), 0)`,
+      totalCost: sql<number>`coalesce(sum(${supplyDistributionItems.lineTotal}), 0)`,
+      distributionCount: sql<number>`count(distinct ${supplyDistributions.id})`,
+    })
+    .from(supplyDistributions)
+    .innerJoin(
+      supplyDistributionItems,
+      eq(supplyDistributions.id, supplyDistributionItems.distributionId)
+    )
+    .innerJoin(supplies, eq(supplyDistributionItems.supplyId, supplies.id))
+    .leftJoin(users, eq(supplyDistributions.userId, users.id))
+    .where(
+      and(
+        session.user.role === 'admin'
+          ? sql`true`
+          : eq(supplyDistributions.userId, session.user.id),
+        gte(
+          supplyDistributions.distributionDate,
+          startOfPeriod.toISOString().split('T')[0]
+        ),
+        lt(
+          supplyDistributions.distributionDate,
+          endOfPeriod.toISOString().split('T')[0]
+        )
+      )
+    )
+    .groupBy(supplies.id, supplies.name)
+    .orderBy(
+      sql`coalesce(sum(${supplyDistributionItems.quantityDistributed}), 0) DESC`
+    );
 
   // Get activity type breakdown by region - only activities with events
   const activityTypeByRegionData = await db
@@ -643,6 +705,77 @@ export async function generateMonthlyActivityReport(
       color: PROGRAM_GOAL_COLORS[(index + 3) % PROGRAM_GOAL_COLORS.length], // Offset by 3 to avoid exact same colors as program goals
     }));
 
+  // Map supply distribution data
+  const supplyDistributionsWithNumbers: SupplyDistributionSummary[] =
+    supplyDistributionData.map(item => ({
+      supplyId: item.supplyId,
+      supplyName: item.supplyName,
+      totalQuantityDistributed: Number(item.totalQuantityDistributed),
+      totalCost: Number(item.totalCost),
+      distributionCount: Number(item.distributionCount),
+    }));
+
+  // Get previous period supply distribution data for growth calculation
+  const previousPeriodSupplyData = await db
+    .select({
+      totalQuantityDistributed: sql<number>`coalesce(sum(${supplyDistributionItems.quantityDistributed}), 0)`,
+    })
+    .from(supplyDistributions)
+    .innerJoin(
+      supplyDistributionItems,
+      eq(supplyDistributions.id, supplyDistributionItems.distributionId)
+    )
+    .innerJoin(supplies, eq(supplyDistributionItems.supplyId, supplies.id))
+    .leftJoin(users, eq(supplyDistributions.userId, users.id))
+    .where(
+      and(
+        session.user.role === 'admin'
+          ? sql`true`
+          : eq(supplyDistributions.userId, session.user.id),
+        gte(
+          supplyDistributions.distributionDate,
+          previousPeriodStart.toISOString().split('T')[0]
+        ),
+        lt(
+          supplyDistributions.distributionDate,
+          previousPeriodEnd.toISOString().split('T')[0]
+        )
+      )
+    );
+
+  // Calculate supply distribution growth
+  const currentPeriodSupplyQuantity = supplyDistributionData.reduce(
+    (sum, item) => sum + Number(item.totalQuantityDistributed),
+    0
+  );
+  const previousPeriodSupplyQuantity = Number(
+    previousPeriodSupplyData[0]?.totalQuantityDistributed || 0
+  );
+
+  let supplyGrowthRate = 0;
+  let supplyGrowthType: 'growth' | 'decline' | 'stable' = 'stable';
+
+  if (previousPeriodSupplyQuantity > 0) {
+    supplyGrowthRate = Math.round(
+      ((currentPeriodSupplyQuantity - previousPeriodSupplyQuantity) /
+        previousPeriodSupplyQuantity) *
+        100
+    );
+  } else if (currentPeriodSupplyQuantity > 0) {
+    supplyGrowthRate = 100; // 100% growth from 0
+  }
+
+  if (supplyGrowthRate > 2) supplyGrowthType = 'growth';
+  else if (supplyGrowthRate < -2) supplyGrowthType = 'decline';
+  else supplyGrowthType = 'stable';
+
+  const monthlySupplyDistributionGrowth: MonthlySupplyDistributionGrowth = {
+    currentMonthQuantity: currentPeriodSupplyQuantity,
+    previousMonthQuantity: previousPeriodSupplyQuantity,
+    growthRate: supplyGrowthRate,
+    growthType: supplyGrowthType,
+  };
+
   return {
     reportMonth,
     totalEvents: totalMetrics[0]?.totalEvents || 0,
@@ -671,6 +804,8 @@ export async function generateMonthlyActivityReport(
     monthlyEventGrowth: monthlyEventGrowthData,
     monthlyCostGrowth: monthlyCostGrowth,
     regionalCostGrowth: regionalCostGrowthData,
+    supplyDistributions: supplyDistributionsWithNumbers,
+    monthlySupplyDistributionGrowth: monthlySupplyDistributionGrowth,
     regions: activeRegions.map(r => r.region).filter(Boolean),
     availableDateRange: {
       minDate: dateRange[0]?.minDate || '',

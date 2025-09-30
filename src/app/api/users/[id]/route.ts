@@ -1,9 +1,10 @@
+// app/api/users/[id]/route.s
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, users } from '@/db';
 import { eq, sql } from 'drizzle-orm';
-
+import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
@@ -102,6 +103,20 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid job title' }, { status: 400 });
     }
 
+    // Get current user data for change tracking
+    const [currentUserData] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    if (!currentUserData) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Track changes
+    const changes: any = {};
+
     // Build update object
     const updateData: any = {
       updatedAt: new Date(),
@@ -199,6 +214,42 @@ export async function PATCH(
       }
     }
 
+    // Compare and track changes
+    if (updateData.firstName || updateData.lastName) {
+      const oldName = `${currentUserData.firstName} ${currentUserData.lastName}`;
+      const newName = `${updateData.firstName || currentUserData.firstName} ${updateData.lastName || currentUserData.lastName}`;
+      if (oldName !== newName) {
+        changes.name = { old: oldName, new: newName };
+      }
+    }
+    if (updateData.email && updateData.email !== currentUserData.email) {
+      changes.email = { old: currentUserData.email, new: updateData.email };
+    }
+    if (updateData.role && updateData.role !== currentUserData.role) {
+      changes.role = { old: currentUserData.role, new: updateData.role };
+    }
+    if (
+      updateData.jobTitle !== undefined &&
+      updateData.jobTitle !== currentUserData.jobTitle
+    ) {
+      changes.jobTitle = {
+        old: currentUserData.jobTitle,
+        new: updateData.jobTitle,
+      };
+    }
+    if (updateData.region && updateData.region !== currentUserData.region) {
+      changes.region = { old: currentUserData.region, new: updateData.region };
+    }
+    if (
+      updateData.isActive !== undefined &&
+      updateData.isActive !== currentUserData.isActive
+    ) {
+      changes.isActive = {
+        old: currentUserData.isActive,
+        new: updateData.isActive,
+      };
+    }
+
     // Update user in database
     const [updatedUser] = await db
       .update(users)
@@ -213,6 +264,11 @@ export async function PATCH(
     // Return user without sensitive data
     const { hashedPassword, resetToken, resetTokenExpiry, ...safeUser } =
       updatedUser;
+
+    // Log user update activity
+    if (Object.keys(changes).length > 0) {
+      await ActivityFeedService.logUserUpdated(session.user.id, id, changes);
+    }
 
     return NextResponse.json({
       success: true,

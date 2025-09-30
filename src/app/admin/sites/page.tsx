@@ -1,5 +1,9 @@
+'use client';
+
 import { Suspense } from 'react';
-import { getSitesCount } from '@/lib/data/sites';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import SitesTable from './components/SitesTable';
 
 function SitesTableSkeleton() {
@@ -11,7 +15,9 @@ function SitesTableSkeleton() {
   );
 }
 
-export default async function AdminSitesPage() {
+export default function AdminSitesPage() {
+  const router = useRouter();
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
@@ -21,6 +27,11 @@ export default async function AdminSitesPage() {
             Manage sites, locations, and their properties
           </p>
         </div>
+
+        <Button onClick={() => router.push('/admin/sites/new')}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Site
+        </Button>
       </div>
 
       <Suspense fallback={<SitesTableSkeleton />}>

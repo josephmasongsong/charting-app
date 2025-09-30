@@ -1,3 +1,4 @@
+// app/sites/[id]/page.tsx
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
@@ -10,35 +11,24 @@ import {
   supplies,
 } from '@/db';
 import { eq, sql } from 'drizzle-orm';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import {
   MapPin,
   Users,
   Home,
-  Check,
-  X,
-  Mail,
-  Calendar,
   Building,
   UserCheck,
-  XCircle,
   Package,
-  DollarSign,
+  ArrowLeft,
+  Edit,
+  Trash2,
 } from 'lucide-react';
+import { notFound } from 'next/navigation';
 import BackButton from '@/components/BackButton';
 import EditButton from './components/EditButton';
 import GoogleMapsButton from './components/GoogleMapsButton';
-import { notFound } from 'next/navigation';
 
 interface SitePageProps {
   params: {
@@ -99,119 +89,15 @@ async function getSiteSupplies(siteId: string) {
   return siteSuppliesData;
 }
 
-// Server Component for boolean display
-function BooleanDisplay({
-  value,
-  trueText,
-  falseText,
-  icon: Icon,
-}: {
-  value: boolean;
-  trueText: string;
-  falseText: string;
-  icon: any;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <Icon className="h-4 w-4 text-muted-foreground" />
-      <Badge
-        variant={value ? 'default' : 'secondary'}
-        className="flex items-center gap-1"
-      >
-        {value ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-        {value ? trueText : falseText}
-      </Badge>
-    </div>
-  );
-}
+// Server function to count events at site
+async function getSiteEventsCount(siteId: string) {
+  const { events } = await import('@/db');
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(events)
+    .where(eq(events.siteId, siteId));
 
-// Supply Inventory Component
-function SupplyInventoryCard({ supplies }: { supplies: any[] }) {
-  const totalValue = supplies.reduce(
-    (sum, supply) => sum + Number(supply.totalValue),
-    0
-  );
-  const totalItems = supplies.reduce((sum, supply) => sum + supply.quantity, 0);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          Supply Inventory
-        </CardTitle>
-        <CardDescription>Current supplies at this site</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {supplies.length > 0 ? (
-          <>
-            {/* Summary */}
-            <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-lg font-semibold">
-                  {totalItems.toLocaleString()}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-lg font-semibold">
-                  ${totalValue.toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Supply List */}
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {supplies.map(supply => (
-                <div
-                  key={supply.id}
-                  className="flex items-center justify-between p-2 border rounded-lg"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {supply.supplyName}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      ${supply.costPerUnit} per unit
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="outline" className="text-xs">
-                      {supply.quantity}
-                    </Badge>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      ${Number(supply.totalValue).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {supplies.length > 5 && (
-              <div className="text-center">
-                <Button variant="outline" size="sm" className="text-xs">
-                  View All Supplies
-                </Button>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-6">
-            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground">
-              No supplies at this site
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Add supplies when editing the site
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+  return result[0]?.count || 0;
 }
 
 export default async function SitePage({ params }: SitePageProps) {
@@ -226,6 +112,7 @@ export default async function SitePage({ params }: SitePageProps) {
   const { id } = await params;
   const site = await getSite(id);
   const siteSuppliesData = await getSiteSupplies(id);
+  const eventsCount = await getSiteEventsCount(id);
 
   // Return 404 if site not found
   if (!site) {
@@ -235,243 +122,285 @@ export default async function SitePage({ params }: SitePageProps) {
   // Check if current user is admin
   const isAdmin = session.user?.role === 'admin';
 
+  // Calculate supply totals
+  const totalSupplyValue = siteSuppliesData.reduce(
+    (sum, supply) => sum + Number(supply.totalValue),
+    0
+  );
+  const totalSupplyItems = siteSuppliesData.reduce(
+    (sum, supply) => sum + supply.quantity,
+    0
+  );
+
+  const formatDateTime = (dateStr: Date) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <BackButton />
-          <div>
-            <h1 className="text-3xl font-bold">{site.name}</h1>
-            <p className="text-muted-foreground">Site Information</p>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <BackButton />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{site.name}</h1>
+              <p className="text-muted-foreground">
+                Site details and information
+              </p>
+            </div>
           </div>
-        </div>
-
-        {isAdmin && <EditButton siteId={site.id} />}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Information */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                Basic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Site Name
-                </h3>
-                <p className="text-lg font-medium">{site.name}</p>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                  Address
-                </h3>
-                <p className="text-sm leading-relaxed">{site.address}</p>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                  Number of Tenants
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <Badge variant="outline" className="text-base px-3 py-1">
-                    {site.numberOfTenants}{' '}
-                    {site.numberOfTenants === 1 ? 'Tenant' : 'Tenants'}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Location Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Location
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                    Latitude
-                  </h3>
-                  <p className="font-mono text-sm">{site.latitude}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                    Longitude
-                  </h3>
-                  <p className="font-mono text-sm">{site.longitude}</p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <GoogleMapsButton
-                latitude={site.latitude}
-                longitude={site.longitude}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Site Properties */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Home className="h-5 w-5" />
-                Site Properties
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <BooleanDisplay
-                  value={site.hasCommunityRoom}
-                  trueText="Has Community Room"
-                  falseText="No Community Room"
-                  icon={Home}
-                />
-
-                <BooleanDisplay
-                  value={site.isSingleSeniorOnly}
-                  trueText="Single Senior Only"
-                  falseText="Not Single Senior Only"
-                  icon={UserCheck}
-                />
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                  Community Partnership
-                </h3>
-                {site.hasCommunityPartner && site.communityPartnerName ? (
-                  <Badge variant="default" className="text-sm px-3 py-1">
-                    {site.communityPartnerName}
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-sm px-3 py-1">
-                    No Community Partner
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Supply Inventory */}
-          <SupplyInventoryCard supplies={siteSuppliesData} />
-
-          {/* Site Manager */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5" />
-                Site Manager
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Name
-                </h3>
-                <p className="font-medium">{site.userName}</p>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Email
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a
-                    href={`mailto:${site.userEmail}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    {site.userEmail}
-                  </a>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Timestamps */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Created
-                </h3>
-                <p className="text-sm">
-                  {new Date(site.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Last Updated
-                </h3>
-                <p className="text-sm">
-                  {new Date(site.updatedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
           {isAdmin && (
+            <div className="flex gap-2">
+              <EditButton siteId={site.id} />
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-2xl font-bold">
+                    {site.numberOfTenants}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Total Tenants
+                  </div>
+                </div>
+                <Users className="h-5 w-5 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-2xl font-bold">{eventsCount}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Events Held
+                  </div>
+                </div>
+                <Package className="h-5 w-5 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-2xl font-bold">
+                    {site.isSingleSeniorOnly ? 'Yes' : 'No'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Senior Only
+                  </div>
+                </div>
+                <UserCheck className="h-5 w-5 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-2xl font-bold">
+                    {site.hasCommunityRoom ? 'Yes' : 'No'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Community Room
+                  </div>
+                </div>
+                <Home className="h-5 w-5 text-orange-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Details */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Primary Info */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Assigned Staff */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5" />
+                  Assigned Staff
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <EditButton
-                  siteId={site.id}
-                  variant="outline"
-                  className="w-full justify-start"
-                />
-                <BackButton
-                  href="/admin/sites"
-                  variant="outline"
-                  className="w-full justify-start"
-                  text="Back to Admin"
-                />
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-semibold">
+                    {site.userName
+                      ?.split(' ')
+                      .map(n => n[0])
+                      .join('')}
+                  </div>
+                  <div>
+                    <div className="font-semibold">{site.userName}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {site.userEmail}
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          )}
+
+            {/* Community Partner */}
+            {site.hasCommunityPartner && site.communityPartnerName && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="h-5 w-5" />
+                    Community Partner
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Badge variant="outline" className="text-sm">
+                    {site.communityPartnerName}
+                  </Badge>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Supply Inventory */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Supply Inventory
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {siteSuppliesData.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-3 rounded-lg bg-muted">
+                        <div className="text-2xl font-bold">
+                          {totalSupplyItems}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Total Items
+                        </div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-muted">
+                        <div className="text-2xl font-bold text-green-600">
+                          ${totalSupplyValue.toFixed(2)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Total Value
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {siteSuppliesData.slice(0, 5).map(supply => (
+                        <div
+                          key={supply.id}
+                          className="flex items-center justify-between p-3 rounded-lg border"
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">
+                              {supply.supplyName}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ${supply.costPerUnit} per unit
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="outline">{supply.quantity}</Badge>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              ${Number(supply.totalValue).toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {siteSuppliesData.length > 5 && (
+                      <div className="text-center pt-2">
+                        <Button variant="outline" size="sm">
+                          View All {siteSuppliesData.length} Supplies
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                    <div className="text-sm text-muted-foreground">
+                      No supplies at this site
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Secondary Info */}
+          <div className="space-y-6">
+            {/* Location Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Location
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">
+                    Address
+                  </div>
+                  <div className="text-sm">{site.address}</div>
+                </div>
+                <div className="pt-2">
+                  <GoogleMapsButton
+                    latitude={site.latitude}
+                    longitude={site.longitude}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Metadata */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Metadata</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Created</span>
+                  <span>{formatDateTime(site.createdAt)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Last Updated</span>
+                  <span>{formatDateTime(site.updatedAt)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

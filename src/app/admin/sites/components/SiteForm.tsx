@@ -340,16 +340,8 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
+    <div className="mx-auto max-w-4xl">
       <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => router.back()}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
         <div>
           <h1 className="text-3xl font-bold">
             {mode === 'create' ? 'Create New Site' : 'Edit Site'}
@@ -794,8 +786,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                             key={availableSupply.id}
                             value={availableSupply.id}
                           >
-                            {availableSupply.name} (Available:{' '}
-                            {availableSupply.quantity})
+                            {availableSupply.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

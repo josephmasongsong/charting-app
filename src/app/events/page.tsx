@@ -1,30 +1,50 @@
+// app/events/page.tsx
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { db, events, users, sites, activityTypes } from '@/db';
-import { eq, ilike, or, desc, sql } from 'drizzle-orm';
-import EventsSearch from './components/EventsSearch';
-import EventCard from './components/EventCard';
+import { eq, ilike, and, desc, sql } from 'drizzle-orm';
+import EventsListClient from './components/EventsListClient';
 
 interface EventsPageProps {
   searchParams: {
     search?: string;
+    activityType?: string;
+    site?: string;
+    organizer?: string;
     page?: string;
   };
 }
 
-// Server function to fetch events
-async function getEvents(search?: string, page = 1, limit = 20) {
+async function getEvents(
+  search?: string,
+  activityTypeFilter?: string,
+  siteFilter?: string,
+  organizerFilter?: string,
+  page = 1,
+  limit = 10
+) {
   const offset = (page - 1) * limit;
 
-  // Build where condition based on search
-  const searchCondition = search
-    ? or(
-        ilike(events.title, `%${search}%`),
-        ilike(activityTypes.name, `%${search}%`),
-        ilike(sites.name, `%${search}%`)
-      )
-    : undefined;
+  const conditions = [];
+
+  if (search) {
+    conditions.push(ilike(events.title, `%${search}%`));
+  }
+
+  if (activityTypeFilter && activityTypeFilter !== 'all') {
+    conditions.push(eq(events.activityTypeId, activityTypeFilter));
+  }
+
+  if (siteFilter && siteFilter !== 'all') {
+    conditions.push(eq(events.siteId, siteFilter));
+  }
+
+  if (organizerFilter && organizerFilter !== 'all') {
+    conditions.push(eq(events.userId, organizerFilter));
+  }
+
+  const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
 
   const eventsData = await db
     .select({
@@ -33,65 +53,114 @@ async function getEvents(search?: string, page = 1, limit = 20) {
       eventDate: events.eventDate,
       activityTypeName: activityTypes.name,
       siteName: sites.name,
-      userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+      organizerName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+      totalParticipants: sql<number>`${events.newParticipants} + ${events.returningParticipants}`,
+      eventIsYouthFocused: events.eventIsYouthFocused,
+      activityTypeId: events.activityTypeId,
+      siteId: events.siteId,
+      userId: events.userId,
     })
     .from(events)
     .leftJoin(users, eq(events.userId, users.id))
     .leftJoin(sites, eq(events.siteId, sites.id))
     .leftJoin(activityTypes, eq(events.activityTypeId, activityTypes.id))
-    .where(searchCondition)
+    .where(whereCondition)
     .limit(limit)
     .offset(offset)
     .orderBy(desc(events.eventDate), desc(events.createdAt));
 
-  return eventsData;
+  // Get total count for pagination
+  const totalCountResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(events)
+    .leftJoin(users, eq(events.userId, users.id))
+    .leftJoin(sites, eq(events.siteId, sites.id))
+    .leftJoin(activityTypes, eq(events.activityTypeId, activityTypes.id))
+    .where(whereCondition);
+
+  const totalCount = Number(totalCountResult[0]?.count || 0);
+
+  return { events: eventsData, totalCount };
+}
+
+async function getFilterOptions() {
+  // Get unique activity types
+  const activityTypesData = await db
+    .select({
+      id: activityTypes.id,
+      name: activityTypes.name,
+    })
+    .from(activityTypes)
+    .orderBy(activityTypes.name);
+
+  // Get unique sites
+  const sitesData = await db
+    .select({
+      id: sites.id,
+      name: sites.name,
+    })
+    .from(sites)
+    .orderBy(sites.name);
+
+  // Get unique organizers
+  const organizersData = await db
+    .selectDistinct({
+      id: users.id,
+      name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+    })
+    .from(users)
+    .innerJoin(events, eq(events.userId, users.id))
+    .orderBy(sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`);
+
+  return {
+    activityTypes: activityTypesData,
+    sites: sitesData,
+    organizers: organizersData,
+  };
 }
 
 export default async function EventsPage({ searchParams }: EventsPageProps) {
   const session = await getServerSession(authOptions);
 
-  // Redirect unauthenticated users to login
   if (!session) {
     redirect('/login');
   }
 
   const search = searchParams.search || '';
+  const activityType = searchParams.activityType || 'all';
+  const site = searchParams.site || 'all';
+  const organizer = searchParams.organizer || 'all';
   const page = parseInt(searchParams.page || '1');
 
-  // Fetch events data on the server
-  const eventsData = await getEvents(search, page);
+  const { events: eventsData, totalCount } = await getEvents(
+    search,
+    activityType,
+    site,
+    organizer,
+    page
+  );
+
+  const filterOptions = await getFilterOptions();
+
+  const isAdmin = session.user.role === 'admin';
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Events</h1>
-        <p className="text-muted-foreground">
-          Browse all community events and activities
-        </p>
-      </div>
-
-      {/* Search Component (Client Component for interactivity) */}
-      <EventsSearch initialSearch={search} />
-
-      {/* Events Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {eventsData.map(event => (
-          <EventCard key={event.id} event={event} />
-        ))}
-      </div>
-
-      {eventsData.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          {search
-            ? `No events found matching "${search}".`
-            : 'No events found.'}
-        </div>
-      )}
-    </div>
+    <EventsListClient
+      initialEvents={eventsData}
+      filterOptions={filterOptions}
+      initialFilters={{
+        search,
+        activityType,
+        site,
+        organizer,
+        page,
+      }}
+      totalCount={totalCount}
+      isAdmin={isAdmin}
+    />
   );
 }
 
-// Generate metadata for SEO
 export async function generateMetadata({ searchParams }: EventsPageProps) {
   const search = searchParams.search;
 

@@ -1,3 +1,4 @@
+// app/events/[id]/page.tsx
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
@@ -11,15 +12,9 @@ import {
   programGoals,
 } from '@/db';
 import { eq, sql } from 'drizzle-orm';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import {
   Calendar,
   Clock,
@@ -27,16 +22,14 @@ import {
   MapPin,
   Activity,
   DollarSign,
-  User,
-  Mail,
   Building,
   UserCheck,
-  Check,
-  X,
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Target,
 } from 'lucide-react';
-import BackButton from '@/components/BackButton';
-import EditButton from './components/EditButton';
-import { minutesToHumanReadable } from '@/lib/validations/events';
+import Link from 'next/link';
 
 interface EventPageProps {
   params: {
@@ -44,7 +37,6 @@ interface EventPageProps {
   };
 }
 
-// Server function to fetch event data
 async function getEvent(eventId: string) {
   const [event] = await db
     .select({
@@ -61,12 +53,8 @@ async function getEvent(eventId: string) {
       totalCost: events.totalCost,
       createdAt: events.createdAt,
       updatedAt: events.updatedAt,
-      // Related data
       userId: events.userId,
-      userName:
-        sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as(
-          'userName'
-        ),
+      userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
       userEmail: users.email,
       siteId: events.siteId,
       siteName: sites.name,
@@ -92,385 +80,460 @@ async function getEvent(eventId: string) {
   return event;
 }
 
-// Server Component for boolean display
-function BooleanDisplay({
-  value,
-  trueText,
-  falseText,
-}: {
-  value: boolean;
-  trueText: string;
-  falseText: string;
-}) {
-  return (
-    <Badge
-      variant={value ? 'default' : 'secondary'}
-      className="flex items-center gap-1 w-fit"
-    >
-      {value ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-      {value ? trueText : falseText}
-    </Badge>
-  );
-}
-
 export default async function EventPage({ params }: EventPageProps) {
   const session = await getServerSession(authOptions);
 
-  // Redirect unauthenticated users to login
   if (!session) {
     redirect('/login');
   }
 
-  // Fetch event data on the server
   const event = await getEvent(params.id);
 
-  // Return 404 if event not found
   if (!event) {
     notFound();
   }
 
-  // Check if current user is admin
   const isAdmin = session.user?.role === 'admin';
-
-  // Calculate total participants
   const totalParticipants = event.newParticipants + event.returningParticipants;
+  const totalTime = event.eventDuration + event.adminDuration;
+  const costPerParticipant =
+    totalParticipants > 0 ? parseFloat(event.totalCost) / totalParticipants : 0;
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const formatDateTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <BackButton />
-          <div>
-            <h1 className="text-3xl font-bold">{event.title}</h1>
-            <p className="text-muted-foreground">Event Details</p>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/events">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">
+                {event.title}
+              </h1>
+              <p className="text-muted-foreground">
+                Event details and information
+              </p>
+            </div>
           </div>
+          {isAdmin && (
+            <div className="flex gap-2">
+              <Link href={`/admin/events/${event.id}/edit`}>
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          )}
         </div>
 
-        {isAdmin && <EditButton eventId={event.id} />}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Information */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Event Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Title
-                </h3>
-                <p className="text-lg font-medium">{event.title}</p>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Date
-                </h3>
-                <p className="text-sm">
-                  {new Date(event.eventDate).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                  Description
-                </h3>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {event.description}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Event Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Event Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                    Event Duration
-                  </h3>
-                  <p className="text-sm font-medium">
-                    {minutesToHumanReadable(event.eventDuration)}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                    Admin Duration
-                  </h3>
-                  <p className="text-sm font-medium">
-                    {minutesToHumanReadable(event.adminDuration)}
-                  </p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                    Participants
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        Total: {totalParticipants}
-                      </span>
-                    </div>
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      <div>New: {event.newParticipants}</div>
-                      <div>Returning: {event.returningParticipants}</div>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                    Cost
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg font-semibold">
-                      ${event.totalCost}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                  Event Type
-                </h3>
-                <BooleanDisplay
-                  value={event.eventIsYouthFocused}
-                  trueText="Youth-Focused Event"
-                  falseText="General Event"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Location & Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Location & Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Site
-                </h3>
-                <p className="font-medium">{event.siteName}</p>
-                <p className="text-sm text-muted-foreground">
-                  {event.siteAddress}
-                </p>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                  Activity Type
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{event.activityTypeName}</span>
-                </div>
-                <Badge variant="outline" className="mt-1">
-                  {event.programGoalName}
-                </Badge>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">
-                  Co-Host
-                </h3>
-                {event.hasCoHost && event.communityPartnerName ? (
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-muted-foreground" />
-                    <Badge variant="default">
-                      {event.communityPartnerName}
-                    </Badge>
-                  </div>
-                ) : (
-                  <BooleanDisplay
-                    value={false}
-                    trueText="Has Co-Host"
-                    falseText="No Co-Host"
-                  />
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Badges */}
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className="text-sm">
+            <Activity className="h-3 w-3 mr-1" />
+            {event.activityTypeName}
+          </Badge>
+          <Badge variant="outline" className="text-sm">
+            <Target className="h-3 w-3 mr-1" />
+            {event.programGoalName}
+          </Badge>
+          {event.eventIsYouthFocused && (
+            <Badge variant="secondary" className="text-sm">
+              Youth-Focused
+            </Badge>
+          )}
+          {event.hasCoHost && (
+            <Badge variant="secondary" className="text-sm">
+              Co-hosted
+            </Badge>
+          )}
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Event Organizer */}
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5" />
-                Event Organizer
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Name
-                </h3>
-                <p className="font-medium">{event.userName}</p>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Email
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a
-                    href={`mailto:${event.userEmail}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    {event.userEmail}
-                  </a>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Event Statistics */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Quick Stats
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {totalParticipants}
-                  </div>
-                  <div className="text-xs text-blue-600">
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-2xl font-bold">{totalParticipants}</div>
+                  <div className="text-xs text-muted-foreground">
                     Total Participants
                   </div>
                 </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">
-                    {minutesToHumanReadable(event.eventDuration)}
-                  </div>
-                  <div className="text-xs text-green-600">Event Duration</div>
+                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-blue-600" />
                 </div>
-              </div>
-
-              <div className="p-3 bg-orange-50 rounded-lg text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  ${event.totalCost}
-                </div>
-                <div className="text-xs text-orange-600">Total Cost</div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Timestamps */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Created
-                </h3>
-                <p className="text-sm">
-                  {new Date(event.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                  Last Updated
-                </h3>
-                <p className="text-sm">
-                  {new Date(event.updatedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-2xl font-bold">
+                    {event.eventDuration}m
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Event Duration
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-green-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
-          {isAdmin && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-2xl font-bold">
+                    ${parseFloat(event.totalCost).toFixed(0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Total Cost
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-2xl font-bold">
+                    ${costPerParticipant.toFixed(2)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Cost/Participant
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                  <Target className="h-5 w-5 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Details */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Primary Info */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Event Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Event Information
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <EditButton
-                  eventId={event.id}
-                  variant="outline"
-                  className="w-full justify-start"
-                />
-                <BackButton
-                  href="/admin/events"
-                  variant="outline"
-                  className="w-full justify-start"
-                  text="Back to Admin"
-                />
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">
+                    Date
+                  </div>
+                  <div className="font-semibold">
+                    {formatDate(event.eventDate)}
+                  </div>
+                </div>
+
+                <div className="h-px bg-border"></div>
+
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">
+                    Description
+                  </div>
+                  <p className="text-sm leading-relaxed">{event.description}</p>
+                </div>
               </CardContent>
             </Card>
-          )}
+
+            {/* Participation */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Participation Breakdown
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-3 rounded-lg bg-muted">
+                    <div className="text-2xl font-bold">
+                      {totalParticipants}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Total</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {event.newParticipants}
+                    </div>
+                    <div className="text-xs text-muted-foreground">New</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {event.returningParticipants}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Returning
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">New Participants</span>
+                    <span className="text-muted-foreground">
+                      {totalParticipants > 0
+                        ? (
+                            (event.newParticipants / totalParticipants) *
+                            100
+                          ).toFixed(1)
+                        : 0}
+                      %
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-orange-500 rounded-full"
+                      style={{
+                        width: `${totalParticipants > 0 ? (event.newParticipants / totalParticipants) * 100 : 0}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Returning Participants</span>
+                    <span className="text-muted-foreground">
+                      {totalParticipants > 0
+                        ? (
+                            (event.returningParticipants / totalParticipants) *
+                            100
+                          ).toFixed(1)
+                        : 0}
+                      %
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full"
+                      style={{
+                        width: `${totalParticipants > 0 ? (event.returningParticipants / totalParticipants) * 100 : 0}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Time Allocation */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Time Allocation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-3 rounded-lg bg-muted">
+                    <div className="text-2xl font-bold">{totalTime}m</div>
+                    <div className="text-xs text-muted-foreground">
+                      Total Time
+                    </div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted">
+                    <div className="text-2xl font-bold text-green-600">
+                      {event.eventDuration}m
+                    </div>
+                    <div className="text-xs text-muted-foreground">Event</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {event.adminDuration}m
+                    </div>
+                    <div className="text-xs text-muted-foreground">Admin</div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Event to Admin Ratio</span>
+                    <Badge variant="outline">
+                      {event.adminDuration > 0
+                        ? (event.eventDuration / event.adminDuration).toFixed(1)
+                        : event.eventDuration}
+                      :1
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Secondary Info */}
+          <div className="space-y-6">
+            {/* Location */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Location
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">
+                    Site
+                  </div>
+                  <div className="font-semibold">{event.siteName}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">
+                    Address
+                  </div>
+                  <div className="text-sm">{event.siteAddress}</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Organizer */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5" />
+                  Organizer
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-semibold">
+                    {event.userName
+                      .split(' ')
+                      .map(n => n[0])
+                      .join('')}
+                  </div>
+                  <div>
+                    <div className="font-semibold">{event.userName}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {event.userEmail}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Community Partner */}
+            {event.hasCoHost && event.communityPartnerName && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="h-5 w-5" />
+                    Community Partner
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Badge variant="outline" className="text-sm">
+                    {event.communityPartnerName}
+                  </Badge>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Financial Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Financial Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Total Cost
+                  </span>
+                  <span className="font-semibold">
+                    ${parseFloat(event.totalCost).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Cost per Participant
+                  </span>
+                  <span className="font-semibold">
+                    ${costPerParticipant.toFixed(2)}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Metadata */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Metadata</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Created</span>
+                  <span>{formatDateTime(event.createdAt)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Last Updated</span>
+                  <span>{formatDateTime(event.updatedAt)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Generate metadata for SEO
 export async function generateMetadata({ params }: EventPageProps) {
   const event = await getEvent(params.id);
 

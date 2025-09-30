@@ -1,3 +1,4 @@
+// app/api/admin/invite-user/route.s
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';

@@ -1,8 +1,10 @@
+// app/api/admin/supplies/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db, supplies, users } from '@/db';
+import { db, supplies, users, siteSupplies, sites } from '@/db';
 import { eq } from 'drizzle-orm';
+import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function GET(
   req: Request,
@@ -77,7 +79,8 @@ export async function PATCH(
     }
 
     const { id } = params;
-    const { name, costPerUnit, quantity } = await req.json();
+    const { name, costPerUnit, quantity, siteId, siteQuantity } =
+      await req.json();
 
     // Validate required fields
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -104,12 +107,26 @@ export async function PATCH(
     }
 
     // Validate quantity
+    const totalQuantity =
+      quantity !== undefined ? parseInt(quantity) : undefined;
     if (
       quantity !== undefined &&
-      (!Number.isInteger(parseInt(quantity)) || parseInt(quantity) < 0)
+      (!Number.isInteger(totalQuantity) || totalQuantity < 0)
     ) {
       return NextResponse.json(
         { error: 'Quantity must be a valid non-negative integer' },
+        { status: 400 }
+      );
+    }
+
+    // Validate site quantity if provided
+    const assignedQuantity = siteQuantity ? parseInt(siteQuantity) : undefined;
+    if (
+      siteQuantity !== undefined &&
+      (!Number.isInteger(assignedQuantity) || assignedQuantity < 0)
+    ) {
+      return NextResponse.json(
+        { error: 'Site quantity must be a valid non-negative integer' },
         { status: 400 }
       );
     }
@@ -139,25 +156,83 @@ export async function PATCH(
       );
     }
 
-    // Update supply
-    const [updatedSupply] = await db
-      .update(supplies)
-      .set({
-        name: name.trim(),
-        costPerUnit: costPerUnit
-          ? parseFloat(costPerUnit).toFixed(2)
-          : existingSupply.costPerUnit,
-        quantity:
-          quantity !== undefined ? parseInt(quantity) : existingSupply.quantity,
-        updatedAt: new Date(),
-      })
-      .where(eq(supplies.id, id))
-      .returning();
+    // Track changes for activity log
+    const changes: any = {};
+    if (name.trim() !== existingSupply.name) {
+      changes.name = { old: existingSupply.name, new: name.trim() };
+    }
+    if (
+      costPerUnit &&
+      parseFloat(costPerUnit).toFixed(2) !== existingSupply.costPerUnit
+    ) {
+      changes.costPerUnit = {
+        old: existingSupply.costPerUnit,
+        new: parseFloat(costPerUnit).toFixed(2),
+      };
+    }
+
+    // Update supply and handle site assignment in a transaction
+    const result = await db.transaction(async tx => {
+      // Update supply
+      const [updatedSupply] = await tx
+        .update(supplies)
+        .set({
+          name: name.trim(),
+          costPerUnit: costPerUnit
+            ? parseFloat(costPerUnit).toFixed(2)
+            : existingSupply.costPerUnit,
+          quantity:
+            totalQuantity !== undefined
+              ? totalQuantity
+              : existingSupply.quantity,
+          updatedAt: new Date(),
+        })
+        .where(eq(supplies.id, id))
+        .returning();
+
+      // Handle site assignment if provided
+      if (siteId && assignedQuantity !== undefined) {
+        // Check if site supply assignment already exists
+        const [existingSiteSupply] = await tx
+          .select()
+          .from(siteSupplies)
+          .where(eq(siteSupplies.supplyId, id))
+          .where(eq(siteSupplies.siteId, siteId))
+          .limit(1);
+
+        if (existingSiteSupply) {
+          // Update existing assignment
+          await tx
+            .update(siteSupplies)
+            .set({
+              quantity: assignedQuantity,
+              updatedAt: new Date(),
+            })
+            .where(eq(siteSupplies.id, existingSiteSupply.id));
+        } else {
+          // Create new assignment
+          await tx.insert(siteSupplies).values({
+            siteId: siteId,
+            supplyId: id,
+            quantity: assignedQuantity,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+      }
+
+      return updatedSupply;
+    });
+
+    // Log update if there are changes
+    if (Object.keys(changes).length > 0) {
+      await ActivityFeedService.logSupplyUpdated(currentUser.id, id, changes);
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Supply updated successfully',
-      supply: updatedSupply,
+      supply: result,
     });
   } catch (error) {
     console.error('Supply update error:', error);
@@ -206,11 +281,21 @@ export async function DELETE(
       return NextResponse.json({ error: 'Supply not found' }, { status: 404 });
     }
 
-    // TODO: Check if supply is being used in site_supplies or event_supply_distributions
-    // You might want to prevent deletion if the supply is in use
+    // Delete supply and related site supplies in a transaction
+    await db.transaction(async tx => {
+      // Delete all site supply assignments first
+      await tx.delete(siteSupplies).where(eq(siteSupplies.supplyId, id));
 
-    // Delete supply
-    await db.delete(supplies).where(eq(supplies.id, id));
+      // Delete the supply
+      await tx.delete(supplies).where(eq(supplies.id, id));
+    });
+
+    // Log deletion
+    await ActivityFeedService.logSupplyDeleted(
+      currentUser.id,
+      id,
+      existingSupply.name
+    );
 
     return NextResponse.json({
       success: true,

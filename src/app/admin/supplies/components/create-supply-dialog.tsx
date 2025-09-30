@@ -30,7 +30,6 @@ export default function CreateSupplyDialog({
   const [form, setForm] = useState({
     name: '',
     costPerUnit: '',
-    quantity: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -45,7 +44,6 @@ export default function CreateSupplyDialog({
         body: JSON.stringify({
           name: form.name,
           costPerUnit: form.costPerUnit || undefined,
-          quantity: form.quantity || undefined,
         }),
       });
 
@@ -53,7 +51,10 @@ export default function CreateSupplyDialog({
 
       if (data.success) {
         onSuccess(`Supply "${form.name}" created successfully!`);
-        setForm({ name: '', costPerUnit: '', quantity: '' });
+        setForm({
+          name: '',
+          costPerUnit: '',
+        });
         onOpenChange(false);
         onRefresh();
       } else {
@@ -72,7 +73,8 @@ export default function CreateSupplyDialog({
         <DialogHeader>
           <DialogTitle>Create New Supply</DialogTitle>
           <DialogDescription>
-            Add a new supply to your catalog.
+            Add a new supply to your catalog. Quantities will be managed through
+            site assignments.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -105,21 +107,9 @@ export default function CreateSupplyDialog({
               placeholder="0.00"
               disabled={loading}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="createQuantity">Initial Quantity</Label>
-            <Input
-              id="createQuantity"
-              type="number"
-              min="0"
-              value={form.quantity}
-              onChange={e =>
-                setForm(prev => ({ ...prev, quantity: e.target.value }))
-              }
-              placeholder="0"
-              disabled={loading}
-            />
+            <p className="text-xs text-muted-foreground">
+              Optional - can be updated later
+            </p>
           </div>
 
           <div className="flex justify-end gap-2">
@@ -131,7 +121,7 @@ export default function CreateSupplyDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !form.name.trim()}>
               {loading ? 'Creating...' : 'Create Supply'}
             </Button>
           </div>

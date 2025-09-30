@@ -9,7 +9,7 @@ export function useActivityFeed() {
   useEffect(() => {
     async function fetchActivityFeed() {
       try {
-        const response = await fetch('/api/activity-feed?limit=20');
+        const response = await fetch('/api/activity-feed?limit=500');
         if (!response.ok) throw new Error('Failed to fetch');
 
         const data = await response.json();

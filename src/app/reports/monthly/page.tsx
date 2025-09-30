@@ -1,4 +1,5 @@
-import { MonthlyActivityReport } from '@/components/MonthlyActivityReport';
+// import { MonthlyActivityReport } from '@/components/MonthlyActivityReport';
+import MonthlyActivityReport from '@/components/reports/monthly';
 import { generateMonthlyActivityReport } from '@/server/actions/reports';
 import { Suspense } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,7 +16,7 @@ interface PageProps {
 
 function ReportSkeleton() {
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="max-w-7xl mx-auto py-6 space-y-6">
       <div className="flex items-center justify-center py-12">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -55,7 +56,7 @@ async function ReportContent({ searchParams }: PageProps) {
     );
 
     return (
-      <div className="container mx-auto py-6">
+      <div className="max-w-7xl mx-auto py-6">
         <MonthlyActivityReport
           data={reportData}
           currentParams={{ startYear, startMonth, endYear, endMonth }}
@@ -64,7 +65,7 @@ async function ReportContent({ searchParams }: PageProps) {
     );
   } catch (error) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="max-w-7xl mx-auto py-6">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="text-center">

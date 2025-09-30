@@ -213,27 +213,19 @@ export default function SitesTable() {
               </CardDescription>
             </div>
 
-            <div className="flex gap-2">
-              {/* Search Bar */}
-              <div className="w-full md:w-80">
-                <form onSubmit={handleSearch} className="flex gap-2">
-                  <Input
-                    placeholder="Search by name, address, user, or community partner..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button type="submit" variant="outline" size="icon">
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </form>
-              </div>
-
-              {/* Add Site Button */}
-              <Button onClick={() => router.push('/admin/sites/new')}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Site
-              </Button>
+            {/* Search Bar */}
+            <div className="w-full md:w-80">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <Input
+                  placeholder="Search by name, address, user, or community partner..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" variant="outline" size="icon">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
             </div>
           </div>
         </CardHeader>

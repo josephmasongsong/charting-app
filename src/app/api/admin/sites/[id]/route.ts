@@ -1,3 +1,4 @@
+// app/api/admin/sites/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -357,6 +358,56 @@ export async function PATCH(
       );
     }
 
+    // Track changes for activity log
+    const changes: any = {};
+    if (data.name !== existingSite.name) {
+      changes.name = { old: existingSite.name, new: data.name };
+    }
+    if (data.address !== existingSite.address) {
+      changes.address = { old: existingSite.address, new: data.address };
+    }
+    if (Number(data.numberOfTenants) !== existingSite.numberOfTenants) {
+      changes.numberOfTenants = {
+        old: existingSite.numberOfTenants,
+        new: Number(data.numberOfTenants),
+      };
+    }
+    if (data.hasCommunityRoom !== existingSite.hasCommunityRoom) {
+      changes.hasCommunityRoom = {
+        old: existingSite.hasCommunityRoom,
+        new: data.hasCommunityRoom,
+      };
+    }
+
+    // Check community partner changes
+    if (data.communityPartnerId !== existingSite.communityPartnerId) {
+      let oldPartnerName = null;
+      let newPartnerName = null;
+
+      if (existingSite.communityPartnerId) {
+        const [oldPartner] = await db
+          .select()
+          .from(communityPartners)
+          .where(eq(communityPartners.id, existingSite.communityPartnerId))
+          .limit(1);
+        oldPartnerName = oldPartner?.name || null;
+      }
+
+      if (data.communityPartnerId) {
+        const [newPartner] = await db
+          .select()
+          .from(communityPartners)
+          .where(eq(communityPartners.id, data.communityPartnerId))
+          .limit(1);
+        newPartnerName = newPartner?.name || null;
+      }
+
+      changes.communityPartnerName = {
+        old: oldPartnerName,
+        new: newPartnerName,
+      };
+    }
+
     // Use transaction to update site and manage supplies
     const result = await db.transaction(async tx => {
       // Update site
@@ -531,6 +582,11 @@ export async function PATCH(
       }
     }
 
+    // Log site updates
+    if (Object.keys(changes).length > 0) {
+      await ActivityFeedService.logSiteUpdated(currentUser.id, id, changes);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Site updated successfully',
@@ -622,6 +678,13 @@ export async function DELETE(
       // Delete site
       await tx.delete(sites).where(eq(sites.id, id));
     });
+
+    // Log site deletion
+    await ActivityFeedService.logSiteDeleted(
+      currentUser.id,
+      id,
+      existingSite.name
+    );
 
     // ===== NEW: Log supplies removed when site is deleted =====
     if (siteSuppliesForLogging.length > 0) {

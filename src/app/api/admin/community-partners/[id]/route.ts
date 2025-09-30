@@ -1,8 +1,10 @@
+// app/api/admin/community-partners/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, communityPartners, users } from '@/db';
 import { eq } from 'drizzle-orm';
+import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function GET(
   req: Request,
@@ -133,6 +135,16 @@ export async function PATCH(
       .where(eq(communityPartners.id, id))
       .returning();
 
+    // Log update if name changed
+    if (name.trim() !== existingPartner.name) {
+      await ActivityFeedService.logCommunityPartnerUpdated(
+        currentUser.id,
+        id,
+        existingPartner.name,
+        name.trim()
+      );
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Community partner updated successfully',
@@ -190,6 +202,13 @@ export async function DELETE(
 
     // Delete community partner
     await db.delete(communityPartners).where(eq(communityPartners.id, id));
+
+    // Log deletion
+    await ActivityFeedService.logCommunityPartnerDeleted(
+      currentUser.id,
+      id,
+      existingPartner.name
+    );
 
     return NextResponse.json({
       success: true,

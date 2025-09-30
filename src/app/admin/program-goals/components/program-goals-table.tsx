@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import {
   Card,
   CardContent,
@@ -20,7 +26,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Plus,
   Edit,
   Trash2,
   Search,
@@ -34,7 +39,6 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-import CreateGoalDialog from './create-goal-dialog';
 import EditGoalDialog from './edit-goal-dialog';
 import DeleteGoalDialog from './delete-goal-dialog';
 
@@ -59,7 +63,22 @@ interface SortConfig {
   order: SortOrder;
 }
 
-export default function ProgramGoalsTable() {
+interface ProgramGoalsTableProps {
+  message?: string;
+  error?: string;
+  onClearMessage?: () => void;
+  onClearError?: () => void;
+}
+
+// Define the ref methods that the parent can call
+export interface ProgramGoalsTableRef {
+  refreshData: () => void;
+}
+
+const ProgramGoalsTable = forwardRef<
+  ProgramGoalsTableRef,
+  ProgramGoalsTableProps
+>(({ message, error, onClearMessage, onClearError }, ref) => {
   const [goals, setGoals] = useState<ProgramGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -75,14 +94,14 @@ export default function ProgramGoalsTable() {
   });
 
   // Dialog states
-  const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<ProgramGoal | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingGoal, setDeletingGoal] = useState<ProgramGoal | null>(null);
 
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  // Internal message/error state for table-specific operations
+  const [internalMessage, setInternalMessage] = useState('');
+  const [internalError, setInternalError] = useState('');
 
   // Fetch goals
   const fetchGoals = useCallback(
@@ -103,18 +122,25 @@ export default function ProgramGoalsTable() {
         if (response.ok) {
           setGoals(data.programGoals);
           setPagination(data.pagination);
-          setError('');
+          setInternalError('');
         } else {
-          setError(data.error || 'Failed to fetch program goals');
+          setInternalError(data.error || 'Failed to fetch program goals');
         }
       } catch (error) {
-        setError('Network error occurred');
+        setInternalError('Network error occurred');
       } finally {
         setLoading(false);
       }
     },
     [sortConfig]
   );
+
+  // Expose refresh method to parent component
+  useImperativeHandle(ref, () => ({
+    refreshData: () => {
+      fetchGoals(pagination.page, search, sortConfig);
+    },
+  }));
 
   useEffect(() => {
     fetchGoals();
@@ -152,33 +178,69 @@ export default function ProgramGoalsTable() {
     fetchGoals(pagination.page, search, sortConfig);
   };
 
-  // Handle success/error messages
-  const showMessage = (msg: string) => {
-    setMessage(msg);
-    setError('');
+  // Handle success/error messages for internal operations
+  const showInternalMessage = (msg: string) => {
+    setInternalMessage(msg);
+    setInternalError('');
+    // Clear message after 5 seconds
+    setTimeout(() => setInternalMessage(''), 5000);
   };
 
-  const showError = (err: string) => {
-    setError(err);
-    setMessage('');
+  const showInternalError = (err: string) => {
+    setInternalError(err);
+    setInternalMessage('');
+    // Clear error after 5 seconds
+    setTimeout(() => setInternalError(''), 5000);
   };
+
+  // Determine which message/error to show (parent props take precedence)
+  const displayMessage = message || internalMessage;
+  const displayError = error || internalError;
 
   return (
     <>
       {/* Messages */}
-      {message && (
+      {displayMessage && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            {message}
+            {displayMessage}
           </AlertDescription>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            onClick={() => {
+              if (message && onClearMessage) {
+                onClearMessage();
+              } else {
+                setInternalMessage('');
+              }
+            }}
+          >
+            ×
+          </Button>
         </Alert>
       )}
 
-      {error && (
+      {displayError && (
         <Alert variant="destructive">
           <XCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{displayError}</AlertDescription>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            onClick={() => {
+              if (error && onClearError) {
+                onClearError();
+              } else {
+                setInternalError('');
+              }
+            }}
+          >
+            ×
+          </Button>
         </Alert>
       )}
 
@@ -196,27 +258,19 @@ export default function ProgramGoalsTable() {
               </CardDescription>
             </div>
 
-            <div className="flex gap-2">
-              {/* Search Bar */}
-              <div className="w-full md:w-80">
-                <form onSubmit={handleSearch} className="flex gap-2">
-                  <Input
-                    placeholder="Search by name..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button type="submit" variant="outline" size="icon">
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </form>
-              </div>
-
-              {/* Add Button */}
-              <Button onClick={() => setCreateOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Goal
-              </Button>
+            {/* Search Bar */}
+            <div className="w-full md:w-80">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <Input
+                  placeholder="Search by name..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" variant="outline" size="icon">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
             </div>
           </div>
         </CardHeader>
@@ -477,20 +531,12 @@ export default function ProgramGoalsTable() {
       </Card>
 
       {/* Dialogs */}
-      <CreateGoalDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSuccess={showMessage}
-        onError={showError}
-        onRefresh={refreshData}
-      />
-
       <EditGoalDialog
         open={editOpen}
         onOpenChange={setEditOpen}
         goal={editingGoal}
-        onSuccess={showMessage}
-        onError={showError}
+        onSuccess={showInternalMessage}
+        onError={showInternalError}
         onRefresh={refreshData}
       />
 
@@ -498,10 +544,14 @@ export default function ProgramGoalsTable() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         goal={deletingGoal}
-        onSuccess={showMessage}
-        onError={showError}
+        onSuccess={showInternalMessage}
+        onError={showInternalError}
         onRefresh={refreshData}
       />
     </>
   );
-}
+});
+
+ProgramGoalsTable.displayName = 'ProgramGoalsTable';
+
+export default ProgramGoalsTable;

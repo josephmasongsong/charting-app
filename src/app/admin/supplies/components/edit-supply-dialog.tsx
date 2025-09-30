@@ -41,7 +41,6 @@ export default function EditSupplyDialog({
   const [form, setForm] = useState({
     name: '',
     costPerUnit: '',
-    quantity: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -50,7 +49,6 @@ export default function EditSupplyDialog({
       setForm({
         name: supply.name,
         costPerUnit: supply.costPerUnit,
-        quantity: supply.quantity.toString(),
       });
     }
   }, [supply]);
@@ -68,7 +66,6 @@ export default function EditSupplyDialog({
         body: JSON.stringify({
           name: form.name,
           costPerUnit: form.costPerUnit,
-          quantity: form.quantity,
         }),
       });
 
@@ -93,7 +90,10 @@ export default function EditSupplyDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Supply</DialogTitle>
-          <DialogDescription>Update the supply information.</DialogDescription>
+          <DialogDescription>
+            Update the supply name and cost. Quantities are managed separately
+            through site assignments.
+          </DialogDescription>
         </DialogHeader>
         {supply && (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -124,21 +124,6 @@ export default function EditSupplyDialog({
                   setForm(prev => ({ ...prev, costPerUnit: e.target.value }))
                 }
                 placeholder="0.00"
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="editQuantity">Quantity</Label>
-              <Input
-                id="editQuantity"
-                type="number"
-                min="0"
-                value={form.quantity}
-                onChange={e =>
-                  setForm(prev => ({ ...prev, quantity: e.target.value }))
-                }
-                placeholder="0"
                 disabled={loading}
               />
             </div>

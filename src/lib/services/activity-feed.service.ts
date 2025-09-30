@@ -1,10 +1,48 @@
+// lib/services/activity-feed.service.ts
 import { eq, desc } from 'drizzle-orm';
 import { db, users } from '@/db';
 import { activityFeed } from '@/db/schema/activity-feed.schema';
 import { ActivityFeedItem } from '../types/activity-feed.types';
 
 export class ActivityFeedService {
-  // Create activity when user is invited
+  // ============= EXISTING METHODS =============
+
+  static async logSupplyDistribution(
+    actorId: string,
+    distributionId: string,
+    distributionData: {
+      siteName: string;
+      distributionType: string;
+      recipientNotes: string;
+      totalCost: number;
+      supplies: Array<{
+        supplyName: string;
+        quantity: number;
+        unitCostAtTime: string;
+        lineTotal: string;
+      }>;
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'supply_distribution_logged',
+      actorId,
+      targetType: 'supply_distribution',
+      targetId: distributionId,
+      metadata: {
+        siteName: distributionData.siteName,
+        distributionType: distributionData.distributionType,
+        recipientNotes: distributionData.recipientNotes,
+        totalCost: distributionData.totalCost,
+        supplies: distributionData.supplies,
+        totalItems: distributionData.supplies.length,
+        totalQuantity: distributionData.supplies.reduce(
+          (sum, supply) => sum + supply.quantity,
+          0
+        ),
+      },
+    });
+  }
+
   static async logUserInvited(
     actorId: string,
     invitedEmail: string,
@@ -14,7 +52,7 @@ export class ActivityFeedService {
       activityType: 'user_invited',
       actorId,
       targetType: 'user_invitation',
-      targetId: crypto.randomUUID(), // Generate a temp ID for invitations
+      targetId: crypto.randomUUID(),
       metadata: {
         invitedEmail,
         title,
@@ -22,7 +60,6 @@ export class ActivityFeedService {
     });
   }
 
-  // Create activity when event is created
   static async logEventCreated(
     actorId: string,
     eventId: string,
@@ -49,7 +86,6 @@ export class ActivityFeedService {
     });
   }
 
-  // Create activity when activity type is created
   static async logActivityTypeCreated(
     actorId: string,
     activityTypeId: string,
@@ -70,7 +106,6 @@ export class ActivityFeedService {
     });
   }
 
-  // Create activity when site is created
   static async logSiteCreated(
     actorId: string,
     siteId: string,
@@ -91,7 +126,6 @@ export class ActivityFeedService {
     });
   }
 
-  // Create activity when community partner is added
   static async logCommunityPartnerAdded(
     actorId: string,
     partnerId: string,
@@ -112,7 +146,6 @@ export class ActivityFeedService {
     });
   }
 
-  // Create activity when program goal is created
   static async logProgramGoalCreated(
     actorId: string,
     programGoalId: string,
@@ -131,7 +164,6 @@ export class ActivityFeedService {
     });
   }
 
-  // Create activity when supply is created
   static async logSupplyCreated(
     actorId: string,
     supplyId: string,
@@ -154,7 +186,6 @@ export class ActivityFeedService {
     });
   }
 
-  // Create activity when supplies are added to a site
   static async logSuppliesAddedToSite(
     actorId: string,
     siteId: string,
@@ -180,7 +211,6 @@ export class ActivityFeedService {
     });
   }
 
-  // Create activity when supplies are removed from a site
   static async logSuppliesRemovedFromSite(
     actorId: string,
     siteId: string,
@@ -206,7 +236,6 @@ export class ActivityFeedService {
     });
   }
 
-  // Create activity when site supply quantities are updated
   static async logSiteSupplyUpdated(
     actorId: string,
     siteId: string,
@@ -234,7 +263,275 @@ export class ActivityFeedService {
     });
   }
 
-  // Get recent activity feed
+  // ============= NEW UPDATE METHODS =============
+
+  static async logEventUpdated(
+    actorId: string,
+    eventId: string,
+    changes: {
+      title?: { old: string; new: string };
+      eventDate?: { old: string; new: string };
+      siteName?: { old: string; new: string };
+      totalParticipants?: { old: number; new: number };
+      totalCost?: { old: string; new: string };
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'event_updated',
+      actorId,
+      targetType: 'event',
+      targetId: eventId,
+      metadata: {
+        changes,
+      },
+    });
+  }
+
+  static async logSiteUpdated(
+    actorId: string,
+    siteId: string,
+    changes: {
+      name?: { old: string; new: string };
+      address?: { old: string; new: string };
+      numberOfTenants?: { old: number; new: number };
+      hasCommunityRoom?: { old: boolean; new: boolean };
+      communityPartnerName?: { old: string | null; new: string | null };
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'site_updated',
+      actorId,
+      targetType: 'site',
+      targetId: siteId,
+      metadata: {
+        changes,
+      },
+    });
+  }
+
+  static async logProgramGoalUpdated(
+    actorId: string,
+    programGoalId: string,
+    oldName: string,
+    newName: string
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'program_goal_updated',
+      actorId,
+      targetType: 'program_goal',
+      targetId: programGoalId,
+      metadata: {
+        oldName,
+        newName,
+      },
+    });
+  }
+
+  static async logActivityTypeUpdated(
+    actorId: string,
+    activityTypeId: string,
+    changes: {
+      name?: { old: string; new: string };
+      programGoalName?: { old: string; new: string };
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'activity_type_updated',
+      actorId,
+      targetType: 'activity_type',
+      targetId: activityTypeId,
+      metadata: {
+        changes,
+      },
+    });
+  }
+
+  static async logCommunityPartnerUpdated(
+    actorId: string,
+    partnerId: string,
+    oldName: string,
+    newName: string
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'community_partner_updated',
+      actorId,
+      targetType: 'community_partner',
+      targetId: partnerId,
+      metadata: {
+        oldName,
+        newName,
+      },
+    });
+  }
+
+  static async logSupplyUpdated(
+    actorId: string,
+    supplyId: string,
+    changes: {
+      name?: { old: string; new: string };
+      costPerUnit?: { old: string; new: string };
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'supply_updated',
+      actorId,
+      targetType: 'supply',
+      targetId: supplyId,
+      metadata: {
+        changes,
+      },
+    });
+  }
+
+  static async logUserUpdated(
+    actorId: string,
+    targetUserId: string,
+    changes: {
+      name?: { old: string; new: string };
+      email?: { old: string; new: string };
+      role?: { old: string; new: string };
+      jobTitle?: { old: string | null; new: string | null };
+      region?: { old: string; new: string };
+      isActive?: { old: boolean; new: boolean };
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'user_updated',
+      actorId,
+      targetType: 'user',
+      targetId: targetUserId,
+      metadata: {
+        changes,
+      },
+    });
+  }
+
+  // ============= NEW DELETE METHODS =============
+
+  static async logEventDeleted(
+    actorId: string,
+    eventId: string,
+    eventData: {
+      title: string;
+      siteName: string;
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'event_deleted',
+      actorId,
+      targetType: 'event',
+      targetId: eventId,
+      metadata: {
+        eventTitle: eventData.title,
+        siteName: eventData.siteName,
+      },
+    });
+  }
+
+  static async logSiteDeleted(
+    actorId: string,
+    siteId: string,
+    siteName: string
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'site_deleted',
+      actorId,
+      targetType: 'site',
+      targetId: siteId,
+      metadata: {
+        siteName,
+      },
+    });
+  }
+
+  static async logProgramGoalDeleted(
+    actorId: string,
+    programGoalId: string,
+    programGoalName: string
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'program_goal_deleted',
+      actorId,
+      targetType: 'program_goal',
+      targetId: programGoalId,
+      metadata: {
+        programGoalName,
+      },
+    });
+  }
+
+  static async logActivityTypeDeleted(
+    actorId: string,
+    activityTypeId: string,
+    activityTypeName: string
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'activity_type_deleted',
+      actorId,
+      targetType: 'activity_type',
+      targetId: activityTypeId,
+      metadata: {
+        activityTypeName,
+      },
+    });
+  }
+
+  static async logCommunityPartnerDeleted(
+    actorId: string,
+    partnerId: string,
+    partnerName: string
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'community_partner_deleted',
+      actorId,
+      targetType: 'community_partner',
+      targetId: partnerId,
+      metadata: {
+        partnerName,
+      },
+    });
+  }
+
+  static async logSupplyDeleted(
+    actorId: string,
+    supplyId: string,
+    supplyName: string
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'supply_deleted',
+      actorId,
+      targetType: 'supply',
+      targetId: supplyId,
+      metadata: {
+        supplyName,
+      },
+    });
+  }
+
+  static async logSupplyDistributionDeleted(
+    actorId: string,
+    distributionId: string,
+    distributionData: {
+      siteName: string;
+      distributionType: string;
+      totalItems: number;
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'supply_distribution_deleted',
+      actorId,
+      targetType: 'supply_distribution',
+      targetId: distributionId,
+      metadata: {
+        siteName: distributionData.siteName,
+        distributionType: distributionData.distributionType,
+        totalItems: distributionData.totalItems,
+      },
+    });
+  }
+
+  // ============= HELPER METHOD =============
+
   static async getRecentActivity(
     limit: number = 20
   ): Promise<ActivityFeedItem[]> {

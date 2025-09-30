@@ -1,42 +1,83 @@
+// app/sites/page.tsx
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { db, sites, users, communityPartners } from '@/db';
-import { eq, ilike, or, desc, sql } from 'drizzle-orm';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Users } from 'lucide-react';
-import SitesSearch from './components/SitesSearch';
-import SiteCard from './components/SiteCard';
+import { eq, ilike, or, and, desc, sql } from 'drizzle-orm';
+import SitesListClient from './components/SitesListClient';
 
 interface SitesPageProps {
   searchParams: {
     search?: string;
     page?: string;
+    isSingleSeniorOnly?: 'true' | 'false' | 'all';
+    hasCommunityRoom?: 'true' | 'false' | 'all';
+    userId?: string; // user id or 'all'
   };
 }
 
-// Server function to fetch sites
-async function getSites(search?: string, page = 1, limit = 20) {
+async function getFilterOptions() {
+  // Only users who actually own at least one site (inner join ensures ownership)
+  const organizers = await db
+    .selectDistinct({
+      id: users.id,
+      name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+    })
+    .from(users)
+    .innerJoin(sites, eq(sites.userId, users.id))
+    .orderBy(sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`);
+
+  return { organizers };
+}
+
+async function getSites(params: {
+  search?: string;
+  page?: number;
+  limit?: number;
+  isSingleSeniorOnly?: 'true' | 'false' | 'all';
+  hasCommunityRoom?: 'true' | 'false' | 'all';
+  userId?: string; // concrete id or 'all'
+}) {
+  const {
+    search = '',
+    page = 1,
+    limit = 10,
+    isSingleSeniorOnly = 'all',
+    hasCommunityRoom = 'all',
+    userId = 'all',
+  } = params;
+
   const offset = (page - 1) * limit;
 
-  // Build where condition based on search
-  const searchCondition = search
-    ? or(
+  const conditions: any[] = [];
+
+  if (search) {
+    conditions.push(
+      or(
         ilike(sites.name, `%${search}%`),
         ilike(sites.address, `%${search}%`),
-        // ilike(users.name, `%${search}%`),
         ilike(communityPartners.name, `%${search}%`)
       )
-    : undefined;
+    );
+  }
 
-  const sitesData = await db
+  if (isSingleSeniorOnly && isSingleSeniorOnly !== 'all') {
+    conditions.push(
+      eq(sites.isSingleSeniorOnly, isSingleSeniorOnly === 'true')
+    );
+  }
+
+  if (hasCommunityRoom && hasCommunityRoom !== 'all') {
+    conditions.push(eq(sites.hasCommunityRoom, hasCommunityRoom === 'true'));
+  }
+
+  if (userId && userId !== 'all') {
+    conditions.push(eq(sites.userId, userId));
+  }
+
+  const whereCond = conditions.length ? and(...conditions) : undefined;
+
+  const data = await db
     .select({
       id: sites.id,
       name: sites.name,
@@ -45,6 +86,9 @@ async function getSites(search?: string, page = 1, limit = 20) {
       hasCommunityPartner: sites.hasCommunityPartner,
       communityPartnerName: communityPartners.name,
       userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+      isSingleSeniorOnly: sites.isSingleSeniorOnly,
+      hasCommunityRoom: sites.hasCommunityRoom,
+      userId: sites.userId,
     })
     .from(sites)
     .leftJoin(users, eq(sites.userId, users.id))
@@ -52,58 +96,68 @@ async function getSites(search?: string, page = 1, limit = 20) {
       communityPartners,
       eq(sites.communityPartnerId, communityPartners.id)
     )
-    .where(searchCondition)
+    .where(whereCond)
     .limit(limit)
     .offset(offset)
     .orderBy(desc(sites.createdAt));
 
-  return sitesData;
+  const totalCountRes = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(sites)
+    .leftJoin(users, eq(sites.userId, users.id))
+    .leftJoin(
+      communityPartners,
+      eq(sites.communityPartnerId, communityPartners.id)
+    )
+    .where(whereCond);
+
+  const totalCount = Number(totalCountRes[0]?.count || 0);
+
+  return { data, totalCount };
 }
 
 export default async function SitesPage({ searchParams }: SitesPageProps) {
   const session = await getServerSession(authOptions);
-
-  // Redirect unauthenticated users to login
-  if (!session) {
-    redirect('/login');
-  }
+  if (!session) redirect('/login');
 
   const search = searchParams.search || '';
-  const page = parseInt(searchParams.page || '1');
+  const page = parseInt(searchParams.page || '1', 10);
+  const isSingleSeniorOnly =
+    (searchParams.isSingleSeniorOnly as 'true' | 'false' | 'all') || 'all';
+  const hasCommunityRoom =
+    (searchParams.hasCommunityRoom as 'true' | 'false' | 'all') || 'all';
+  const userId = searchParams.userId || 'all';
 
-  // Fetch sites data on the server
-  const sitesData = await getSites(search, page);
+  const { data, totalCount } = await getSites({
+    search,
+    page,
+    isSingleSeniorOnly,
+    hasCommunityRoom,
+    userId,
+  });
+
+  const { organizers } = await getFilterOptions();
+  const isAdmin = (session as any).user.role === 'admin';
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Sites</h1>
-        <p className="text-muted-foreground">Browse all available sites</p>
-      </div>
-
-      {/* Search Component (Client Component for interactivity) */}
-      <SitesSearch initialSearch={search} />
-
-      {/* Sites Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sitesData.map(site => (
-          <SiteCard key={site.id} site={site} />
-        ))}
-      </div>
-
-      {sitesData.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          {search ? `No sites found matching "${search}".` : 'No sites found.'}
-        </div>
-      )}
-    </div>
+    <SitesListClient
+      initialSites={data as any}
+      initialFilters={{
+        search,
+        page,
+        isSingleSeniorOnly,
+        hasCommunityRoom,
+        userId,
+      }}
+      filterOptions={{ organizers }}
+      totalCount={totalCount}
+      isAdmin={isAdmin}
+    />
   );
 }
 
-// Generate metadata for SEO
 export async function generateMetadata({ searchParams }: SitesPageProps) {
   const search = searchParams.search;
-
   return {
     title: search
       ? `Sites - Search results for "${search}"`

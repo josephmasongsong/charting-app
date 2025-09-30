@@ -1,8 +1,10 @@
+// app/api/admin/activity-types/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, users, programGoals, activityTypes } from '@/db';
 import { eq } from 'drizzle-orm';
+import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function GET(
   req: Request,
@@ -152,6 +154,24 @@ export async function PATCH(
       );
     }
 
+    // Track changes
+    const changes: any = {};
+    if (name.trim() !== existingType.name) {
+      changes.name = { old: existingType.name, new: name.trim() };
+    }
+    if (programGoalId !== existingType.programGoalId) {
+      // Get old program goal name
+      const [oldGoal] = await db
+        .select()
+        .from(programGoals)
+        .where(eq(programGoals.id, existingType.programGoalId))
+        .limit(1);
+      changes.programGoalName = {
+        old: oldGoal?.name || 'Unknown',
+        new: programGoal.name,
+      };
+    }
+
     // Update activity type
     const [updatedType] = await db
       .update(activityTypes)
@@ -162,6 +182,15 @@ export async function PATCH(
       })
       .where(eq(activityTypes.id, id))
       .returning();
+
+    // Log update if there are changes
+    if (Object.keys(changes).length > 0) {
+      await ActivityFeedService.logActivityTypeUpdated(
+        currentUser.id,
+        id,
+        changes
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -220,6 +249,13 @@ export async function DELETE(
 
     // Delete activity type
     await db.delete(activityTypes).where(eq(activityTypes.id, id));
+
+    // Log deletion
+    await ActivityFeedService.logActivityTypeDeleted(
+      currentUser.id,
+      id,
+      existingType.name
+    );
 
     return NextResponse.json({
       success: true,

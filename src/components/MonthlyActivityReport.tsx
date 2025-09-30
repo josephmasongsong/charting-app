@@ -29,7 +29,10 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Package,
+  Truck,
 } from 'lucide-react';
+import { MonthlyReportExportButton } from './MonthlyReportExportButton';
 
 interface ActivityTypeByRegion {
   activityTypeId: string;
@@ -90,6 +93,21 @@ interface RegionalCostGrowth {
   growthType: 'growth' | 'decline' | 'stable';
 }
 
+interface SupplyDistributionSummary {
+  supplyId: string;
+  supplyName: string;
+  totalQuantityDistributed: number;
+  totalCost: number;
+  distributionCount: number;
+}
+
+interface MonthlySupplyDistributionGrowth {
+  currentMonthQuantity: number;
+  previousMonthQuantity: number;
+  growthRate: number;
+  growthType: 'growth' | 'decline' | 'stable';
+}
+
 interface MonthlyActivityReportData {
   reportMonth: string;
   totalEvents: number;
@@ -106,6 +124,8 @@ interface MonthlyActivityReportData {
   monthlyEventGrowth: MonthlyEventGrowth[];
   monthlyCostGrowth: MonthlyCostGrowth;
   regionalCostGrowth: RegionalCostGrowth[];
+  supplyDistributions: SupplyDistributionSummary[];
+  monthlySupplyDistributionGrowth: MonthlySupplyDistributionGrowth;
   regions: string[];
   availableDateRange: { minDate: string; maxDate: string };
 }
@@ -525,6 +545,71 @@ function DateRangeDialog({
   );
 }
 
+function SupplyDistributionsSidebar({
+  supplyDistributions,
+}: {
+  supplyDistributions: SupplyDistributionSummary[];
+}) {
+  return (
+    <Card className="h-fit">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Package className="h-5 w-5 text-primary" />
+          Supplies Distributed
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {supplyDistributions.length > 0 ? (
+          <div className="rounded-md border">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="h-10 px-3 text-left align-middle text-xs uppercase text-muted-foreground">
+                      Supply
+                    </th>
+                    <th className="h-10 px-3 text-center align-middle text-xs uppercase text-muted-foreground">
+                      Distributions
+                    </th>
+                    <th className="h-10 px-3 text-right align-middle text-xs uppercase text-muted-foreground">
+                      Qty
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {supplyDistributions.map(supply => (
+                    <tr
+                      key={supply.supplyId}
+                      className="border-b transition-colors hover:bg-muted/50"
+                    >
+                      <td className="p-3 align-middle font-normal text-sm">
+                        <div className="truncate">{supply.supplyName}</div>
+                      </td>
+                      <td className="p-3 align-middle text-center font-normal text-sm">
+                        {supply.distributionCount}
+                      </td>
+                      <td className="p-3 align-middle text-right font-normal text-sm">
+                        {supply.totalQuantityDistributed.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Truck className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">
+              No supplies distributed during this period
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function ActivityTypeByRegionTable({
   data,
   participantGrowthData,
@@ -778,14 +863,6 @@ export function MonthlyActivityReport({
         ? 'decline'
         : 'stable';
 
-  // Calculate admin hours for metric card
-  const currentPeriodAdminHours = Math.round(data.totalAdminDuration / 60);
-
-  // Calculate admin hours growth (similar to cost growth logic)
-  // This would ideally come from server, but we can estimate from existing patterns
-  const adminHoursGrowthRate = 0; // Placeholder - should come from server
-  const adminHoursGrowthType = 'stable';
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -799,15 +876,12 @@ export function MonthlyActivityReport({
             currentParams={currentParams}
             availableDateRange={data.availableDateRange}
           />
-          <Button variant="outline" size="sm" onClick={handleExportPDF}>
-            <Download className="h-4 w-4 mr-2" />
-            Export XLS
-          </Button>
+          <MonthlyReportExportButton data={data} />
         </div>
       </div>
 
       {/* Metric Cards - Top Row */}
-      <div className="grid gap-4 grid-cols-3">
+      <div className="grid gap-4 grid-cols-4">
         <MetricCard
           title="Total Events"
           value={data.totalEvents}
@@ -858,7 +932,7 @@ export function MonthlyActivityReport({
           title="Total Cost"
           value={data.totalCost}
           icon={DollarSign}
-          formatter={val => `$${val.toFixed(2)}`}
+          formatter={val => `${val.toFixed(2)}`}
           subMetrics={[
             {
               label: 'vs Previous Period',
@@ -876,31 +950,69 @@ export function MonthlyActivityReport({
             },
           ]}
         />
+        <MetricCard
+          title="Items Distributed"
+          value={data.supplyDistributions.reduce(
+            (sum, item) => sum + item.totalQuantityDistributed,
+            0
+          )}
+          icon={Package}
+          subMetrics={[
+            {
+              label: 'vs Previous Period',
+              value: (
+                <div
+                  className={`flex items-center gap-1 ${getGrowthColor(data.monthlySupplyDistributionGrowth.growthType)}`}
+                >
+                  {getGrowthIcon(
+                    data.monthlySupplyDistributionGrowth.growthType
+                  )}
+                  <span>
+                    {data.monthlySupplyDistributionGrowth.growthRate > 0
+                      ? '+'
+                      : ''}
+                    {data.monthlySupplyDistributionGrowth.growthRate}%
+                  </span>
+                </div>
+              ),
+            },
+          ]}
+        />
       </div>
 
-      {/* Main Content Area - Full Width Tables */}
-      <div className="w-full">
-        <ActivityTypeByRegionTable
-          data={data.activityTypesByRegion}
-          participantGrowthData={data.monthlyParticipantGrowth}
-          eventGrowthData={data.monthlyEventGrowth || []}
-          costGrowthData={data.regionalCostGrowth || []}
-        />
+      {/* Main Content Area - Content with Sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content - 2/3 width */}
+        <div className="lg:col-span-2">
+          <ActivityTypeByRegionTable
+            data={data.activityTypesByRegion}
+            participantGrowthData={data.monthlyParticipantGrowth}
+            eventGrowthData={data.monthlyEventGrowth || []}
+            costGrowthData={data.regionalCostGrowth || []}
+          />
 
-        {data.activityTypesByRegion.length === 0 && (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                No Activities Found
-              </h3>
-              <p className="text-muted-foreground text-center">
-                No events were recorded for {data.reportMonth}.<br />
-                Try selecting a different period or check your data.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+          {data.activityTypesByRegion.length === 0 && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  No Activities Found
+                </h3>
+                <p className="text-muted-foreground text-center">
+                  No events were recorded for {data.reportMonth}.<br />
+                  Try selecting a different period or check your data.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Sidebar - 1/3 width */}
+        <div className="lg:col-span-1">
+          <SupplyDistributionsSidebar
+            supplyDistributions={data.supplyDistributions}
+          />
+        </div>
       </div>
     </div>
   );

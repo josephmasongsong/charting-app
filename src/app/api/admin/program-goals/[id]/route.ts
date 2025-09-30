@@ -1,9 +1,10 @@
+// app/api/admin/program-goals/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, programGoals, users } from '@/db';
 import { eq } from 'drizzle-orm';
-
+import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
@@ -133,6 +134,16 @@ export async function PATCH(
       .where(eq(programGoals.id, id))
       .returning();
 
+    // Log update if name changed
+    if (name.trim() !== existingGoal.name) {
+      await ActivityFeedService.logProgramGoalUpdated(
+        currentUser.id,
+        id,
+        existingGoal.name,
+        name.trim()
+      );
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Program goal updated successfully',
@@ -190,6 +201,13 @@ export async function DELETE(
 
     // Delete program goal
     await db.delete(programGoals).where(eq(programGoals.id, id));
+
+    // Log deletion
+    await ActivityFeedService.logProgramGoalDeleted(
+      currentUser.id,
+      id,
+      existingGoal.name
+    );
 
     return NextResponse.json({
       success: true,

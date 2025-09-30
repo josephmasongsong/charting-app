@@ -36,7 +36,7 @@ export default function RootLayout({
         <AuthProvider>
           <AuthGuard>
             <Navigation />
-            <main className="min-h-screen bg-gray-50">{children}</main>
+            <main className="min-h-screen bg-background">{children}</main>
           </AuthGuard>
         </AuthProvider>
       </body>

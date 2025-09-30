@@ -1,358 +1,433 @@
+// src/components/ActivityFeed.tsx
 'use client';
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import React, { useState } from 'react';
+import Link from 'next/link';
 import {
-  CalendarDays,
-  MapPin,
-  Users,
-  Target,
-  Building,
-  UserPlus,
-  Mail,
-  Clock,
-  Package,
-  PackagePlus,
-  PackageMinus,
-  PackageCheck,
-} from 'lucide-react';
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useActivityFeed } from '@/hooks/useActivityFeed';
 
 // Types
 type ActivityType =
   | 'user_invited'
   | 'event_created'
+  | 'event_updated'
+  | 'event_deleted'
   | 'activity_type_created'
+  | 'activity_type_updated'
+  | 'activity_type_deleted'
   | 'site_created'
+  | 'site_updated'
+  | 'site_deleted'
   | 'community_partner_added'
+  | 'community_partner_updated'
+  | 'community_partner_deleted'
   | 'program_goal_created'
+  | 'program_goal_updated'
+  | 'program_goal_deleted'
   | 'supply_created'
+  | 'supply_updated'
+  | 'supply_deleted'
   | 'supplies_added_to_site'
   | 'supplies_removed_from_site'
-  | 'site_supply_updated';
+  | 'site_supply_updated'
+  | 'supply_distribution_logged'
+  | 'supply_distribution_deleted'
+  | 'user_updated';
 
 interface User {
   firstName: string;
   lastName: string;
 }
 
-interface UserInvitedDetails {
-  invitedEmail: string;
-  title: string;
-}
-
-interface EventCreatedDetails {
-  eventTitle: string;
-  siteName: string;
-  totalParticipants: number;
-  isYouthFocused: boolean;
-  hasCoHost?: boolean;
-}
-
-interface ActivityTypeCreatedDetails {
-  activityTypeName: string;
-  programGoal: string;
-}
-
-interface SiteCreatedDetails {
-  siteName: string;
-  tenantCount: number;
-}
-
-interface CommunityPartnerAddedDetails {
-  partnerName: string;
-  siteName: string;
-}
-
-interface ProgramGoalCreatedDetails {
-  programGoalName: string;
-}
-
-interface SupplyCreatedDetails {
-  supplyName: string;
-  costPerUnit: string;
-  quantity: number;
-}
-
-interface SuppliesAddedToSiteDetails {
-  siteName: string;
-  supplies: Array<{
-    name: string;
-    quantity: number;
-    costPerUnit: string;
-  }>;
-  totalItems: number;
-}
-
-interface SuppliesRemovedFromSiteDetails {
-  siteName: string;
-  supplies: Array<{
-    name: string;
-    quantity: number;
-    costPerUnit: string;
-  }>;
-  totalItems: number;
-}
-
-interface SiteSupplyUpdatedDetails {
-  siteName: string;
-  supplyName: string;
-  oldQuantity: number;
-  newQuantity: number;
-  quantityChange: number;
-  costPerUnit: string;
-}
-
-type ActivityDetails =
-  | UserInvitedDetails
-  | EventCreatedDetails
-  | ActivityTypeCreatedDetails
-  | SiteCreatedDetails
-  | CommunityPartnerAddedDetails
-  | ProgramGoalCreatedDetails
-  | SupplyCreatedDetails
-  | SuppliesAddedToSiteDetails
-  | SuppliesRemovedFromSiteDetails
-  | SiteSupplyUpdatedDetails;
-
 interface Activity {
   id: number;
   type: ActivityType;
   user: User;
   timestamp: string;
-  details: ActivityDetails;
+  details: any;
+  targetId?: string;
 }
 
 const ActivityFeed: React.FC = () => {
   const { activities } = useActivityFeed();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const getActivityIcon = (type: ActivityType): React.ReactNode => {
-    const icons: Record<ActivityType, React.ReactNode> = {
-      user_invited: <Mail className="h-4 w-4" />,
-      event_created: <CalendarDays className="h-4 w-4" />,
-      activity_type_created: <Target className="h-4 w-4" />,
-      site_created: <Building className="h-4 w-4" />,
-      community_partner_added: <Users className="h-4 w-4" />,
-      program_goal_created: <Target className="h-4 w-4" />,
-      supply_created: <Package className="h-4 w-4" />,
-      supplies_added_to_site: <PackagePlus className="h-4 w-4" />,
-      supplies_removed_from_site: <PackageMinus className="h-4 w-4" />,
-      site_supply_updated: <PackageCheck className="h-4 w-4" />,
-    };
-    return icons[type] || <CalendarDays className="h-4 w-4" />;
+  // Calculate pagination
+  const totalPages = Math.ceil(activities.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentActivities = activities.slice(startIndex, endIndex);
+
+  const handlePreviousPage = () => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
   };
 
-  const renderActivityContent = (activity: Activity): React.ReactNode => {
-    const { type, user, details } = activity;
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  };
+
+  const getActivityColor = (type: ActivityType): string => {
+    const colors: Record<ActivityType, string> = {
+      user_invited: 'text-purple-600',
+      event_created: 'text-green-600',
+      event_updated: 'text-blue-600',
+      event_deleted: 'text-red-600',
+      activity_type_created: 'text-emerald-600',
+      activity_type_updated: 'text-blue-600',
+      activity_type_deleted: 'text-red-600',
+      site_created: 'text-orange-600',
+      site_updated: 'text-blue-600',
+      site_deleted: 'text-red-600',
+      community_partner_added: 'text-pink-600',
+      community_partner_updated: 'text-blue-600',
+      community_partner_deleted: 'text-red-600',
+      program_goal_created: 'text-indigo-600',
+      program_goal_updated: 'text-blue-600',
+      program_goal_deleted: 'text-red-600',
+      supply_created: 'text-amber-600',
+      supply_updated: 'text-blue-600',
+      supply_deleted: 'text-red-600',
+      supplies_added_to_site: 'text-teal-600',
+      supplies_removed_from_site: 'text-red-600',
+      site_supply_updated: 'text-cyan-600',
+      supply_distribution_logged: 'text-blue-600',
+      supply_distribution_deleted: 'text-red-600',
+      user_updated: 'text-blue-600',
+    };
+    return colors[type] || 'text-gray-600';
+  };
+
+  const getUserInitials = (user: User): string => {
+    return `${user.firstName[0]}${user.lastName[0]}`;
+  };
+
+  const formatSupplyList = (
+    supplies: Array<{ supplyName?: string; name?: string; quantity: number }>
+  ): string => {
+    if (supplies.length === 0) return '';
+
+    const formatted = supplies.map(s => {
+      const name = s.supplyName || s.name || 'Unknown Supply';
+      return `${s.quantity} ${name}`;
+    });
+
+    if (formatted.length === 1) {
+      return formatted[0];
+    } else if (formatted.length === 2) {
+      return `${formatted[0]} and ${formatted[1]}`;
+    } else {
+      const lastItem = formatted[formatted.length - 1];
+      const otherItems = formatted.slice(0, -1).join(', ');
+      return `${otherItems}, and ${lastItem}`;
+    }
+  };
+
+  const formatChanges = (changes: any): string => {
+    const changeTexts: string[] = [];
+
+    for (const [key, value] of Object.entries(changes)) {
+      const change = value as { old: any; new: any };
+      let fieldName = key.replace(/([A-Z])/g, ' $1').toLowerCase();
+
+      // Special formatting for specific fields
+      if (key === 'isActive') {
+        changeTexts.push(
+          `status from ${change.old ? 'active' : 'inactive'} to ${change.new ? 'active' : 'inactive'}`
+        );
+      } else if (key === 'jobTitle') {
+        const oldTitle = change.old || 'none';
+        const newTitle = change.new || 'none';
+        changeTexts.push(`job title from ${oldTitle} to ${newTitle}`);
+      } else if (key === 'communityPartnerName') {
+        const oldPartner = change.old || 'none';
+        const newPartner = change.new || 'none';
+        changeTexts.push(
+          `community partner from ${oldPartner} to ${newPartner}`
+        );
+      } else if (key === 'hasCommunityRoom') {
+        changeTexts.push(
+          `community room status to ${change.new ? 'yes' : 'no'}`
+        );
+      } else {
+        changeTexts.push(
+          `${fieldName} from "${change.old}" to "${change.new}"`
+        );
+      }
+    }
+
+    return changeTexts.join(', ');
+  };
+
+  const getActivityTitle = (activity: Activity): React.ReactNode => {
+    const { type, user, details, targetId } = activity;
     const userName = `${user.firstName} ${user.lastName}`;
+    const colorClass = getActivityColor(type);
 
     switch (type) {
-      case 'user_invited': {
-        const userDetails = details as UserInvitedDetails;
+      case 'user_invited':
         return (
-          <div>
-            <p className="text-sm text-gray-900">
-              <span className="font-medium">{userName}</span> invited{' '}
-              <span className="font-medium text-blue-600">
-                {userDetails.invitedEmail}
-              </span>{' '}
-              as {userDetails.title}
-            </p>
-          </div>
+          <>
+            {userName} invited{' '}
+            <span className={colorClass}>{details.invitedEmail}</span> as{' '}
+            {details.title}
+          </>
         );
-      }
 
-      case 'event_created': {
-        const eventDetails = details as EventCreatedDetails;
+      case 'event_created':
         return (
-          <div>
-            <p className="text-sm text-gray-900">
-              <span className="font-medium">{userName}</span> held an event{' '}
-              <span className="font-medium text-blue-600">
-                {eventDetails.eventTitle}
-              </span>{' '}
-              at <span className="font-medium">{eventDetails.siteName}</span>
-            </p>
-            <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {eventDetails.totalParticipants} participants
-              </span>
-            </div>
-          </div>
+          <>
+            {userName} held an event{' '}
+            <Link
+              href={`/events/${targetId}`}
+              className={`${colorClass} hover:underline`}
+            >
+              {details.eventTitle}
+            </Link>{' '}
+            at {details.siteName}
+          </>
         );
-      }
 
-      case 'activity_type_created': {
-        const activityTypeDetails = details as ActivityTypeCreatedDetails;
+      case 'event_updated':
         return (
-          <div>
-            <p className="text-sm text-gray-900">
-              <span className="font-medium">{userName}</span> created activity
-              type{' '}
-              <span className="font-medium text-green-600">
-                {activityTypeDetails.activityTypeName}
-              </span>
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Under: {activityTypeDetails.programGoal}
-            </p>
-          </div>
+          <>
+            {userName} updated event details:{' '}
+            <span className={colorClass}>{formatChanges(details.changes)}</span>
+          </>
         );
-      }
 
-      case 'site_created': {
-        const siteDetails = details as SiteCreatedDetails;
+      case 'event_deleted':
         return (
-          <div>
-            <p className="text-sm text-gray-900">
-              <span className="font-medium">{userName}</span> created site{' '}
-              <span className="font-medium text-purple-600">
-                {siteDetails.siteName}
-              </span>
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {siteDetails.tenantCount} tenants
-            </p>
-          </div>
+          <>
+            {userName} deleted event{' '}
+            <span className={colorClass}>{details.eventTitle}</span> at{' '}
+            {details.siteName}
+          </>
         );
-      }
 
-      case 'community_partner_added': {
-        const partnerDetails = details as CommunityPartnerAddedDetails;
+      case 'activity_type_created':
         return (
-          <div>
-            <p className="text-sm text-gray-900">
-              <span className="font-medium">{userName}</span> added partner{' '}
-              <span className="font-medium text-orange-600">
-                {partnerDetails.partnerName}
-              </span>
-            </p>
-          </div>
+          <>
+            {userName} created activity type{' '}
+            <span className={colorClass}>{details.activityTypeName}</span>
+          </>
         );
-      }
 
-      case 'program_goal_created': {
-        const goalDetails = details as ProgramGoalCreatedDetails;
+      case 'activity_type_updated':
         return (
-          <div>
-            <p className="text-sm text-gray-900">
-              <span className="font-medium">{userName}</span> created program
-              goal{' '}
-              <span className="font-medium text-indigo-600">
-                {goalDetails.programGoalName}
-              </span>
-            </p>
-          </div>
+          <>
+            {userName} updated activity type:{' '}
+            <span className={colorClass}>{formatChanges(details.changes)}</span>
+          </>
         );
-      }
 
-      case 'supply_created': {
-        const supplyDetails = details as SupplyCreatedDetails;
+      case 'activity_type_deleted':
         return (
-          <div>
-            <p className="text-sm text-gray-900">
-              <span className="font-medium">{userName}</span> added supply{' '}
-              <span className="font-medium text-emerald-600">
-                {supplyDetails.supplyName}
-              </span>
-            </p>
-            <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <Package className="h-3 w-3" />
-                {supplyDetails.quantity} units
-              </span>
-              <span>${supplyDetails.costPerUnit} per unit</span>
-            </div>
-          </div>
+          <>
+            {userName} deleted activity type{' '}
+            <span className={colorClass}>{details.activityTypeName}</span>
+          </>
         );
-      }
 
-      case 'supplies_added_to_site': {
-        const siteSupplyDetails = details as SuppliesAddedToSiteDetails;
+      case 'site_created':
         return (
-          <div>
-            <p className="text-sm text-gray-900">
-              <span className="font-medium">{userName}</span> added{' '}
-              <span className="font-medium text-green-600">
-                {siteSupplyDetails.totalItems} supply item
-                {siteSupplyDetails.totalItems !== 1 ? 's' : ''}
-              </span>{' '}
-              to{' '}
-              <span className="font-medium">{siteSupplyDetails.siteName}</span>
-            </p>
-            <div className="mt-1 text-xs text-gray-500">
-              {siteSupplyDetails.supplies.slice(0, 2).map((supply, index) => (
-                <span key={index} className="block">
-                  {supply.name}: {supply.quantity} units
-                </span>
-              ))}
-              {siteSupplyDetails.supplies.length > 2 && (
-                <span className="text-gray-400">
-                  +{siteSupplyDetails.supplies.length - 2} more items
-                </span>
-              )}
-            </div>
-          </div>
+          <>
+            {userName} created site{' '}
+            <Link
+              href={`/sites/${targetId}`}
+              className={`${colorClass} hover:underline`}
+            >
+              {details.siteName}
+            </Link>
+          </>
         );
-      }
 
-      case 'supplies_removed_from_site': {
-        const siteSupplyDetails = details as SuppliesRemovedFromSiteDetails;
+      case 'site_updated':
         return (
-          <div>
-            <p className="text-sm text-gray-900">
-              <span className="font-medium">{userName}</span> removed{' '}
-              <span className="font-medium text-red-600">
-                {siteSupplyDetails.totalItems} supply item
-                {siteSupplyDetails.totalItems !== 1 ? 's' : ''}
-              </span>{' '}
-              from{' '}
-              <span className="font-medium">{siteSupplyDetails.siteName}</span>
-            </p>
-            <div className="mt-1 text-xs text-gray-500">
-              {siteSupplyDetails.supplies.slice(0, 2).map((supply, index) => (
-                <span key={index} className="block">
-                  {supply.name}: {supply.quantity} units
-                </span>
-              ))}
-              {siteSupplyDetails.supplies.length > 2 && (
-                <span className="text-gray-400">
-                  +{siteSupplyDetails.supplies.length - 2} more items
-                </span>
-              )}
-            </div>
-          </div>
+          <>
+            {userName} updated site details:{' '}
+            <span className={colorClass}>{formatChanges(details.changes)}</span>
+          </>
         );
-      }
 
-      case 'site_supply_updated': {
-        const updateDetails = details as SiteSupplyUpdatedDetails;
-        const isIncrease = updateDetails.quantityChange > 0;
+      case 'site_deleted':
         return (
-          <div>
-            <p className="text-sm text-gray-900">
-              <span className="font-medium">{userName}</span> updated{' '}
-              <span className="font-medium text-blue-600">
-                {updateDetails.supplyName}
-              </span>{' '}
-              quantity at{' '}
-              <span className="font-medium">{updateDetails.siteName}</span>
-            </p>
-            <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <PackageCheck className="h-3 w-3" />
-                {updateDetails.oldQuantity} → {updateDetails.newQuantity} units
-              </span>
-              <span className={isIncrease ? 'text-green-600' : 'text-red-600'}>
-                {isIncrease ? '+' : ''}
-                {updateDetails.quantityChange}
-              </span>
-            </div>
-          </div>
+          <>
+            {userName} deleted site{' '}
+            <span className={colorClass}>{details.siteName}</span>
+          </>
         );
-      }
+
+      case 'community_partner_added':
+        return (
+          <>
+            {userName} added partner{' '}
+            <span className={colorClass}>{details.partnerName}</span>
+          </>
+        );
+
+      case 'community_partner_updated':
+        return (
+          <>
+            {userName} updated community partner from{' '}
+            <span className={colorClass}>{details.oldName}</span> to{' '}
+            <span className={colorClass}>{details.newName}</span>
+          </>
+        );
+
+      case 'community_partner_deleted':
+        return (
+          <>
+            {userName} deleted community partner{' '}
+            <span className={colorClass}>{details.partnerName}</span>
+          </>
+        );
+
+      case 'program_goal_created':
+        return (
+          <>
+            {userName} created program goal{' '}
+            <span className={colorClass}>{details.programGoalName}</span>
+          </>
+        );
+
+      case 'program_goal_updated':
+        return (
+          <>
+            {userName} updated program goal from{' '}
+            <span className={colorClass}>{details.oldName}</span> to{' '}
+            <span className={colorClass}>{details.newName}</span>
+          </>
+        );
+
+      case 'program_goal_deleted':
+        return (
+          <>
+            {userName} deleted program goal{' '}
+            <span className={colorClass}>{details.programGoalName}</span>
+          </>
+        );
+
+      case 'supply_created':
+        return (
+          <>
+            {userName} created supply{' '}
+            <span className={colorClass}>{details.supplyName}</span>
+          </>
+        );
+
+      case 'supply_updated':
+        return (
+          <>
+            {userName} updated supply:{' '}
+            <span className={colorClass}>{formatChanges(details.changes)}</span>
+          </>
+        );
+
+      case 'supply_deleted':
+        return (
+          <>
+            {userName} deleted supply{' '}
+            <span className={colorClass}>{details.supplyName}</span>
+          </>
+        );
+
+      case 'supplies_added_to_site':
+        return (
+          <>
+            {userName} added{' '}
+            <span className={colorClass}>
+              {formatSupplyList(details.supplies)}
+            </span>{' '}
+            to {details.siteName}
+          </>
+        );
+
+      case 'supplies_removed_from_site':
+        return (
+          <>
+            {userName} removed{' '}
+            <span className={colorClass}>
+              {formatSupplyList(details.supplies)}
+            </span>{' '}
+            from {details.siteName}
+          </>
+        );
+
+      case 'site_supply_updated':
+        return (
+          <>
+            {userName} updated{' '}
+            <span className={colorClass}>{details.supplyName}</span> at{' '}
+            {details.siteName}
+          </>
+        );
+
+      case 'supply_distribution_logged':
+        return (
+          <>
+            {userName} distributed{' '}
+            <span className={colorClass}>
+              {formatSupplyList(details.supplies)}
+            </span>{' '}
+            at {details.siteName}
+          </>
+        );
+
+      case 'supply_distribution_deleted':
+        return (
+          <>
+            {userName} deleted a {details.distributionType} distribution at{' '}
+            <span className={colorClass}>{details.siteName}</span>
+          </>
+        );
+
+      case 'user_updated':
+        return (
+          <>
+            {userName} updated user profile:{' '}
+            <span className={colorClass}>{formatChanges(details.changes)}</span>
+          </>
+        );
+
+      default:
+        return 'Activity';
+    }
+  };
+
+  const getActivitySubtitle = (activity: Activity): string | null => {
+    const { type, details } = activity;
+
+    switch (type) {
+      case 'event_created':
+        return `${details.totalParticipants} participants`;
+
+      case 'activity_type_created':
+        return details.programGoal;
+
+      case 'site_created':
+        return `${details.tenantCount} tenants`;
+
+      case 'supply_created':
+        return `${details.costPerUnit} per unit`;
+
+      case 'site_supply_updated':
+        return `${details.oldQuantity} → ${details.newQuantity} units`;
+
+      case 'supply_distribution_logged':
+        return `${details.totalCost.toFixed(2)} total cost`;
+
+      case 'supply_distribution_deleted':
+        return `${details.totalItems} items`;
 
       default:
         return null;
@@ -360,55 +435,97 @@ const ActivityFeed: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Clock className="h-5 w-5" />
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CalendarDays className="h-5 w-5" />
           Recent Activity
         </CardTitle>
+        <CardDescription>Latest events and system activities</CardDescription>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-1">
-          {activities.map((activity: Activity) => {
+      <CardContent>
+        <div className="space-y-6">
+          {currentActivities.map((activity: Activity) => {
+            const subtitle = getActivitySubtitle(activity);
             return (
               <div
                 key={activity.id}
-                className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-start justify-between gap-4"
               >
-                <div className="flex-shrink-0 mt-0.5">
-                  <div className="p-2 rounded-full bg-gray-100">
-                    {getActivityIcon(activity.type)}
-                  </div>
-                </div>
-
-                <div className="flex-grow min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs text-gray-400">
-                      {activity.timestamp}
-                    </span>
-                  </div>
-
-                  {renderActivityContent(activity)}
-                </div>
-
-                <div className="flex-shrink-0">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-xs bg-gray-100">
-                      {activity.user.firstName[0]}
-                      {activity.user.lastName[0]}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
+                    <AvatarFallback className="bg-muted">
+                      {getUserInitials(activity.user)}
                     </AvatarFallback>
                   </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm mb-1">
+                      {getActivityTitle(activity)}
+                    </div>
+                    {subtitle && (
+                      <div className="text-xs text-muted-foreground">
+                        {subtitle}
+                      </div>
+                    )}
+                  </div>
                 </div>
+                <Badge variant="outline" className="flex-shrink-0">
+                  {activity.timestamp}
+                </Badge>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-6 pt-4 border-t text-center">
-          <button className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">
-            Load More Activity
-          </button>
-        </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className="w-9"
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = parseInt(searchParams.get('limit') || '100');
 
     // Fetch activity feed
     const activities = await ActivityFeedService.getRecentActivity(limit);

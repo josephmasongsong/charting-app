@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import {
   Card,
   CardContent,
@@ -20,7 +26,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Plus,
   Edit,
   Trash2,
   Search,
@@ -34,7 +39,6 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-import CreatePartnerDialog from './create-partner-dialog';
 import EditPartnerDialog from './edit-partner-dialog';
 import DeletePartnerDialog from './delete-partner-dialog';
 
@@ -59,7 +63,22 @@ interface SortConfig {
   order: SortOrder;
 }
 
-export default function CommunityPartnersTable() {
+interface CommunityPartnersTableProps {
+  message?: string;
+  error?: string;
+  onClearMessage?: () => void;
+  onClearError?: () => void;
+}
+
+// Define the ref methods that the parent can call
+export interface CommunityPartnersTableRef {
+  refreshData: () => void;
+}
+
+const CommunityPartnersTable = forwardRef<
+  CommunityPartnersTableRef,
+  CommunityPartnersTableProps
+>(({ message, error, onClearMessage, onClearError }, ref) => {
   const [partners, setPartners] = useState<CommunityPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -75,7 +94,6 @@ export default function CommunityPartnersTable() {
   });
 
   // Dialog states
-  const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState<CommunityPartner | null>(
     null
@@ -84,8 +102,9 @@ export default function CommunityPartnersTable() {
   const [deletingPartner, setDeletingPartner] =
     useState<CommunityPartner | null>(null);
 
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  // Internal message/error state for table-specific operations
+  const [internalMessage, setInternalMessage] = useState('');
+  const [internalError, setInternalError] = useState('');
 
   // Fetch partners
   const fetchPartners = useCallback(
@@ -106,18 +125,25 @@ export default function CommunityPartnersTable() {
         if (response.ok) {
           setPartners(data.communityPartners);
           setPagination(data.pagination);
-          setError('');
+          setInternalError('');
         } else {
-          setError(data.error || 'Failed to fetch community partners');
+          setInternalError(data.error || 'Failed to fetch community partners');
         }
       } catch (error) {
-        setError('Network error occurred');
+        setInternalError('Network error occurred');
       } finally {
         setLoading(false);
       }
     },
     [sortConfig]
   );
+
+  // Expose refresh method to parent component
+  useImperativeHandle(ref, () => ({
+    refreshData: () => {
+      fetchPartners(pagination.page, search, sortConfig);
+    },
+  }));
 
   useEffect(() => {
     fetchPartners();
@@ -155,33 +181,69 @@ export default function CommunityPartnersTable() {
     fetchPartners(pagination.page, search, sortConfig);
   };
 
-  // Handle success/error messages
-  const showMessage = (msg: string) => {
-    setMessage(msg);
-    setError('');
+  // Handle success/error messages for internal operations
+  const showInternalMessage = (msg: string) => {
+    setInternalMessage(msg);
+    setInternalError('');
+    // Clear message after 5 seconds
+    setTimeout(() => setInternalMessage(''), 5000);
   };
 
-  const showError = (err: string) => {
-    setError(err);
-    setMessage('');
+  const showInternalError = (err: string) => {
+    setInternalError(err);
+    setInternalMessage('');
+    // Clear error after 5 seconds
+    setTimeout(() => setInternalError(''), 5000);
   };
+
+  // Determine which message/error to show (parent props take precedence)
+  const displayMessage = message || internalMessage;
+  const displayError = error || internalError;
 
   return (
     <>
       {/* Messages */}
-      {message && (
+      {displayMessage && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            {message}
+            {displayMessage}
           </AlertDescription>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            onClick={() => {
+              if (message && onClearMessage) {
+                onClearMessage();
+              } else {
+                setInternalMessage('');
+              }
+            }}
+          >
+            ×
+          </Button>
         </Alert>
       )}
 
-      {error && (
+      {displayError && (
         <Alert variant="destructive">
           <XCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{displayError}</AlertDescription>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            onClick={() => {
+              if (error && onClearError) {
+                onClearError();
+              } else {
+                setInternalError('');
+              }
+            }}
+          >
+            ×
+          </Button>
         </Alert>
       )}
 
@@ -199,27 +261,19 @@ export default function CommunityPartnersTable() {
               </CardDescription>
             </div>
 
-            <div className="flex gap-2">
-              {/* Search Bar */}
-              <div className="w-full md:w-80">
-                <form onSubmit={handleSearch} className="flex gap-2">
-                  <Input
-                    placeholder="Search by name..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button type="submit" variant="outline" size="icon">
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </form>
-              </div>
-
-              {/* Add Button */}
-              <Button onClick={() => setCreateOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Partner
-              </Button>
+            {/* Search Bar */}
+            <div className="w-full md:w-80">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <Input
+                  placeholder="Search by name..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" variant="outline" size="icon">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
             </div>
           </div>
         </CardHeader>
@@ -484,20 +538,12 @@ export default function CommunityPartnersTable() {
       </Card>
 
       {/* Dialogs */}
-      <CreatePartnerDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSuccess={showMessage}
-        onError={showError}
-        onRefresh={refreshData}
-      />
-
       <EditPartnerDialog
         open={editOpen}
         onOpenChange={setEditOpen}
         partner={editingPartner}
-        onSuccess={showMessage}
-        onError={showError}
+        onSuccess={showInternalMessage}
+        onError={showInternalError}
         onRefresh={refreshData}
       />
 
@@ -505,10 +551,14 @@ export default function CommunityPartnersTable() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         partner={deletingPartner}
-        onSuccess={showMessage}
-        onError={showError}
+        onSuccess={showInternalMessage}
+        onError={showInternalError}
         onRefresh={refreshData}
       />
     </>
   );
-}
+});
+
+CommunityPartnersTable.displayName = 'CommunityPartnersTable';
+
+export default CommunityPartnersTable;

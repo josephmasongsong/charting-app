@@ -42,6 +42,7 @@ import {
 
 import EditSupplyDialog from './edit-supply-dialog';
 import DeleteSupplyDialog from './delete-supply-dialog';
+import ViewSupplyDialog from './view-supply-dialog';
 
 interface Supply {
   id: string;
@@ -105,6 +106,8 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
     });
 
     // Dialog states
+    const [viewOpen, setViewOpen] = useState(false);
+    const [viewingSupply, setViewingSupply] = useState<Supply | null>(null);
     const [editOpen, setEditOpen] = useState(false);
     const [editingSupply, setEditingSupply] = useState<Supply | null>(null);
     const [deleteOpen, setDeleteOpen] = useState(false);
@@ -172,6 +175,12 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
       const newSortConfig = { field, order: newOrder };
       setSortConfig(newSortConfig);
       fetchSupplies(pagination.page, search, newSortConfig);
+    };
+
+    // Handle view supply
+    const openViewSupply = (supply: Supply) => {
+      setViewingSupply(supply);
+      setViewOpen(true);
     };
 
     // Handle edit supply
@@ -267,7 +276,8 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
                   Supplies ({pagination.total})
                 </CardTitle>
                 <CardDescription>
-                  Manage your supplies catalog and inventory
+                  Manage your supplies catalog. Quantities are managed through
+                  individual site assignments.
                 </CardDescription>
               </div>
 
@@ -339,7 +349,7 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
                             onClick={() => handleSort('quantity')}
                             className="h-auto p-0 font-semibold hover:bg-transparent"
                           >
-                            Quantity
+                            Total Quantity
                             {sortConfig.field === 'quantity' ? (
                               sortConfig.order === 'asc' ? (
                                 <ChevronUp className="ml-2 h-4 w-4" />
@@ -443,12 +453,7 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() =>
-                                    window.open(
-                                      `/supplies/${supply.id}`,
-                                      '_blank'
-                                    )
-                                  }
+                                  onClick={() => openViewSupply(supply)}
                                   title="View supply details"
                                 >
                                   <Eye className="h-4 w-4" />
@@ -644,6 +649,13 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
         </Card>
 
         {/* Dialogs */}
+        <ViewSupplyDialog
+          open={viewOpen}
+          onOpenChange={setViewOpen}
+          supply={viewingSupply}
+          onError={showInternalError}
+        />
+
         <EditSupplyDialog
           open={editOpen}
           onOpenChange={setEditOpen}

@@ -1,31 +1,23 @@
+// components/Navigation.tsx
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Home,
-  MapPin,
-  Calendar,
-  Settings,
-  Shield,
-  LogOut,
-  Plus,
-  BarChart3,
-} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { LogOut, Settings, Shield, BarChart3, LayoutGrid } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export default function Navigation() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const isAdmin = session?.user?.role === 'admin';
 
   const handleSignOut = () => {
@@ -52,9 +44,11 @@ export default function Navigation() {
 
   const userInitials = getUserInitials(session.user?.name, session.user?.email);
 
+  const isDashboardActive = pathname === '/dashboard';
+
   return (
-    <nav className="border-b bg-white sticky top-0 z-50">
-      <div className="container mx-auto px-4">
+    <nav className="border-b bg-background sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto xl:px-0 px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo/Brand */}
           <Link href="/dashboard" className="flex items-center">
@@ -63,68 +57,33 @@ export default function Navigation() {
               width={40}
               height={40}
               alt="BCH Tenant Engagement"
-              className="h-10 w-10"
+              className="h-10 w-10 rounded-md"
             />
           </Link>
 
-          {/* Main Navigation */}
-          <div className="hidden items-center space-x-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm">
-                <Home className="h-4 w-4 mr-2" />
-                Dashboard
-              </Button>
-            </Link>
-
-            <Link href="/sites">
-              <Button variant="ghost" size="sm">
-                <MapPin className="h-4 w-4 mr-2" />
-                Sites
-              </Button>
-            </Link>
-
-            <Link href="/events">
-              <Button variant="ghost" size="sm">
-                <Calendar className="h-4 w-4 mr-2" />
-                Events
-              </Button>
-            </Link>
-
+          {/* Right Side: Dashboard Icon + User Menu */}
+          <div className="flex items-center gap-2">
+            {/* Dashboard (grid) icon */}
             <Link
-              href="/reports/monthly"
-              className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+              href="/dashboard"
+              aria-label="Dashboard"
+              aria-current={isDashboardActive ? 'page' : undefined}
+              className={[
+                'p-2 rounded-xl transition-colors',
+                isDashboardActive
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground',
+              ].join(' ')}
             >
-              <BarChart3 className="h-4 w-4" />
-              Monthly Reports
-            </Link>
-
-            {isAdmin && (
-              <Link href="/admin">
-                <Button variant="ghost" size="sm">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Admin
-                </Button>
-              </Link>
-            )}
-          </div>
-
-          {/* Right Side - Create Event Button + User Menu */}
-          <div className="flex items-center space-x-3">
-            {/* Create Event Button */}
-            <Link href="/events/new">
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Event
-              </Button>
+              <LayoutGrid className="h-5 w-5" />
             </Link>
 
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center space-x-2"
+                <button
+                  className="flex items-center gap-2 rounded-xl px-2 py-1 transition-colors"
+                  aria-label="User menu"
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage
@@ -139,20 +98,19 @@ export default function Navigation() {
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
-                  <span>{session.user?.name || session.user?.email}</span>
-                </Button>
+                  <span className="text-sm font-medium hidden sm:inline">
+                    {session.user?.name || session.user?.email}
+                  </span>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-
                 <DropdownMenuItem asChild>
                   <Link href="/settings" className="w-full">
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
                   </Link>
                 </DropdownMenuItem>
-
+                {/*
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin" className="w-full">
@@ -169,7 +127,7 @@ export default function Navigation() {
                       Monthly Reports
                     </Link>
                   </DropdownMenuItem>
-                )}
+                )} */}
 
                 <DropdownMenuSeparator />
 

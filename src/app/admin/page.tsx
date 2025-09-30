@@ -1,4 +1,6 @@
-import { requireAdmin } from '@/lib/role-guard';
+// app/admin/page.tsx
+'use client';
+import React from 'react';
 import {
   Card,
   CardContent,
@@ -9,294 +11,161 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   Users,
-  UserPlus,
-  Shield,
-  Activity,
   Target,
-  Users as CommunityIcon,
   MapPin,
-  Home,
+  Activity,
+  Package,
+  BarChart3,
+  Settings,
+  Truck,
+  Calendar,
+  Building,
 } from 'lucide-react';
-import Link from 'next/link';
-import {
-  db,
-  users,
-  programGoals,
-  communityPartners,
-  activityTypes,
-  sites,
-} from '@/db';
-import { eq, sql } from 'drizzle-orm';
 
-export default async function AdminDashboard() {
-  await requireAdmin();
-
-  // Get user statistics
-  const [totalUsers] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users);
-
-  const [adminCount] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users)
-    .where(eq(users.role, 'admin'));
-
-  const [partnerCount] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users)
-    .where(eq(users.role, 'partner'));
-
-  const [userCount] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users)
-    .where(eq(users.role, 'user'));
-
-  // Get other model statistics
-  const [goalCount] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(programGoals);
-
-  const [communityPartnerCount] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(communityPartners);
-
-  const [activityTypeCount] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(activityTypes);
-
-  const [siteCount] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(sites);
-
-  // Get sites with community partners
-  const [sitesWithPartners] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(sites)
-    .where(eq(sites.hasCommunityPartner, true));
-
+const AdminDashboard = () => {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Admin Dashboard</h2>
-        <p className="text-muted-foreground">
-          Overview of your application's data and system status.
-        </p>
-      </div>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        {/* <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">Administrative Dashboard</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Comprehensive system management and configuration tools
+          </p>
+        </div> */}
 
-      {/* User Statistics */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4">User Management</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalUsers.count}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Admins</CardTitle>
-              <Shield className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{adminCount.count}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Partners</CardTitle>
-              <Activity className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{partnerCount.count}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Regular Users
-              </CardTitle>
-              <Users className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{userCount.count}</div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Content Statistics */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Content Overview</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Sites</CardTitle>
-              <MapPin className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{siteCount.count}</div>
-              <p className="text-xs text-muted-foreground">
-                {sitesWithPartners.count} with partners
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Program Goals
-              </CardTitle>
-              <Target className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{goalCount.count}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Activity Types
-              </CardTitle>
-              <Activity className="h-4 w-4 text-indigo-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {activityTypeCount.count}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Community Partners
-              </CardTitle>
-              <CommunityIcon className="h-4 w-4 text-teal-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {communityPartnerCount.count}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Management Actions */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Management</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Manage users, roles, and permissions across your application.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link href="/admin/users">
-                <Button className="w-full">
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Users
+        {/* Resource Management Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Admin Navigation</CardTitle>
+            <CardDescription>
+              Common tasks and resource management
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <a href="/events/new">
+                <Button className="h-20 w-full flex flex-col gap-2">
+                  <Calendar className="h-5 w-5" />
+                  <span className="text-sm">New Event</span>
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
+              </a>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Site Management</CardTitle>
-              <CardDescription>
-                Manage sites, locations, and their community partnerships.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link href="/admin/sites">
-                <Button className="w-full">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Manage Sites
+              <a href="/admin/supply-distributions/new">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Truck className="h-5 w-5" />
+                  <span className="text-sm">Log Distribution</span>
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
+              </a>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Program Goals</CardTitle>
-              <CardDescription>
-                Manage program goals and objectives for your application.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link href="/admin/program-goals">
-                <Button className="w-full">
-                  <Target className="h-4 w-4 mr-2" />
-                  Manage Program Goals
+              <a href="/admin/sites">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Building className="h-5 w-5" />
+                  <span className="text-sm">Manage Sites</span>
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
+              </a>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Activity Types</CardTitle>
-              <CardDescription>
-                Manage activity types and their relationships to program goals.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link href="/admin/activity-types">
-                <Button className="w-full">
-                  <Activity className="h-4 w-4 mr-2" />
-                  Manage Activity Types
+              <a href="/reports/monthly">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Target className="h-5 w-5" />
+                  <span className="text-sm">View Reports</span>
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
+              </a>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Community Partners</CardTitle>
-              <CardDescription>
-                Manage community partners and organizations.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link href="/admin/community-partners">
-                <Button className="w-full">
-                  <CommunityIcon className="h-4 w-4 mr-2" />
-                  Manage Community Partners
+              <a href="/admin/users">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Users className="h-5 w-5" />
+                  <span className="text-sm">Users</span>
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
+              </a>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>
-                Common administrative tasks and system management.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link href="/admin/users">
-                <Button variant="outline" className="w-full">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Invite New User
+              <a href="/admin/program-goals">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Target className="h-5 w-5" />
+                  <span className="text-sm">Program Goals</span>
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
+              </a>
+
+              <a href="/admin/activity-types">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Activity className="h-5 w-5" />
+                  <span className="text-sm">Activity Types</span>
+                </Button>
+              </a>
+
+              <a href="/admin/community-partners">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Users className="h-5 w-5" />
+                  <span className="text-sm">Community Partners</span>
+                </Button>
+              </a>
+
+              <a href="/admin/supplies">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Package className="h-5 w-5" />
+                  <span className="text-sm">Supplies</span>
+                </Button>
+              </a>
+
+              <a href="/admin/supply-distributions">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Truck className="h-5 w-5" />
+                  <span className="text-sm">Distributions</span>
+                </Button>
+              </a>
+
+              <a href="/admin/events">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Calendar className="h-5 w-5" />
+                  <span className="text-sm">Events</span>
+                </Button>
+              </a>
+
+              <a href="/admin/settings">
+                <Button
+                  variant="outline"
+                  className="h-20 w-full flex flex-col gap-2"
+                >
+                  <Settings className="h-5 w-5" />
+                  <span className="text-sm">Settings</span>
+                </Button>
+              </a>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-}
+};
+
+export default AdminDashboard;

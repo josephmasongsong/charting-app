@@ -1,8 +1,9 @@
+// app/api/admin/supplies/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db, supplies, users } from '@/db';
-import { eq, ilike, count, desc, asc } from 'drizzle-orm';
+import { db, supplies, users, siteSupplies } from '@/db';
+import { eq, ilike, count, desc, asc, sql } from 'drizzle-orm';
 import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function GET(req: Request) {
@@ -58,7 +59,8 @@ export async function GET(req: Request) {
         sortColumn = supplies.costPerUnit;
         break;
       case 'quantity':
-        sortColumn = supplies.quantity;
+        // Calculate total quantity from site supplies
+        sortColumn = sql`COALESCE(SUM(${siteSupplies.quantity}), 0)`;
         break;
       case 'createdAt':
         sortColumn = supplies.createdAt;
@@ -72,20 +74,38 @@ export async function GET(req: Request) {
 
     const sortFunction = sortOrder === 'asc' ? asc : desc;
 
-    // Get paginated results
+    // Get paginated results with calculated quantities
     let suppliesQuery = db
       .select({
         id: supplies.id,
         name: supplies.name,
         costPerUnit: supplies.costPerUnit,
-        quantity: supplies.quantity,
+        quantity: sql<number>`COALESCE(SUM(${siteSupplies.quantity}), 0)`.as(
+          'quantity'
+        ),
         createdAt: supplies.createdAt,
         updatedAt: supplies.updatedAt,
       })
       .from(supplies)
+      .leftJoin(siteSupplies, eq(supplies.id, siteSupplies.supplyId))
+      .groupBy(
+        supplies.id,
+        supplies.name,
+        supplies.costPerUnit,
+        supplies.createdAt,
+        supplies.updatedAt
+      )
       .limit(limit)
-      .offset(offset)
-      .orderBy(sortFunction(sortColumn));
+      .offset(offset);
+
+    // Handle different sort scenarios
+    if (sortBy === 'quantity') {
+      suppliesQuery = suppliesQuery.orderBy(
+        sortFunction(sql`COALESCE(SUM(${siteSupplies.quantity}), 0)`)
+      );
+    } else {
+      suppliesQuery = suppliesQuery.orderBy(sortFunction(sortColumn));
+    }
 
     // Apply search condition if it exists
     const allSupplies = searchCondition
@@ -132,7 +152,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, costPerUnit, quantity } = await req.json();
+    const { name, costPerUnit } = await req.json();
 
     // Validate required fields
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -158,17 +178,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate quantity
-    if (
-      quantity !== undefined &&
-      (!Number.isInteger(parseInt(quantity)) || parseInt(quantity) < 0)
-    ) {
-      return NextResponse.json(
-        { error: 'Quantity must be a valid non-negative integer' },
-        { status: 400 }
-      );
-    }
-
     // Check if supply with this name already exists
     const [existingSupply] = await db
       .select()
@@ -189,7 +198,7 @@ export async function POST(req: Request) {
       .values({
         name: name.trim(),
         costPerUnit: costPerUnit ? parseFloat(costPerUnit).toFixed(2) : '0.00',
-        quantity: quantity ? parseInt(quantity) : 0,
+        quantity: 0, // Always 0 since quantities are managed through site assignments
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -199,7 +208,6 @@ export async function POST(req: Request) {
     await ActivityFeedService.logSupplyCreated(currentUser.id, newSupply.id, {
       name: newSupply.name,
       costPerUnit: newSupply.costPerUnit,
-      quantity: newSupply.quantity,
     });
 
     return NextResponse.json({
