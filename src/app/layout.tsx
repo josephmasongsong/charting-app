@@ -39,6 +39,21 @@ export default function RootLayout({
             <main className="min-h-screen bg-background">{children}</main>
           </AuthGuard>
         </AuthProvider>
+        <footer className="border-t bg-muted/50 px-6 py-4">
+          <div className="max-w-7xl mx-auto flex justify-between">
+            <span className="text-sm text-foreground">
+              © Copyright 2025 BC Housing.
+            </span>
+            <div>
+              <p className="text-sm text-foreground">
+                Questions? Email&nbsp;
+                <a href="mailto:jmasongson@bchousing.org" className="underline">
+                  support.
+                </a>
+              </p>
+            </div>
+          </div>
+        </footer>
       </body>
     </html>
   );

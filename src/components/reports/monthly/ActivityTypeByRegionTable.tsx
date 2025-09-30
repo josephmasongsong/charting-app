@@ -102,17 +102,17 @@ export function ActivityTypeByRegionTable({
               <div className="border rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <tr className="border-b hover:bg-muted/50">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-foreground align-middle whitespace-nowrap">
                         Activity Type
                       </th>
-                      <th className="text-center py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="text-center py-3 px-4 text-sm font-medium text-foreground align-middle whitespace-nowrap">
                         Events
                       </th>
-                      <th className="text-center py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="text-center py-3 px-4 text-sm font-medium text-foreground align-middle whitespace-nowrap">
                         Participants
                       </th>
-                      <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="text-right py-3 px-4 text-sm font-medium text-foreground align-middle whitespace-nowrap">
                         Total Cost
                       </th>
                     </tr>
