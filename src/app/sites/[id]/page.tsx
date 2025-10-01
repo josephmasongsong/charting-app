@@ -31,9 +31,9 @@ import EditButton from './components/EditButton';
 import GoogleMapsButton from './components/GoogleMapsButton';
 
 interface SitePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // Server function to fetch site data
