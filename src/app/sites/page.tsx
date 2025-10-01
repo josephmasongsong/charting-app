@@ -7,13 +7,13 @@ import { eq, ilike, or, and, desc, sql } from 'drizzle-orm';
 import SitesListClient from './components/SitesListClient';
 
 interface SitesPageProps {
-  searchParams: {
+  searchParams: Promise<{
     search?: string;
     page?: string;
     isSingleSeniorOnly?: 'true' | 'false' | 'all';
     hasCommunityRoom?: 'true' | 'false' | 'all';
     userId?: string; // user id or 'all'
-  };
+  }>;
 }
 
 async function getFilterOptions() {
@@ -120,13 +120,14 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
 
-  const search = searchParams.search || '';
-  const page = parseInt(searchParams.page || '1', 10);
+  const params = await searchParams;
+  const search = params.search || '';
+  const page = parseInt(params.page || '1', 10);
   const isSingleSeniorOnly =
-    (searchParams.isSingleSeniorOnly as 'true' | 'false' | 'all') || 'all';
+    (params.isSingleSeniorOnly as 'true' | 'false' | 'all') || 'all';
   const hasCommunityRoom =
-    (searchParams.hasCommunityRoom as 'true' | 'false' | 'all') || 'all';
-  const userId = searchParams.userId || 'all';
+    (params.hasCommunityRoom as 'true' | 'false' | 'all') || 'all';
+  const userId = params.userId || 'all';
 
   const { data, totalCount } = await getSites({
     search,
@@ -157,7 +158,8 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
 }
 
 export async function generateMetadata({ searchParams }: SitesPageProps) {
-  const search = searchParams.search;
+  const params = await searchParams;
+  const search = params.search;
   return {
     title: search
       ? `Sites - Search results for "${search}"`

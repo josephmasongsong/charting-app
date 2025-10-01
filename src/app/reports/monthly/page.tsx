@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     startYear?: string;
     startMonth?: string;
     endYear?: string;
     endMonth?: string;
-  };
+  }>;
 }
 
 function ReportSkeleton() {
@@ -33,18 +33,19 @@ function ReportSkeleton() {
 }
 
 async function ReportContent({ searchParams }: PageProps) {
+  const params = await searchParams;
   const now = new Date();
-  const startYear = searchParams.startYear
-    ? parseInt(searchParams.startYear)
+  const startYear = params.startYear
+    ? parseInt(params.startYear)
     : now.getFullYear();
-  const startMonth = searchParams.startMonth
-    ? parseInt(searchParams.startMonth)
+  const startMonth = params.startMonth
+    ? parseInt(params.startMonth)
     : now.getMonth() + 1;
-  const endYear = searchParams.endYear
-    ? parseInt(searchParams.endYear)
+  const endYear = params.endYear
+    ? parseInt(params.endYear)
     : undefined;
-  const endMonth = searchParams.endMonth
-    ? parseInt(searchParams.endMonth)
+  const endMonth = params.endMonth
+    ? parseInt(params.endMonth)
     : undefined;
 
   try {

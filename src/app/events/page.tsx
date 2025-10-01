@@ -7,13 +7,13 @@ import { eq, ilike, and, desc, sql } from 'drizzle-orm';
 import EventsListClient from './components/EventsListClient';
 
 interface EventsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     search?: string;
     activityType?: string;
     site?: string;
     organizer?: string;
     page?: string;
-  };
+  }>;
 }
 
 async function getEvents(
@@ -126,11 +126,12 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
     redirect('/login');
   }
 
-  const search = searchParams.search || '';
-  const activityType = searchParams.activityType || 'all';
-  const site = searchParams.site || 'all';
-  const organizer = searchParams.organizer || 'all';
-  const page = parseInt(searchParams.page || '1');
+  const params = await searchParams;
+  const search = params.search || '';
+  const activityType = params.activityType || 'all';
+  const site = params.site || 'all';
+  const organizer = params.organizer || 'all';
+  const page = parseInt(params.page || '1');
 
   const { events: eventsData, totalCount } = await getEvents(
     search,
@@ -162,7 +163,8 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 }
 
 export async function generateMetadata({ searchParams }: EventsPageProps) {
-  const search = searchParams.search;
+  const params = await searchParams;
+  const search = params.search;
 
   return {
     title: search
