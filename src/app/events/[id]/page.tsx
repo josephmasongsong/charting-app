@@ -24,12 +24,12 @@ import {
   DollarSign,
   Building,
   UserCheck,
-  ArrowLeft,
   Edit,
-  Trash2,
   Target,
+  Copy,
 } from 'lucide-react';
 import Link from 'next/link';
+import { DuplicateEventDialog } from '../components/DuplicateEventDialog';
 
 interface EventPageProps {
   params: Promise<{
@@ -110,56 +110,38 @@ export default async function EventPage({ params }: EventPageProps) {
     });
   };
 
-  const formatDateTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/events">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                {event.title}
-              </h1>
-              <p className="text-muted-foreground">
-                Event details and information
-              </p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{event.title}</h1>
+            <p className="text-muted-foreground">
+              Event details and information
+            </p>
           </div>
-          {isAdmin && (
-            <div className="flex gap-2">
+
+          <div className="flex gap-2">
+            {isAdmin && (
               <Link href={`/admin/events/${event.id}/edit`}>
                 <Button variant="outline" size="sm">
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
               </Link>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </div>
-          )}
+            )}
+            <DuplicateEventDialog
+              eventId={event.id}
+              eventTitle={event.title}
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate
+                </Button>
+              }
+            />
+          </div>
         </div>
 
         {/* Badges */}
@@ -195,9 +177,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     Total Participants
                   </div>
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
+                <Users className="h-5 w-5 text-blue-500" />
               </div>
             </CardContent>
           </Card>
@@ -213,9 +193,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     Event Duration
                   </div>
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-green-600" />
-                </div>
+                <Clock className="h-5 w-5 text-green-500" />
               </div>
             </CardContent>
           </Card>
@@ -231,9 +209,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     Total Cost
                   </div>
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-purple-600" />
-                </div>
+                <DollarSign className="h-5 w-5 text-purple-500" />
               </div>
             </CardContent>
           </Card>
@@ -249,9 +225,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     Cost/Participant
                   </div>
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
-                  <Target className="h-5 w-5 text-orange-600" />
-                </div>
+                <Target className="h-5 w-5 text-orange-500" />
               </div>
             </CardContent>
           </Card>
@@ -508,23 +482,6 @@ export default async function EventPage({ params }: EventPageProps) {
                   <span className="font-semibold">
                     ${costPerParticipant.toFixed(2)}
                   </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Metadata */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Metadata</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created</span>
-                  <span>{formatDateTime(String(event.createdAt))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Last Updated</span>
-                  <span>{formatDateTime(String(event.updatedAt))}</span>
                 </div>
               </CardContent>
             </Card>

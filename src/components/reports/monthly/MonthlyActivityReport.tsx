@@ -16,6 +16,7 @@ import { MetricCard } from './MetricCard';
 import { DateRangeDialog } from './DateRangeDialog';
 import { MonthlyReportExportButton } from './MonthlyReportExportButton';
 import { SupplyDistributionsSidebar } from './SupplyDistributionsSidebar';
+import { SitePerformanceCard } from './SitePerformanceCard';
 import { ActivityTypeByRegionTable } from './ActivityTypeByRegionTable';
 import {
   getGrowthIcon,
@@ -225,9 +226,16 @@ export function MonthlyActivityReport({
 
         {/* Sidebar - 1/3 width */}
         <div className="lg:col-span-1">
-          <SupplyDistributionsSidebar
-            supplyDistributions={data.supplyDistributions}
-          />
+          <div className="space-y-6">
+            {' '}
+            {/* ADD THIS WRAPPER DIV */}
+            <SupplyDistributionsSidebar
+              supplyDistributions={data.supplyDistributions}
+            />
+            <SitePerformanceCard sites={data.sitePerformance} />{' '}
+            {/* ADD THIS LINE */}
+          </div>{' '}
+          {/* CLOSE WRAPPER DIV */}
         </div>
       </div>
     </div>

@@ -379,7 +379,7 @@ export async function PATCH(
       };
     }
 
-    // Check community partner changes
+    // Check community partner changes - only log if there's an actual change
     if (data.communityPartnerId !== existingSite.communityPartnerId) {
       let oldPartnerName = null;
       let newPartnerName = null;
@@ -402,10 +402,13 @@ export async function PATCH(
         newPartnerName = newPartner?.name || null;
       }
 
-      changes.communityPartnerName = {
-        old: oldPartnerName,
-        new: newPartnerName,
-      };
+      // Only add to changes if there's an actual difference (not both null)
+      if (oldPartnerName !== newPartnerName) {
+        changes.communityPartnerName = {
+          old: oldPartnerName,
+          new: newPartnerName,
+        };
+      }
     }
 
     // Use transaction to update site and manage supplies

@@ -6,6 +6,7 @@ import {
   activityTypes,
   programGoals,
   users,
+  sites,
   supplyDistributions,
   supplyDistributionItems,
   supplies,
@@ -80,6 +81,13 @@ interface MonthlySupplyDistributionGrowth {
   growthType: 'growth' | 'decline' | 'stable';
 }
 
+interface SitePerformance {
+  siteName: string;
+  eventCount: number;
+  participantCount: number;
+  utilizationRate: number;
+}
+
 interface SupplyDistributionSummary {
   supplyId: string;
   supplyName: string;
@@ -106,6 +114,7 @@ interface MonthlyActivityReportData {
   regionalCostGrowth: RegionalCostGrowth[];
   monthlySupplyDistributionGrowth: MonthlySupplyDistributionGrowth;
   supplyDistributions: SupplyDistributionSummary[];
+  sitePerformance: SitePerformance[];
   regions: string[];
   availableDateRange: {
     minDate: string;
@@ -697,14 +706,12 @@ export async function generateMonthlyActivityReport(
   // Map program goals with colors, filtering out nulls
   const programGoalsWithColors: ProgramGoalSummary[] = programGoalsData
     .filter(goal => goal.programGoalId && goal.programGoalName)
-    .map(
-      (goal, index) => ({
-        id: goal.programGoalId!,
-        name: goal.programGoalName!,
-        activityCount: Number(goal.activityCount),
-        color: PROGRAM_GOAL_COLORS[index % PROGRAM_GOAL_COLORS.length],
-      })
-    );
+    .map((goal, index) => ({
+      id: goal.programGoalId!,
+      name: goal.programGoalName!,
+      activityCount: Number(goal.activityCount),
+      color: PROGRAM_GOAL_COLORS[index % PROGRAM_GOAL_COLORS.length],
+    }));
 
   // Map activity types participation with colors (different palette to avoid conflicts), filtering out nulls
   const activityTypesParticipationWithColors: ActivityTypeParticipation[] =
@@ -789,6 +796,43 @@ export async function generateMonthlyActivityReport(
     growthType: supplyGrowthType,
   };
 
+  // Get site performance data
+  const sitePerformanceData = await db
+    .select({
+      siteName: sites.name,
+      eventCount: sql<number>`count(${events.id})`,
+      participantCount: sql<number>`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0)`,
+    })
+    .from(events)
+    .leftJoin(sites, eq(events.siteId, sites.id))
+    .leftJoin(users, eq(events.userId, users.id))
+    .where(
+      and(
+        session.user.role === 'admin'
+          ? sql`true`
+          : eq(events.userId, session.user.id),
+        gte(events.eventDate, startOfPeriod.toISOString().split('T')[0]),
+        lt(events.eventDate, endOfPeriod.toISOString().split('T')[0]),
+        sql`${sites.name} IS NOT NULL`
+      )
+    )
+    .groupBy(sites.name)
+    .orderBy(sql`count(${events.id}) DESC`);
+
+  // Calculate utilization rates (assuming 100 events = 100% utilization)
+  const maxPossibleEvents = 100;
+  const sitePerformanceWithUtilization: SitePerformance[] = sitePerformanceData
+    .filter(site => site.siteName)
+    .map(site => ({
+      siteName: site.siteName!,
+      eventCount: Number(site.eventCount),
+      participantCount: Number(site.participantCount),
+      utilizationRate: Math.min(
+        Math.round((Number(site.eventCount) / maxPossibleEvents) * 100),
+        100
+      ),
+    }));
+
   return {
     reportMonth,
     totalEvents: totalMetrics[0]?.totalEvents || 0,
@@ -800,7 +844,13 @@ export async function generateMonthlyActivityReport(
     totalEventDuration: Number(totalMetrics[0]?.totalEventDuration || 0),
     totalAdminDuration: Number(totalMetrics[0]?.totalAdminDuration || 0),
     activityTypesByRegion: activityTypeByRegionData
-      .filter(item => item.activityTypeId && item.activityTypeName && item.programGoalName && item.region)
+      .filter(
+        item =>
+          item.activityTypeId &&
+          item.activityTypeName &&
+          item.programGoalName &&
+          item.region
+      )
       .map(item => ({
         activityTypeId: item.activityTypeId!,
         activityTypeName: item.activityTypeName!,
@@ -821,7 +871,10 @@ export async function generateMonthlyActivityReport(
     regionalCostGrowth: regionalCostGrowthData,
     supplyDistributions: supplyDistributionsWithNumbers,
     monthlySupplyDistributionGrowth: monthlySupplyDistributionGrowth,
-    regions: activeRegions.map(r => r.region).filter((r): r is string => Boolean(r)),
+    sitePerformance: sitePerformanceWithUtilization,
+    regions: activeRegions
+      .map(r => r.region)
+      .filter((r): r is string => Boolean(r)),
     availableDateRange: {
       minDate: dateRange[0]?.minDate || '',
       maxDate: dateRange[0]?.maxDate || '',

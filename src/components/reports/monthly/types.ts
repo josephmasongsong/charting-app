@@ -74,6 +74,13 @@ export interface MonthlySupplyDistributionGrowth {
   growthType: 'growth' | 'decline' | 'stable';
 }
 
+export interface SitePerformance {
+  siteName: string;
+  eventCount: number;
+  participantCount: number;
+  utilizationRate: number;
+}
+
 export interface MonthlyActivityReportData {
   reportMonth: string;
   totalEvents: number;
@@ -92,6 +99,7 @@ export interface MonthlyActivityReportData {
   regionalCostGrowth: RegionalCostGrowth[];
   supplyDistributions: SupplyDistributionSummary[];
   monthlySupplyDistributionGrowth: MonthlySupplyDistributionGrowth;
+  sitePerformance: SitePerformance[];
   regions: string[];
   availableDateRange: { minDate: string; maxDate: string };
 }

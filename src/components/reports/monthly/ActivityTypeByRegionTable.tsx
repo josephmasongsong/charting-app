@@ -139,7 +139,7 @@ export function ActivityTypeByRegionTable({
                     ))}
 
                     {/* Region Total Row */}
-                    <tr className="bg-primary/5 border-t-2 border-primary/20">
+                    <tr className="border-t bg-muted/50 border-primary/20">
                       <td className="py-3 px-4 text-sm font-semibold text-primary">
                         {region} Region Total
                       </td>

@@ -12,7 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, Shield, BarChart3, LayoutGrid } from 'lucide-react';
+import {
+  LogOut,
+  Settings,
+  Shield,
+  BarChart3,
+  LayoutGrid,
+  Home,
+} from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 export default function Navigation() {
@@ -75,7 +82,7 @@ export default function Navigation() {
                   : 'text-muted-foreground hover:text-foreground',
               ].join(' ')}
             >
-              <LayoutGrid className="h-5 w-5" />
+              <Home className="h-5 w-5" />
             </Link>
 
             {/* User Menu */}

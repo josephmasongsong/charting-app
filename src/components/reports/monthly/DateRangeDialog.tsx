@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -26,16 +26,32 @@ interface DateRangeDialogProps {
   availableDateRange: { minDate: string; maxDate: string };
 }
 
+const MONTHS = [
+  { value: 1, label: 'January' },
+  { value: 2, label: 'February' },
+  { value: 3, label: 'March' },
+  { value: 4, label: 'April' },
+  { value: 5, label: 'May' },
+  { value: 6, label: 'June' },
+  { value: 7, label: 'July' },
+  { value: 8, label: 'August' },
+  { value: 9, label: 'September' },
+  { value: 10, label: 'October' },
+  { value: 11, label: 'November' },
+  { value: 12, label: 'December' },
+];
+
 export function DateRangeDialog({
   currentParams,
   availableDateRange,
 }: DateRangeDialogProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
   const [isRange, setIsRange] = useState(
     !!(currentParams.endYear && currentParams.endMonth)
   );
-  const [open, setOpen] = useState(false);
+
   const [selectedStartYear, setSelectedStartYear] = useState(
     currentParams.startYear
   );
@@ -50,9 +66,9 @@ export function DateRangeDialog({
   );
   const [validationError, setValidationError] = useState('');
 
+  // Parse available date range
   const minDate = new Date(availableDateRange.minDate);
   const maxDate = new Date(availableDateRange.maxDate);
-
   const minYear = minDate.getFullYear();
   const maxYear = maxDate.getFullYear();
   const minMonth = minDate.getMonth() + 1;
@@ -63,47 +79,107 @@ export function DateRangeDialog({
     (_, i) => minYear + i
   );
 
-  const months = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
-  ];
+  // Get available months for a given year
+  const getAvailableMonths = useCallback(
+    (year: number) => {
+      return MONTHS.filter(month => {
+        if (year === minYear && year === maxYear) {
+          return month.value >= minMonth && month.value <= maxMonth;
+        } else if (year === minYear) {
+          return month.value >= minMonth;
+        } else if (year === maxYear) {
+          return month.value <= maxMonth;
+        }
+        return true;
+      });
+    },
+    [minYear, maxYear, minMonth, maxMonth]
+  );
 
-  const getAvailableMonths = (year: number) => {
-    return months.filter(month => {
-      if (year === minYear && year === maxYear) {
-        return month.value >= minMonth && month.value <= maxMonth;
-      } else if (year === minYear) {
-        return month.value >= minMonth;
-      } else if (year === maxYear) {
-        return month.value <= maxMonth;
+  // Check if a month is available for a given year
+  const isMonthAvailable = useCallback(
+    (year: number, month: number) => {
+      const availableMonths = getAvailableMonths(year);
+      return availableMonths.some(m => m.value === month);
+    },
+    [getAvailableMonths]
+  );
+
+  // Get the first available month for a year
+  const getFirstAvailableMonth = useCallback(
+    (year: number) => {
+      const availableMonths = getAvailableMonths(year);
+      return availableMonths.length > 0 ? availableMonths[0].value : 1;
+    },
+    [getAvailableMonths]
+  );
+
+  // Get the last available month for a year
+  const getLastAvailableMonth = useCallback(
+    (year: number) => {
+      const availableMonths = getAvailableMonths(year);
+      return availableMonths.length > 0
+        ? availableMonths[availableMonths.length - 1].value
+        : 12;
+    },
+    [getAvailableMonths]
+  );
+
+  // Validate date range
+  const validateDateRange = useCallback(
+    (
+      startYear: number,
+      startMonth: number,
+      endYear: number,
+      endMonth: number
+    ) => {
+      if (!isRange) return true;
+
+      const startDate = new Date(startYear, startMonth - 1);
+      const endDate = new Date(endYear, endMonth - 1);
+
+      return startDate <= endDate;
+    },
+    [isRange]
+  );
+
+  // Handle start year change
+  const handleStartYearChange = (newYear: number) => {
+    setSelectedStartYear(newYear);
+
+    // Adjust start month if it's not available in the new year
+    if (!isMonthAvailable(newYear, selectedStartMonth)) {
+      const newMonth = getFirstAvailableMonth(newYear);
+      setSelectedStartMonth(newMonth);
+    }
+  };
+
+  // Handle end year change
+  const handleEndYearChange = (newYear: number) => {
+    setSelectedEndYear(newYear);
+
+    // Adjust end month if it's not available in the new year
+    if (!isMonthAvailable(newYear, selectedEndMonth)) {
+      const newMonth = getLastAvailableMonth(newYear);
+      setSelectedEndMonth(newMonth);
+    }
+  };
+
+  // Handle range mode toggle
+  const handleRangeModeToggle = (checked: boolean) => {
+    setIsRange(checked);
+
+    if (checked) {
+      // When enabling range mode, set end date to start date if not already set
+      if (!currentParams.endYear || !currentParams.endMonth) {
+        setSelectedEndYear(selectedStartYear);
+        setSelectedEndMonth(selectedStartMonth);
       }
-      return true;
-    });
+    }
   };
 
-  const validateDateRange = (
-    startYear: number,
-    startMonth: number,
-    endYear: number,
-    endMonth: number
-  ) => {
-    if (!isRange) return true;
-    const startDate = new Date(startYear, startMonth - 1);
-    const endDate = new Date(endYear, endMonth - 1);
-    return startDate <= endDate;
-  };
-
-  React.useEffect(() => {
+  // Validate whenever relevant state changes
+  useEffect(() => {
     if (
       isRange &&
       !validateDateRange(
@@ -123,9 +199,23 @@ export function DateRangeDialog({
     selectedEndYear,
     selectedEndMonth,
     isRange,
+    validateDateRange,
   ]);
 
+  // Reset to current params when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSelectedStartYear(currentParams.startYear);
+      setSelectedStartMonth(currentParams.startMonth);
+      setSelectedEndYear(currentParams.endYear || currentParams.startYear);
+      setSelectedEndMonth(currentParams.endMonth || currentParams.startMonth);
+      setIsRange(!!(currentParams.endYear && currentParams.endMonth));
+      setValidationError('');
+    }
+  }, [open, currentParams]);
+
   const handleSubmit = () => {
+    // Final validation check
     if (
       isRange &&
       !validateDateRange(
@@ -176,8 +266,8 @@ export function DateRangeDialog({
               id="isRange"
               type="checkbox"
               checked={isRange}
-              onChange={e => setIsRange(e.target.checked)}
-              className="h-4 w-4"
+              onChange={e => handleRangeModeToggle(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
             />
             <Label htmlFor="isRange" className="text-sm font-medium">
               Date Range Mode
@@ -191,6 +281,7 @@ export function DateRangeDialog({
               </div>
             )}
 
+            {/* Start Date */}
             <div>
               <Label className="text-sm font-medium text-muted-foreground mb-2 block">
                 {isRange ? 'Start Date' : 'Month & Year'}
@@ -210,7 +301,7 @@ export function DateRangeDialog({
                     onChange={e =>
                       setSelectedStartMonth(parseInt(e.target.value))
                     }
-                    className="w-full p-2 text-sm border rounded"
+                    className="w-full p-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                   >
                     {getAvailableMonths(selectedStartYear).map(month => (
@@ -232,9 +323,9 @@ export function DateRangeDialog({
                     name="startYear"
                     value={selectedStartYear}
                     onChange={e =>
-                      setSelectedStartYear(parseInt(e.target.value))
+                      handleStartYearChange(parseInt(e.target.value))
                     }
-                    className="w-full p-2 text-sm border rounded"
+                    className="w-full p-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                   >
                     {availableYears.map(year => (
@@ -247,6 +338,7 @@ export function DateRangeDialog({
               </div>
             </div>
 
+            {/* End Date */}
             {isRange && (
               <div>
                 <Label className="text-sm font-medium text-muted-foreground mb-2 block">
@@ -267,7 +359,7 @@ export function DateRangeDialog({
                       onChange={e =>
                         setSelectedEndMonth(parseInt(e.target.value))
                       }
-                      className="w-full p-2 text-sm border rounded"
+                      className="w-full p-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       {getAvailableMonths(selectedEndYear).map(month => (
                         <option key={month.value} value={month.value}>
@@ -288,9 +380,9 @@ export function DateRangeDialog({
                       name="endYear"
                       value={selectedEndYear}
                       onChange={e =>
-                        setSelectedEndYear(parseInt(e.target.value))
+                        handleEndYearChange(parseInt(e.target.value))
                       }
-                      className="w-full p-2 text-sm border rounded"
+                      className="w-full p-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       {availableYears.map(year => (
                         <option key={year} value={year}>

@@ -7,6 +7,6 @@ export * from './DateRangeDialog';
 export * from './SupplyDistributionsSidebar';
 export * from './ActivityTypeByRegionTable';
 export * from './MonthlyActivityReport';
-
+export * from './SitePerformanceCard';
 // Re-export the main component as default
 export { MonthlyActivityReport as default } from './MonthlyActivityReport';

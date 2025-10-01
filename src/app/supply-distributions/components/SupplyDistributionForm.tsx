@@ -325,7 +325,7 @@ export default function SupplyDistributionForm() {
 
         // Optionally redirect after success
         setTimeout(() => {
-          router.push('/admin/supply-distributions');
+          router.push('/dashboard');
         }, 2000);
       } else {
         setError(data.error || 'Failed to log distribution');

@@ -23,7 +23,6 @@ import {
   Package,
   ArrowLeft,
   Edit,
-  Trash2,
 } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import BackButton from '@/components/BackButton';
@@ -132,42 +131,21 @@ export default async function SitePage({ params }: SitePageProps) {
     0
   );
 
-  const formatDateTime = (dateStr: Date) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <BackButton />
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">{site.name}</h1>
-              <p className="text-muted-foreground">
-                Site details and information
-              </p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold">{site.name}</h1>
+            <p className="text-muted-foreground">
+              Site details and information
+            </p>
           </div>
           {isAdmin && (
             <div className="flex gap-2">
+              <BackButton />
               <EditButton siteId={site.id} />
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
             </div>
           )}
         </div>
@@ -380,23 +358,6 @@ export default async function SitePage({ params }: SitePageProps) {
                     latitude={site.latitude}
                     longitude={site.longitude}
                   />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Metadata */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Metadata</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created</span>
-                  <span>{formatDateTime(site.createdAt)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Last Updated</span>
-                  <span>{formatDateTime(site.updatedAt)}</span>
                 </div>
               </CardContent>
             </Card>
