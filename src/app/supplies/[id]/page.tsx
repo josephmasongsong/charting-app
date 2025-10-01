@@ -7,9 +7,9 @@ import { eq } from 'drizzle-orm';
 import SupplyDetailCard from './components/SupplyDetailCard';
 
 interface SupplyPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // Server function to fetch supply data directly from database
