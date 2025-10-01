@@ -32,9 +32,9 @@ import {
 import Link from 'next/link';
 
 interface EventPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 async function getEvent(eventId: string) {
@@ -87,7 +87,8 @@ export default async function EventPage({ params }: EventPageProps) {
     redirect('/login');
   }
 
-  const event = await getEvent(params.id);
+  const { id } = await params;
+  const event = await getEvent(id);
 
   if (!event) {
     notFound();
@@ -535,7 +536,8 @@ export default async function EventPage({ params }: EventPageProps) {
 }
 
 export async function generateMetadata({ params }: EventPageProps) {
-  const event = await getEvent(params.id);
+  const { id } = await params;
+  const event = await getEvent(id);
 
   if (!event) {
     return {

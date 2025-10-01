@@ -7,7 +7,7 @@ import { db, events } from '@/db';
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function POST(
       );
     }
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
 
     // Fetch the original event
     const [originalEvent] = await db

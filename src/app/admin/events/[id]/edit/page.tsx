@@ -14,9 +14,9 @@ import { eq, sql } from 'drizzle-orm';
 import EventForm from '@/components/EventForm';
 
 interface EditEventPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 async function getEventData(eventId: string) {
@@ -78,17 +78,19 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
   }
 
   // Get event data
-  const eventData = await getEventData(params.id);
+  const { id } = await params;
+  const eventData = await getEventData(id);
 
   if (!eventData) {
     redirect('/admin/events');
   }
 
-  return <EventForm mode="edit" eventId={params.id} initialData={eventData} />;
+  return <EventForm mode="edit" eventId={id} initialData={eventData} />;
 }
 
 export async function generateMetadata({ params }: EditEventPageProps) {
-  const eventData = await getEventData(params.id);
+  const { id } = await params;
+  const eventData = await getEventData(id);
 
   return {
     title: eventData ? `Edit Event - ${eventData.title}` : 'Edit Event',

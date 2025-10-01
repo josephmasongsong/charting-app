@@ -6,11 +6,11 @@ import bcrypt from 'bcrypt';
 
 export async function POST(
   req: Request,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
     const { password } = await req.json();
-    const { token } = params;
+    const { token } = await params;
 
     // Find user with valid token
     const [user] = await db

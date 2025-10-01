@@ -15,7 +15,7 @@ import { eq } from 'drizzle-orm';
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -38,7 +38,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Get distribution details with related data
     const [distribution] = await db

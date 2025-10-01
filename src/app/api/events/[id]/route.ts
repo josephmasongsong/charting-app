@@ -16,7 +16,7 @@ import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -29,7 +29,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const [event] = await db
       .select({
@@ -91,7 +91,7 @@ export async function GET(
 // PATCH - Update event (for non-admins editing duplicated events only)
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -103,7 +103,7 @@ export async function PATCH(
       );
     }
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const body = await req.json();
     const { isFirstSaveAfterDuplication, ...eventData } = body;
 
@@ -280,7 +280,7 @@ export async function PATCH(
 // DELETE - Delete event (admin only)
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -300,7 +300,8 @@ export async function DELETE(
       );
     }
 
-    await db.delete(events).where(eq(events.id, params.id));
+    const { id } = await params;
+    await db.delete(events).where(eq(events.id, id));
 
     return NextResponse.json({
       success: true,

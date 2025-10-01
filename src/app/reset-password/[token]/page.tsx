@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ import { CheckCircle, XCircle } from 'lucide-react';
 export default function ResetPassword({
   params,
 }: {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -27,7 +27,7 @@ export default function ResetPassword({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const router = useRouter();
-  const { token } = params;
+  const { token } = use(params);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

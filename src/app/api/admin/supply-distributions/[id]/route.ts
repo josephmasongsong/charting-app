@@ -16,7 +16,7 @@ import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -36,7 +36,7 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Get distribution details
     const [distribution] = await db
@@ -106,7 +106,7 @@ export async function GET(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -129,7 +129,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Get distribution details for logging before deletion
     const [existingDistribution] = await db

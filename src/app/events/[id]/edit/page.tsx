@@ -7,8 +7,8 @@ import { db, events } from '@/db';
 import { eq } from 'drizzle-orm';
 
 interface PageProps {
-  params: { id: string };
-  searchParams: { duplicated?: string };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ duplicated?: string }>;
 }
 
 export default async function EditEventPage({
@@ -21,7 +21,9 @@ export default async function EditEventPage({
     redirect('/auth/signin');
   }
 
-  const isDuplicated = searchParams.duplicated === 'true';
+  const { id } = await params;
+  const { duplicated } = await searchParams;
+  const isDuplicated = duplicated === 'true';
 
   // Non-admins can only edit if it's a duplicated event on first save
   if (session.user.role !== 'admin' && !isDuplicated) {
@@ -32,7 +34,7 @@ export default async function EditEventPage({
   const [event] = await db
     .select()
     .from(events)
-    .where(eq(events.id, params.id))
+    .where(eq(events.id, id))
     .limit(1);
 
   if (!event) {
@@ -47,7 +49,7 @@ export default async function EditEventPage({
   return (
     <EventForm
       mode="edit"
-      eventId={params.id}
+      eventId={id}
       initialData={event}
       isDuplicated={isDuplicated}
       isAdmin={session.user.role === 'admin'}
