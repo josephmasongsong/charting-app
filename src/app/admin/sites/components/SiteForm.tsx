@@ -443,7 +443,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="userId">Site Manager *</Label>
+              <Label htmlFor="userId">Tenant Engagement Worker *</Label>
               <Select
                 value={formData.userId}
                 onValueChange={value =>

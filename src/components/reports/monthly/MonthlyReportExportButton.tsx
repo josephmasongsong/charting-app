@@ -4,14 +4,9 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet } from 'lucide-react';
 import { MonthlyActivityReportData } from './types';
+import * as XLSX from 'xlsx';
 
 interface MonthlyReportExportButtonProps {
   data: MonthlyActivityReportData;
@@ -22,92 +17,129 @@ export function MonthlyReportExportButton({
 }: MonthlyReportExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleExportPDF = async () => {
+  const handleExportExcel = async () => {
     setIsExporting(true);
     try {
-      // TODO: Implement PDF export logic
-      console.log('Exporting PDF...', data);
+      // Create a new workbook
+      const workbook = XLSX.utils.book_new();
 
-      // Placeholder for actual implementation
-      // You might want to use a library like jsPDF or call an API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      alert('PDF export would happen here');
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const handleExportCSV = async () => {
-    setIsExporting(true);
-    try {
-      // Create CSV content
-      const headers = [
+      // Prepare Activity Types by Region data
+      const activityHeaders = [
         'Region',
         'Activity Type',
+        'Program Goal',
         'Events',
-        'Participants',
+        'Total Participants',
         'New Participants',
         'Returning Participants',
+        'Admin Duration (hrs)',
         'Total Cost',
       ];
-      const rows = data.activityTypesByRegion.map(activity => [
+
+      const activityRows = data.activityTypesByRegion.map(activity => [
         activity.region,
         activity.activityTypeName,
+        activity.programGoalName,
         activity.eventCount,
         activity.participantsServed,
         activity.newParticipants,
         activity.returningParticipants,
-        activity.totalCost.toFixed(2),
+        Math.round(activity.totalAdminDuration / 60), // Convert minutes to hours
+        activity.totalCost,
       ]);
 
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.join(',')),
-      ].join('\n');
+      // Create worksheet data with summary section
+      const worksheetData: any[][] = [
+        ['Monthly Activity Report'],
+        ['Report Period:', data.reportMonth],
+        [],
+        ['Summary Statistics'],
+        ['Total Events:', data.totalEvents],
+        ['Total Participants:', data.totalParticipants],
+        ['New Participants:', data.totalNewParticipants],
+        ['Returning Participants:', data.totalReturningParticipants],
+        [
+          'Total Event Duration (hrs):',
+          Math.round(data.totalEventDuration / 60),
+        ],
+        [
+          'Total Admin Duration (hrs):',
+          Math.round(data.totalAdminDuration / 60),
+        ],
+        ['Total Cost:', `$${data.totalCost.toFixed(2)}`],
+        [],
+        ['Activity Types by Region'],
+        activityHeaders,
+        ...activityRows,
+      ];
 
-      // Create download link
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
+      // Add supply distributions if they exist
+      if (data.supplyDistributions && data.supplyDistributions.length > 0) {
+        const supplyHeaders = [
+          'Supply Name',
+          'Total Quantity Distributed',
+          'Total Cost',
+          'Distribution Count',
+        ];
 
-      link.setAttribute('href', url);
-      link.setAttribute(
-        'download',
-        `monthly-report-${data.reportMonth.replace(/\s+/g, '-')}.csv`
-      );
-      link.style.visibility = 'hidden';
+        const supplyRows = data.supplyDistributions.map(supply => [
+          supply.supplyName,
+          supply.totalQuantityDistributed,
+          supply.totalCost,
+          supply.distributionCount,
+        ]);
 
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        // Add spacing and supply distribution section
+        worksheetData.push(
+          [],
+          [],
+          ['Supply Distributions'],
+          supplyHeaders,
+          ...supplyRows
+        );
+      }
+
+      // Create worksheet
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+      // Set column widths
+      worksheet['!cols'] = [
+        { wch: 20 }, // Region/Label column
+        { wch: 25 }, // Activity Type/Value column
+        { wch: 20 }, // Program Goal column
+        { wch: 10 }, // Events column
+        { wch: 18 }, // Total Participants column
+        { wch: 18 }, // New Participants column
+        { wch: 20 }, // Returning Participants column
+        { wch: 20 }, // Admin Duration column
+        { wch: 15 }, // Total Cost column
+      ];
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Monthly Report');
+
+      // Generate filename
+      const filename = `monthly-report-${data.reportMonth.replace(/\s+/g, '-').toLowerCase()}.xlsx`;
+
+      // Write workbook and trigger download
+      XLSX.writeFile(workbook, filename);
     } catch (error) {
-      console.error('Error exporting CSV:', error);
+      console.error('Error exporting Excel:', error);
+      alert('An error occurred while exporting the report.');
     } finally {
       setIsExporting(false);
     }
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={isExporting}>
-          <Download className="h-4 w-4 mr-2" />
-          {isExporting ? 'Exporting...' : 'Export'}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleExportPDF}>
-          <FileText className="h-4 w-4 mr-2" />
-          Export as PDF
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleExportCSV}>
-          <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Export as CSV
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={isExporting}
+      onClick={handleExportExcel}
+    >
+      <FileSpreadsheet className="h-4 w-4 mr-2" />
+      {isExporting ? 'Exporting...' : 'Export to Excel'}
+    </Button>
   );
 }

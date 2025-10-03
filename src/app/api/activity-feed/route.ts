@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
       user: activity.actor,
       timestamp: formatTimeAgo(activity.createdAt),
       details: activity.metadata,
+      targetId: activity.targetId, // ← Add this line!
     }));
 
     return NextResponse.json({ activities: formattedActivities });
