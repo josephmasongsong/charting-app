@@ -27,24 +27,18 @@ export function MonthlyReportExportButton({
       const activityHeaders = [
         'Region',
         'Activity Type',
-        'Program Goal',
         'Events',
-        'Total Participants',
         'New Participants',
         'Returning Participants',
-        'Admin Duration (hrs)',
         'Total Cost',
       ];
 
       const activityRows = data.activityTypesByRegion.map(activity => [
         activity.region,
         activity.activityTypeName,
-        activity.programGoalName,
         activity.eventCount,
-        activity.participantsServed,
         activity.newParticipants,
         activity.returningParticipants,
-        Math.round(activity.totalAdminDuration / 60), // Convert minutes to hours
         activity.totalCost,
       ]);
 
@@ -106,12 +100,9 @@ export function MonthlyReportExportButton({
       worksheet['!cols'] = [
         { wch: 20 }, // Region/Label column
         { wch: 25 }, // Activity Type/Value column
-        { wch: 20 }, // Program Goal column
         { wch: 10 }, // Events column
-        { wch: 18 }, // Total Participants column
         { wch: 18 }, // New Participants column
         { wch: 20 }, // Returning Participants column
-        { wch: 20 }, // Admin Duration column
         { wch: 15 }, // Total Cost column
       ];
 

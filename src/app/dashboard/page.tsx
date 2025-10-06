@@ -317,6 +317,25 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-3">
+                      <Link href="/admin/events" className="block">
+                        <Button
+                          variant="outline"
+                          className="w-full h-24 flex flex-col gap-2"
+                        >
+                          <CalendarDays className="h-6 w-6" />
+                          <span className="text-sm font-medium">Events</span>
+                        </Button>
+                      </Link>
+
+                      <Link href="/admin/sites" className="block">
+                        <Button
+                          variant="outline"
+                          className="w-full h-24 flex flex-col gap-2"
+                        >
+                          <MapPin className="h-6 w-6" />
+                          <span className="text-sm font-medium">Sites</span>
+                        </Button>
+                      </Link>
                       <Link href="/admin/users" className="block">
                         <Button
                           variant="outline"
@@ -385,26 +404,6 @@ export default function Dashboard() {
                           <span className="text-sm font-medium">
                             Distributions
                           </span>
-                        </Button>
-                      </Link>
-
-                      <Link href="/admin/events" className="block">
-                        <Button
-                          variant="outline"
-                          className="w-full h-24 flex flex-col gap-2"
-                        >
-                          <CalendarDays className="h-6 w-6" />
-                          <span className="text-sm font-medium">Events</span>
-                        </Button>
-                      </Link>
-
-                      <Link href="/admin/sites" className="block">
-                        <Button
-                          variant="outline"
-                          className="w-full h-24 flex flex-col gap-2"
-                        >
-                          <MapPin className="h-6 w-6" />
-                          <span className="text-sm font-medium">Sites</span>
                         </Button>
                       </Link>
                     </div>

@@ -210,7 +210,12 @@ const DistributionsTable = forwardRef<
 
     // Fetch distributions
     const fetchDistributions = useCallback(
-      async (page = 1, searchTerm = '', sort = sortConfig, filters: FilterConfig = {}) => {
+      async (
+        page = 1,
+        searchTerm = '',
+        sort = sortConfig,
+        filters: FilterConfig = {}
+      ) => {
         try {
           setLoading(true);
           const params = new URLSearchParams({
