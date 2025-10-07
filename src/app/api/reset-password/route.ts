@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 
+const logoUrl = `${process.env.NEXT_PUBLIC_APP_URL}/logo.jpg`;
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
       subject: 'Password Reset Request',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <img src="${logoUrl}" style="width: 40px; height: 40px; margin: auto; display: block;" alt="BCH Logo" />
           <h2 style="color: #333;">Password Reset Request</h2>
           <p>You requested a password reset for your account. Click the link below to reset your password:</p>
           <p style="margin: 20px 0;">

@@ -8,6 +8,7 @@ import bcrypt from 'bcrypt';
 import { Resend } from 'resend';
 import crypto from 'crypto';
 import { ActivityFeedService } from '@/lib/services/activity-feed.service';
+const logoUrl = `${process.env.NEXT_PUBLIC_APP_URL}/logo.jpg`;
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -135,6 +136,7 @@ export async function POST(req: Request) {
           subject: 'Welcome! Your account has been created',
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <img src="${logoUrl}" style="width: 40px; height: 40px; margin: auto; display: block;" alt="BCH Logo" />
               <h2 style="color: #333;">Welcome to Our Platform!</h2>
               <p>Hello ${firstName},</p>
               <p>Your account has been created by an administrator. Here are your login details:</p>
