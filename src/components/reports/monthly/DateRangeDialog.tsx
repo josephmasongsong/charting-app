@@ -49,20 +49,20 @@ export function DateRangeDialog({
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [isRange, setIsRange] = useState(
-    !!(currentParams.endYear && currentParams.endMonth)
+    !!(currentParams.endYear && currentParams.endMonth),
   );
 
   const [selectedStartYear, setSelectedStartYear] = useState(
-    currentParams.startYear
+    currentParams.startYear,
   );
   const [selectedStartMonth, setSelectedStartMonth] = useState(
-    currentParams.startMonth
+    currentParams.startMonth,
   );
   const [selectedEndYear, setSelectedEndYear] = useState(
-    currentParams.endYear || currentParams.startYear
+    currentParams.endYear || currentParams.startYear,
   );
   const [selectedEndMonth, setSelectedEndMonth] = useState(
-    currentParams.endMonth || currentParams.startMonth
+    currentParams.endMonth || currentParams.startMonth,
   );
   const [validationError, setValidationError] = useState('');
 
@@ -76,7 +76,7 @@ export function DateRangeDialog({
 
   const availableYears = Array.from(
     { length: maxYear - minYear + 1 },
-    (_, i) => minYear + i
+    (_, i) => minYear + i,
   );
 
   // Get available months for a given year
@@ -93,7 +93,7 @@ export function DateRangeDialog({
         return true;
       });
     },
-    [minYear, maxYear, minMonth, maxMonth]
+    [minYear, maxYear, minMonth, maxMonth],
   );
 
   // Check if a month is available for a given year
@@ -102,7 +102,7 @@ export function DateRangeDialog({
       const availableMonths = getAvailableMonths(year);
       return availableMonths.some(m => m.value === month);
     },
-    [getAvailableMonths]
+    [getAvailableMonths],
   );
 
   // Get the first available month for a year
@@ -111,7 +111,7 @@ export function DateRangeDialog({
       const availableMonths = getAvailableMonths(year);
       return availableMonths.length > 0 ? availableMonths[0].value : 1;
     },
-    [getAvailableMonths]
+    [getAvailableMonths],
   );
 
   // Get the last available month for a year
@@ -122,7 +122,7 @@ export function DateRangeDialog({
         ? availableMonths[availableMonths.length - 1].value
         : 12;
     },
-    [getAvailableMonths]
+    [getAvailableMonths],
   );
 
   // Validate date range
@@ -131,7 +131,7 @@ export function DateRangeDialog({
       startYear: number,
       startMonth: number,
       endYear: number,
-      endMonth: number
+      endMonth: number,
     ) => {
       if (!isRange) return true;
 
@@ -140,7 +140,7 @@ export function DateRangeDialog({
 
       return startDate <= endDate;
     },
-    [isRange]
+    [isRange],
   );
 
   // Handle start year change
@@ -186,7 +186,7 @@ export function DateRangeDialog({
         selectedStartYear,
         selectedStartMonth,
         selectedEndYear,
-        selectedEndMonth
+        selectedEndMonth,
       )
     ) {
       setValidationError('Start date must be before or equal to end date');
@@ -205,14 +205,35 @@ export function DateRangeDialog({
   // Reset to current params when dialog opens
   useEffect(() => {
     if (open) {
-      setSelectedStartYear(currentParams.startYear);
-      setSelectedStartMonth(currentParams.startMonth);
-      setSelectedEndYear(currentParams.endYear || currentParams.startYear);
-      setSelectedEndMonth(currentParams.endMonth || currentParams.startMonth);
+      // Clamp start year to available years if out of range
+      const validStartYear = availableYears.includes(currentParams.startYear)
+        ? currentParams.startYear
+        : maxYear;
+
+      // Clamp start month to available months for the valid year
+      const validStartMonth = isMonthAvailable(validStartYear, currentParams.startMonth)
+        ? currentParams.startMonth
+        : getFirstAvailableMonth(validStartYear);
+
+      setSelectedStartYear(validStartYear);
+      setSelectedStartMonth(validStartMonth);
+
+      // Clamp end year to available years if out of range
+      const validEndYear = currentParams.endYear && availableYears.includes(currentParams.endYear)
+        ? currentParams.endYear
+        : validStartYear;
+
+      // Clamp end month to available months for the valid end year
+      const validEndMonth = currentParams.endMonth && isMonthAvailable(validEndYear, currentParams.endMonth)
+        ? currentParams.endMonth
+        : validStartMonth;
+
+      setSelectedEndYear(validEndYear);
+      setSelectedEndMonth(validEndMonth);
       setIsRange(!!(currentParams.endYear && currentParams.endMonth));
       setValidationError('');
     }
-  }, [open, currentParams]);
+  }, [open, currentParams, availableYears, maxYear, isMonthAvailable, getFirstAvailableMonth]);
 
   const handleSubmit = () => {
     // Final validation check
@@ -222,7 +243,7 @@ export function DateRangeDialog({
         selectedStartYear,
         selectedStartMonth,
         selectedEndYear,
-        selectedEndMonth
+        selectedEndMonth,
       )
     ) {
       setValidationError('Start date must be before or equal to end date');
