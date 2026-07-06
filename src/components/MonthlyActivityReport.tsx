@@ -226,7 +226,9 @@ function MetricCard({
                 <span className="font-medium text-foreground">
                   {React.isValidElement(subMetric.value)
                     ? subMetric.value
-                    : subMetric.formatter && (typeof subMetric.value === 'string' || typeof subMetric.value === 'number')
+                    : subMetric.formatter &&
+                        (typeof subMetric.value === 'string' ||
+                          typeof subMetric.value === 'number')
                       ? subMetric.formatter(subMetric.value)
                       : subMetric.value}
                 </span>
@@ -249,20 +251,20 @@ function DateRangeDialog({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isRange, setIsRange] = useState(
-    !!(currentParams.endYear && currentParams.endMonth)
+    !!(currentParams.endYear && currentParams.endMonth),
   );
   const [open, setOpen] = useState(false);
   const [selectedStartYear, setSelectedStartYear] = useState(
-    currentParams.startYear
+    currentParams.startYear,
   );
   const [selectedStartMonth, setSelectedStartMonth] = useState(
-    currentParams.startMonth
+    currentParams.startMonth,
   );
   const [selectedEndYear, setSelectedEndYear] = useState(
-    currentParams.endYear || currentParams.startYear
+    currentParams.endYear || currentParams.startYear,
   );
   const [selectedEndMonth, setSelectedEndMonth] = useState(
-    currentParams.endMonth || currentParams.startMonth
+    currentParams.endMonth || currentParams.startMonth,
   );
   const [validationError, setValidationError] = useState('');
 
@@ -276,7 +278,7 @@ function DateRangeDialog({
 
   const availableYears = Array.from(
     { length: maxYear - minYear + 1 },
-    (_, i) => minYear + i
+    (_, i) => minYear + i,
   );
 
   const months = [
@@ -311,7 +313,7 @@ function DateRangeDialog({
     startYear: number,
     startMonth: number,
     endYear: number,
-    endMonth: number
+    endMonth: number,
   ) => {
     if (!isRange) return true;
     const startDate = new Date(startYear, startMonth - 1);
@@ -326,7 +328,7 @@ function DateRangeDialog({
         selectedStartYear,
         selectedStartMonth,
         selectedEndYear,
-        selectedEndMonth
+        selectedEndMonth,
       )
     ) {
       setValidationError('Start date must be before or equal to end date');
@@ -350,7 +352,7 @@ function DateRangeDialog({
         selectedStartYear,
         selectedStartMonth,
         selectedEndYear,
-        selectedEndMonth
+        selectedEndMonth,
       )
     ) {
       setValidationError('Start date must be before or equal to end date');
@@ -630,7 +632,7 @@ function ActivityTypeByRegionTable({
         acc[item.region].push(item);
         return acc;
       },
-      {} as Record<string, ActivityTypeByRegion[]>
+      {} as Record<string, ActivityTypeByRegion[]>,
     );
   }, [data]);
 
@@ -652,7 +654,7 @@ function ActivityTypeByRegionTable({
         returningParticipants: 0,
         adminDuration: 0,
         cost: 0,
-      }
+      },
     );
   };
 
@@ -759,7 +761,7 @@ function ActivityTypeByRegionTable({
                                 className={`flex items-center gap-1 ${getGrowthColor(regionParticipantGrowth.growthType)}`}
                               >
                                 {getGrowthIcon(
-                                  regionParticipantGrowth.growthType
+                                  regionParticipantGrowth.growthType,
                                 )}
                                 <span className="text-xs font-medium">
                                   {regionParticipantGrowth.growthRate > 0
@@ -815,18 +817,18 @@ export function MonthlyActivityReport({
   // Calculate overall growth for participant metric card
   const totalCurrentParticipants = data.monthlyParticipantGrowth.reduce(
     (sum, item) => sum + item.currentMonthParticipants,
-    0
+    0,
   );
   const totalPreviousParticipants = data.monthlyParticipantGrowth.reduce(
     (sum, item) => sum + item.previousMonthParticipants,
-    0
+    0,
   );
   const overallParticipantGrowthRate =
     totalPreviousParticipants > 0
       ? Math.round(
           ((totalCurrentParticipants - totalPreviousParticipants) /
             totalPreviousParticipants) *
-            100
+            100,
         )
       : 0;
 
@@ -841,18 +843,18 @@ export function MonthlyActivityReport({
   const totalCurrentEvents =
     data.monthlyEventGrowth?.reduce(
       (sum, item) => sum + item.currentMonthEvents,
-      0
+      0,
     ) || 0;
   const totalPreviousEvents =
     data.monthlyEventGrowth?.reduce(
       (sum, item) => sum + item.previousMonthEvents,
-      0
+      0,
     ) || 0;
   const overallEventGrowthRate =
     totalPreviousEvents > 0
       ? Math.round(
           ((totalCurrentEvents - totalPreviousEvents) / totalPreviousEvents) *
-            100
+            100,
         )
       : 0;
 
@@ -954,7 +956,7 @@ export function MonthlyActivityReport({
           title="Items Distributed"
           value={data.supplyDistributions.reduce(
             (sum, item) => sum + item.totalQuantityDistributed,
-            0
+            0,
           )}
           icon={Package}
           subMetrics={[
@@ -965,7 +967,7 @@ export function MonthlyActivityReport({
                   className={`flex items-center gap-1 ${getGrowthColor(data.monthlySupplyDistributionGrowth.growthType)}`}
                 >
                   {getGrowthIcon(
-                    data.monthlySupplyDistributionGrowth.growthType
+                    data.monthlySupplyDistributionGrowth.growthType,
                   )}
                   <span>
                     {data.monthlySupplyDistributionGrowth.growthRate > 0

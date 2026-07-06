@@ -32,18 +32,18 @@ export function MonthlyActivityReport({
   // Calculate overall growth for participant metric card
   const totalCurrentParticipants = data.monthlyParticipantGrowth.reduce(
     (sum, item) => sum + item.currentMonthParticipants,
-    0
+    0,
   );
   const totalPreviousParticipants = data.monthlyParticipantGrowth.reduce(
     (sum, item) => sum + item.previousMonthParticipants,
-    0
+    0,
   );
   const overallParticipantGrowthRate =
     totalPreviousParticipants > 0
       ? Math.round(
           ((totalCurrentParticipants - totalPreviousParticipants) /
             totalPreviousParticipants) *
-            100
+            100,
         )
       : 0;
 
@@ -58,18 +58,18 @@ export function MonthlyActivityReport({
   const totalCurrentEvents =
     data.monthlyEventGrowth?.reduce(
       (sum, item) => sum + item.currentMonthEvents,
-      0
+      0,
     ) || 0;
   const totalPreviousEvents =
     data.monthlyEventGrowth?.reduce(
       (sum, item) => sum + item.previousMonthEvents,
-      0
+      0,
     ) || 0;
   const overallEventGrowthRate =
     totalPreviousEvents > 0
       ? Math.round(
           ((totalCurrentEvents - totalPreviousEvents) / totalPreviousEvents) *
-            100
+            100,
         )
       : 0;
 
@@ -171,7 +171,7 @@ export function MonthlyActivityReport({
           title="Items Distributed"
           value={data.supplyDistributions.reduce(
             (sum, item) => sum + item.totalQuantityDistributed,
-            0
+            0,
           )}
           icon={Package}
           subMetrics={[
@@ -182,7 +182,7 @@ export function MonthlyActivityReport({
                   className={`flex items-center gap-1 ${getGrowthColor(data.monthlySupplyDistributionGrowth.growthType)}`}
                 >
                   {getGrowthIcon(
-                    data.monthlySupplyDistributionGrowth.growthType
+                    data.monthlySupplyDistributionGrowth.growthType,
                   )}
                   <span>
                     {data.monthlySupplyDistributionGrowth.growthRate > 0

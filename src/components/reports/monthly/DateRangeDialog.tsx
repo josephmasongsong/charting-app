@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useTransition, useEffect, useCallback } from 'react';
+import React, { useState, useTransition, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -51,6 +51,7 @@ export function DateRangeDialog({
   const [isRange, setIsRange] = useState(
     !!(currentParams.endYear && currentParams.endMonth),
   );
+  const prevOpenRef = useRef(false);
 
   const [selectedStartYear, setSelectedStartYear] = useState(
     currentParams.startYear,
@@ -204,7 +205,8 @@ export function DateRangeDialog({
 
   // Reset to current params when dialog opens
   useEffect(() => {
-    if (open) {
+    // Only run when dialog transitions from closed to open
+    if (open && !prevOpenRef.current) {
       // Clamp start year to available years if out of range
       const validStartYear = availableYears.includes(currentParams.startYear)
         ? currentParams.startYear
@@ -233,6 +235,8 @@ export function DateRangeDialog({
       setIsRange(!!(currentParams.endYear && currentParams.endMonth));
       setValidationError('');
     }
+
+    prevOpenRef.current = open;
   }, [open, currentParams, availableYears, maxYear, isMonthAvailable, getFirstAvailableMonth]);
 
   const handleSubmit = () => {

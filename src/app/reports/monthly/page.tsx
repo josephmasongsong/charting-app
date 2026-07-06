@@ -41,19 +41,15 @@ async function ReportContent({ searchParams }: PageProps) {
   const startMonth = params.startMonth
     ? parseInt(params.startMonth)
     : now.getMonth() + 1;
-  const endYear = params.endYear
-    ? parseInt(params.endYear)
-    : undefined;
-  const endMonth = params.endMonth
-    ? parseInt(params.endMonth)
-    : undefined;
+  const endYear = params.endYear ? parseInt(params.endYear) : undefined;
+  const endMonth = params.endMonth ? parseInt(params.endMonth) : undefined;
 
   try {
     const reportData = await generateMonthlyActivityReport(
       startYear,
       startMonth,
       endYear,
-      endMonth
+      endMonth,
     );
 
     return (

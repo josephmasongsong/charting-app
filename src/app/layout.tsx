@@ -41,9 +41,7 @@ export default function RootLayout({
         </AuthProvider>
         <footer className="border-t bg-muted/50 px-6 py-4">
           <div className="max-w-7xl mx-auto flex justify-between">
-            <span className="text-sm text-foreground">
-              © Copyright 2025 BC Housing.
-            </span>
+            <span className="text-sm text-foreground">© Copyright 2025.</span>
             <div>
               <p className="text-sm text-foreground">
                 Questions? Email&nbsp;
