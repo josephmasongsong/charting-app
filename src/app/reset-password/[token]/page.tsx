@@ -5,15 +5,26 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { BrandMark } from '@/components/ui/brand-mark';
+import { cn } from '@/lib/utils';
+
+const pageClass =
+  'flex min-h-screen items-center justify-center bg-(--action-primary) px-6 py-12';
+const cardClass =
+  'w-full max-w-[480px] gap-0 rounded-(--radius-card) border-0 bg-(--surface-card) px-12 pt-10 pb-11 shadow-none';
+const labelClass = 'text-[14.5px] font-semibold';
+const inputClass =
+  'h-10 rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)';
+const submitClass =
+  'h-auto w-full rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[11px] text-[15.5px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+const alertClass = 'mt-6 border-y-0 border-r-0 px-3.5 py-3';
+// Success status treatment: --success bar on the design system's green surface.
+// --bch-green-50 is not declared in src/styles/tokens; this is the design
+// system's own expression of it, fallback included.
+const successAlertClass =
+  'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
 
 export default function ResetPassword({
   params,
@@ -71,69 +82,91 @@ export default function ResetPassword({
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            Set new password
-          </CardTitle>
-          <CardDescription className="text-center">
-            Enter your new password below
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {success ? (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                {message}
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <XCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+    <div className={pageClass}>
+      <Card className={cardClass}>
+        <div className="flex items-center justify-center gap-2.5">
+          <BrandMark size={34} />
+          <span className="text-2xl font-bold tracking-[.02em] text-(--surface-chrome)">
+            BC HOUSING
+          </span>
+        </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="password">New Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter new password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    minLength={8}
-                  />
-                </div>
+        <h1 className="mt-7 text-center text-xl leading-tight font-bold text-(--surface-chrome)">
+          Set new password
+        </h1>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm new password"
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    minLength={8}
-                  />
-                </div>
+        {/* TODO: /reset-password/[token] — not wired: the template's alert slot
+            can also show an expired/invalid link on load; the API only checks
+            the token on submit, so only submit-time errors appear here. */}
+        {success ? (
+          <Alert className={cn(alertClass, successAlertClass)}>
+            <AlertDescription className="text-[14px] leading-[1.45] text-foreground">
+              {message}
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <>
+            {error && (
+              <Alert variant="destructive" className={alertClass}>
+                <AlertDescription className="text-[14px] leading-[1.45]">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Processing...' : 'Reset Password'}
-                </Button>
-              </form>
-            </div>
-          )}
-        </CardContent>
+            <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-6">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="password" className={labelClass}>
+                  New Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Enter new password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  minLength={8}
+                  className={inputClass}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="confirmPassword" className={labelClass}>
+                  Confirm Password
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  minLength={8}
+                  className={inputClass}
+                />
+              </div>
+
+              <Button type="submit" disabled={isLoading} className={submitClass}>
+                {isLoading ? 'Processing...' : 'Reset Password'}
+              </Button>
+            </form>
+          </>
+        )}
+
+        {/* TODO: /reset-password/[token] — not wired: the template's
+            "Back to sign in" link; this page has no navigation today. */}
+        <button
+          type="button"
+          onClick={() => {}}
+          className="mt-6 cursor-pointer text-center text-[14.5px] text-(--action-primary) hover:text-(--action-primary-hover) hover:underline"
+        >
+          Back to sign in
+        </button>
       </Card>
     </div>
   );
