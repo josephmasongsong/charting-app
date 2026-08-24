@@ -1,4 +1,3 @@
-// app/sites/[id]/page.tsx
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
@@ -11,20 +10,14 @@ import {
   supplies,
 } from '@/db';
 import { eq, sql } from 'drizzle-orm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  MapPin,
-  Users,
-  Home,
-  Building,
-  UserCheck,
-  Package,
-  ArrowLeft,
-  Edit,
-} from 'lucide-react';
+import { ProfileField } from '@/components/ui/profile-field';
+import { DataTable } from '@/components/ui/data-table';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Package } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import BackButton from '@/components/BackButton';
 import EditButton from './components/EditButton';
 import GoogleMapsButton from './components/GoogleMapsButton';
@@ -35,7 +28,6 @@ interface SitePageProps {
   }>;
 }
 
-// Server function to fetch site data
 async function getSite(siteId: string) {
   const [site] = await db
     .select({
@@ -68,7 +60,6 @@ async function getSite(siteId: string) {
   return site;
 }
 
-// Server function to fetch site supplies
 async function getSiteSupplies(siteId: string) {
   const siteSuppliesData = await db
     .select({
@@ -88,7 +79,6 @@ async function getSiteSupplies(siteId: string) {
   return siteSuppliesData;
 }
 
-// Server function to count events at site
 async function getSiteEventsCount(siteId: string) {
   const { events } = await import('@/db');
   const result = await db
@@ -99,29 +89,44 @@ async function getSiteEventsCount(siteId: string) {
   return result[0]?.count || 0;
 }
 
+const surfaceCardClass =
+  'gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) shadow-(--shadow-card)';
+const kpiTileClass =
+  'gap-0 rounded-(--radius-card) border-(--border-default) border-l-4 border-l-(--surface-chrome) bg-(--surface-card) px-[18px] pt-3.5 pb-4 shadow-(--shadow-card)';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary) disabled:border-(--bch-gray-300) disabled:text-(--bch-gray-500) disabled:opacity-100';
+
+function money(value: number) {
+  return `$${value.toFixed(2)}`;
+}
+
+function formatDate(date: Date | string | null) {
+  if (!date) return '';
+  return new Date(date).toLocaleDateString('en-CA', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export default async function SitePage({ params }: SitePageProps) {
   const session = await getServerSession(authOptions);
 
-  // Redirect unauthenticated users to login
   if (!session) {
     redirect('/login');
   }
 
-  // Fetch site data and supplies on the server
   const { id } = await params;
   const site = await getSite(id);
   const siteSuppliesData = await getSiteSupplies(id);
   const eventsCount = await getSiteEventsCount(id);
 
-  // Return 404 if site not found
   if (!site) {
     notFound();
   }
 
-  // Check if current user is admin
   const isAdmin = session.user?.role === 'admin';
 
-  // Calculate supply totals
   const totalSupplyValue = siteSuppliesData.reduce(
     (sum, supply) => sum + Number(supply.totalValue),
     0
@@ -131,244 +136,211 @@ export default async function SitePage({ params }: SitePageProps) {
     0
   );
 
+  const kpis: { label: string; value: string; note?: string }[] = [
+    {
+      label: 'Total Tenants',
+      value: String(site.numberOfTenants),
+    },
+    {
+      label: 'Events Held',
+      value: String(eventsCount),
+      note: 'All time',
+    },
+    {
+      // TODO: /sites/[id] — not wired: avg attendance needs an aggregate
+      // over this site's events; only count(*) is fetched today.
+      label: 'Avg Attendance',
+      value: '—',
+      note: 'Not tracked yet',
+    },
+    {
+      label: 'Inventory Value',
+      value: money(totalSupplyValue),
+      note: `${totalSupplyItems} unit${totalSupplyItems === 1 ? '' : 's'} on hand`,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-(--surface-page) px-6 pt-6 pb-12">
+      <div className="mx-auto max-w-[1180px]">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">{site.name}</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-[28px] leading-tight font-bold tracking-[-.2px]">
+              {site.name}
+            </h1>
+            <p className="mt-1.5 text-[15px] text-(--text-muted)">
               Site details and information
             </p>
           </div>
-          {isAdmin && (
-            <div className="flex gap-2">
-              <BackButton />
-              <EditButton siteId={site.id} />
-            </div>
-          )}
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-2xl font-bold">
-                    {site.numberOfTenants}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Total Tenants
-                  </div>
-                </div>
-                <Users className="h-5 w-5 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{eventsCount}</div>
-                  <div className="text-xs text-muted-foreground">
-                    Events Held
-                  </div>
-                </div>
-                <Package className="h-5 w-5 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-2xl font-bold">
-                    {site.isSingleSeniorOnly ? 'Yes' : 'No'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Senior Only
-                  </div>
-                </div>
-                <UserCheck className="h-5 w-5 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-2xl font-bold">
-                    {site.hasCommunityRoom ? 'Yes' : 'No'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Community Room
-                  </div>
-                </div>
-                <Home className="h-5 w-5 text-orange-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Primary Info */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Assigned Staff */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5" />
-                  Assigned Staff
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-semibold">
-                    {site.userName
-                      ?.split(' ')
-                      .map(n => n[0])
-                      .join('')}
-                  </div>
-                  <div>
-                    <div className="font-semibold">{site.userName}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {site.userEmail}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Community Partner */}
-            {site.hasCommunityPartner && site.communityPartnerName && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building className="h-5 w-5" />
-                    Community Partner
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Badge variant="outline" className="text-sm">
-                    {site.communityPartnerName}
-                  </Badge>
-                </CardContent>
-              </Card>
+          <div className="flex shrink-0 gap-2.5">
+            {/* TODO: /sites/[id] — not wired: template's "Log an event"
+                header action; /events/new exists but wiring is a
+                behaviour decision. */}
+            <Button
+              variant="outline"
+              disabled
+              className={outlineButtonClass}
+            >
+              Log an event
+            </Button>
+            {isAdmin && (
+              <>
+                <BackButton />
+                <EditButton siteId={site.id} />
+              </>
             )}
-
-            {/* Supply Inventory */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Supply Inventory
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {siteSuppliesData.length > 0 ? (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center p-3 rounded-lg bg-muted">
-                        <div className="text-2xl font-bold">
-                          {totalSupplyItems}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Total Items
-                        </div>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-muted">
-                        <div className="text-2xl font-bold text-green-600">
-                          ${totalSupplyValue.toFixed(2)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Total Value
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      {siteSuppliesData.slice(0, 5).map(supply => (
-                        <div
-                          key={supply.id}
-                          className="flex items-center justify-between p-3 rounded-lg border"
-                        >
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">
-                              {supply.supplyName}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              ${supply.costPerUnit} per unit
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <Badge variant="outline">{supply.quantity}</Badge>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              ${Number(supply.totalValue).toFixed(2)}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {siteSuppliesData.length > 5 && (
-                      <div className="text-center pt-2">
-                        <Button variant="outline" size="sm">
-                          View All {siteSuppliesData.length} Supplies
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-8">
-                    <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                    <div className="text-sm text-muted-foreground">
-                      No supplies at this site
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Secondary Info */}
-          <div className="space-y-6">
-            {/* Location Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Location
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground mb-1">
-                    Address
-                  </div>
-                  <div className="text-sm">{site.address}</div>
-                </div>
-                <div className="pt-2">
-                  <GoogleMapsButton
-                    latitude={site.latitude}
-                    longitude={site.longitude}
-                  />
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+          {kpis.map(kpi => (
+            <Card key={kpi.label} className={kpiTileClass}>
+              <div className="text-[11.5px] font-semibold tracking-[.5px] text-(--text-muted) uppercase">
+                {kpi.label}
+              </div>
+              <div className="mt-1.5 text-[30px] leading-[1.1] font-bold text-(--surface-chrome)">
+                {kpi.value}
+              </div>
+              {kpi.note && (
+                <div className="mt-1 text-[12.5px] text-(--text-muted)">
+                  {kpi.note}
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+
+        <Card
+          className={cn(
+            surfaceCardClass,
+            'mt-5 grid grid-cols-1 gap-8 p-8 md:grid-cols-[220px_1fr_1.1fr]'
+          )}
+        >
+          <div>
+            <iframe
+              src={`https://maps.google.com/maps?q=${site.latitude},${site.longitude}&z=15&output=embed`}
+              title={`Map of ${site.name}`}
+              loading="lazy"
+              className="h-[220px] w-[220px] max-w-full rounded-(--radius-card) border-0"
+            />
+            <div className="mt-3.5 text-[22px] leading-[1.25] font-bold">
+              {site.name}
+            </div>
+            <div className="mt-3">
+              <GoogleMapsButton
+                latitude={site.latitude}
+                longitude={site.longitude}
+              />
+            </div>
+          </div>
+
+          <div>
+            <ProfileField label="Address">{site.address}</ProfileField>
+            {/* TODO: /sites/[id] — not wired: sites has no region column. */}
+            <ProfileField label="Region">—</ProfileField>
+            <ProfileField label="Tenancy Type">
+              {site.isSingleSeniorOnly ? 'Single seniors only' : 'Mixed tenancy'}
+            </ProfileField>
+            <ProfileField label="Community Room">
+              {site.hasCommunityRoom ? 'Yes' : 'No'}
+            </ProfileField>
+            {site.hasCommunityPartner && site.communityPartnerName && (
+              <ProfileField label="Community Partner">
+                {site.communityPartnerName}
+              </ProfileField>
+            )}
+          </div>
+
+          <div>
+            <div className="mb-3 text-[17px] font-bold">Assigned Worker</div>
+            <div className="flex items-start gap-3">
+              <div className="grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-[linear-gradient(160deg,#8FA6B5,#6B8496)] text-sm font-bold text-white">
+                {site.userName
+                  ?.split(' ')
+                  .map(n => n[0])
+                  .join('')}
+              </div>
+              <div className="min-w-0">
+                <div className="text-[14.5px] font-bold">{site.userName}</div>
+                <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
+                  {site.userEmail}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className={cn(surfaceCardClass, 'mt-4 overflow-hidden')}>
+          <div className="flex flex-wrap items-baseline justify-between gap-4 px-6 pt-[18px] pb-3.5">
+            <div>
+              <div className="text-[17px] font-bold">Supply Inventory</div>
+              <div className="mt-0.5 text-[13px] text-(--text-muted)">
+                Stock held at this site
+              </div>
+            </div>
+            {/* TODO: /sites/[id] — not wired: no request-stock flow exists;
+                also pending the inventory-direction decision. */}
+            <Button variant="outline" size="sm" disabled className={outlineButtonClass}>
+              Request stock
+            </Button>
+          </div>
+          {siteSuppliesData.length > 0 ? (
+            <div className="overflow-x-auto px-6 pb-5">
+              {/* TODO: /sites/[id] — not wired: template's par-level sublines,
+                  low-stock pills, and warning banner need a par column on
+                  site_supplies (and the inventory-direction decision). */}
+              <DataTable
+                columns={[
+                  { key: 'item', label: 'Item' },
+                  { key: 'qty', label: 'On hand', num: true },
+                  { key: 'unit', label: 'Unit cost', num: true },
+                  { key: 'value', label: 'Value', num: true },
+                ]}
+                rows={siteSuppliesData.map(supply => ({
+                  item: (
+                    <div>
+                      <div className="text-[15px] font-semibold">
+                        {supply.supplyName}
+                      </div>
+                      <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
+                        Updated {formatDate(supply.lastUpdated)}
+                      </div>
+                    </div>
+                  ),
+                  qty: (
+                    <span className="text-[15px] font-semibold">
+                      {supply.quantity}
+                    </span>
+                  ),
+                  unit: (
+                    <span className="text-(--text-muted)">
+                      {money(Number(supply.costPerUnit))}
+                    </span>
+                  ),
+                  value: money(Number(supply.totalValue)),
+                }))}
+                footer={{
+                  item: `${siteSuppliesData.length} item${siteSuppliesData.length === 1 ? '' : 's'}`,
+                  qty: String(totalSupplyItems),
+                  unit: '',
+                  value: money(totalSupplyValue),
+                }}
+              />
+            </div>
+          ) : (
+            <EmptyState
+              icon={Package}
+              title="No supplies at this site"
+              description="Supplies assigned to this site will appear here"
+              className="border-0"
+            />
+          )}
+        </Card>
       </div>
     </div>
   );
 }
 
-// Generate metadata for SEO
 export async function generateMetadata({ params }: SitePageProps) {
   const { id } = await params;
   const site = await getSite(id);

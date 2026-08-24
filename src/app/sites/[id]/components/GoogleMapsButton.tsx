@@ -22,7 +22,7 @@ export default function GoogleMapsButton({
       variant="outline"
       size="sm"
       onClick={handleClick}
-      className="flex items-center gap-2"
+      className="flex h-8 items-center gap-2 rounded-(--radius-control) border-(--border-default) bg-(--surface-card) text-[13.5px] text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)"
     >
       <Globe className="h-4 w-4" />
       View on Google Maps

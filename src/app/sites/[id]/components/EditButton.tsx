@@ -1,8 +1,9 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Edit } from 'lucide-react';
+import { PenLine } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface EditButtonProps {
   siteId: string;
@@ -19,7 +20,7 @@ interface EditButtonProps {
 export default function EditButton({
   siteId,
   variant = 'default',
-  className = 'flex items-center gap-2',
+  className,
 }: EditButtonProps) {
   const router = useRouter();
 
@@ -27,9 +28,14 @@ export default function EditButton({
     <Button
       onClick={() => router.push(`/admin/sites/${siteId}/edit`)}
       variant={variant}
-      className={className}
+      className={cn(
+        'flex items-center gap-2',
+        variant === 'default' &&
+          'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover)',
+        className
+      )}
     >
-      <Edit className="h-4 w-4" />
+      <PenLine className="h-4 w-4" />
       Edit Site
     </Button>
   );
