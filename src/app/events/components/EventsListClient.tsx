@@ -60,6 +60,7 @@ interface InitialFilters {
   activityType: string;
   site: string;
   organizer: string;
+  dateRange: string;
   page: number;
 }
 
@@ -130,6 +131,9 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
   const [filterOrganizer, setFilterOrganizer] = useState(
     initialFilters.organizer
   );
+  const [filterDateRange, setFilterDateRange] = useState(
+    initialFilters.dateRange
+  );
   const [currentPage, setCurrentPage] = useState(initialFilters.page);
 
   const itemsPerPage = 10;
@@ -170,6 +174,14 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
       }
     }
 
+    if (newFilters.dateRange !== undefined) {
+      if (newFilters.dateRange && newFilters.dateRange !== 'all') {
+        params.set('dateRange', newFilters.dateRange);
+      } else {
+        params.delete('dateRange');
+      }
+    }
+
     if (newFilters.page !== undefined) {
       if (newFilters.page > 1) {
         params.set('page', newFilters.page.toString());
@@ -205,6 +217,12 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
     updateURL({ organizer: value, page: 1 });
   };
 
+  const handleDateRangeChange = (value: string) => {
+    setFilterDateRange(value);
+    setCurrentPage(1);
+    updateURL({ dateRange: value, page: 1 });
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     updateURL({ page });
@@ -215,6 +233,7 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
     setFilterActivityType('all');
     setFilterSite('all');
     setFilterOrganizer('all');
+    setFilterDateRange('all');
     setCurrentPage(1);
     router.push('/events');
   };
@@ -224,6 +243,7 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
     filterActivityType !== 'all',
     filterSite !== 'all',
     filterOrganizer !== 'all',
+    filterDateRange !== 'all',
   ].filter(Boolean).length;
 
   const formatDate = (dateStr: string) => {
@@ -345,17 +365,18 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
             </SelectContent>
           </Select>
 
-          {/* TODO: /events — not wired: date-range filter has no search param
-              or event_date condition in getEvents(). */}
-          <Select value="all" disabled>
+          <Select value={filterDateRange} onValueChange={handleDateRangeChange}>
             <SelectTrigger
               aria-label="Date range"
-              className={cn(selectTriggerClass, 'w-36')}
+              className={cn(selectTriggerClass, 'w-40')}
             >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All time</SelectItem>
+              <SelectItem value="month">This month</SelectItem>
+              <SelectItem value="3months">Last 3 months</SelectItem>
+              <SelectItem value="year">This year</SelectItem>
             </SelectContent>
           </Select>
 

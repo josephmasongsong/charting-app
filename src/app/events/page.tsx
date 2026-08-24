@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { db, events, users, sites, activityTypes } from '@/db';
-import { eq, ilike, and, desc, sql } from 'drizzle-orm';
+import { eq, ilike, and, desc, gte, sql } from 'drizzle-orm';
 import EventsListClient from './components/EventsListClient';
 
 interface EventsPageProps {
@@ -12,8 +12,30 @@ interface EventsPageProps {
     activityType?: string;
     site?: string;
     organizer?: string;
+    dateRange?: string;
     page?: string;
   }>;
+}
+
+// event_date is a DATE column; format cutoffs from local parts to avoid the
+// UTC shift that toISOString() introduces around midnight.
+const formatDateOnly = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+function dateRangeCutoff(dateRangeFilter?: string): string | null {
+  const now = new Date();
+  switch (dateRangeFilter) {
+    case 'month':
+      return formatDateOnly(new Date(now.getFullYear(), now.getMonth(), 1));
+    case '3months':
+      return formatDateOnly(
+        new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
+      );
+    case 'year':
+      return formatDateOnly(new Date(now.getFullYear(), 0, 1));
+    default:
+      return null;
+  }
 }
 
 async function getEvents(
@@ -21,6 +43,7 @@ async function getEvents(
   activityTypeFilter?: string,
   siteFilter?: string,
   organizerFilter?: string,
+  dateRangeFilter?: string,
   page = 1,
   limit = 10
 ) {
@@ -42,6 +65,11 @@ async function getEvents(
 
   if (organizerFilter && organizerFilter !== 'all') {
     conditions.push(eq(events.userId, organizerFilter));
+  }
+
+  const cutoff = dateRangeCutoff(dateRangeFilter);
+  if (cutoff) {
+    conditions.push(gte(events.eventDate, cutoff));
   }
 
   const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
@@ -131,6 +159,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
   const activityType = params.activityType || 'all';
   const site = params.site || 'all';
   const organizer = params.organizer || 'all';
+  const dateRange = params.dateRange || 'all';
   const page = parseInt(params.page || '1');
 
   const { events: eventsData, totalCount } = await getEvents(
@@ -138,6 +167,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
     activityType,
     site,
     organizer,
+    dateRange,
     page
   );
 
@@ -154,6 +184,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
         activityType,
         site,
         organizer,
+        dateRange,
         page,
       }}
       totalCount={totalCount}
