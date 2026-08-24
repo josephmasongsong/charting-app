@@ -8,16 +8,12 @@ import {
   useImperativeHandle,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PaginationFooter } from '@/components/ui/pagination-footer';
 import {
   Table,
   TableBody,
@@ -26,21 +22,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import {
-  Edit,
+  PenLine,
   Trash2,
   Search,
-  CheckCircle,
-  XCircle,
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  Eye,
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Event {
   id: string;
@@ -84,10 +74,23 @@ interface EventsTableProps {
   onDelete: (event: Event) => void;
 }
 
-// Define the ref methods that the parent can call
 export interface EventsTableRef {
   refreshData: () => void;
 }
+
+const headCellClass =
+  'h-auto whitespace-nowrap border border-[#0a7276] bg-(--surface-chrome) px-3.5 py-2.5 text-left text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase';
+const bodyCellClass =
+  'whitespace-nowrap border border-(--bch-gray-200) px-3.5 py-[9px]';
+const bodyRowClass =
+  'border-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+const rowActionClass =
+  'size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)';
+const destructiveActionClass =
+  'size-8 rounded-(--radius-control) text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)';
+const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
+const successAlertClass =
+  'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
 
 const EventsTable = forwardRef<EventsTableRef, EventsTableProps>(
   ({ message, error, onClearMessage, onClearError, onDelete }, ref) => {
@@ -110,7 +113,6 @@ const EventsTable = forwardRef<EventsTableRef, EventsTableProps>(
     const [internalMessage, setInternalMessage] = useState('');
     const [internalError, setInternalError] = useState('');
 
-    // Fetch events
     const fetchEvents = useCallback(
       async (page = 1, searchTerm = '', sort = sortConfig) => {
         try {
@@ -142,7 +144,6 @@ const EventsTable = forwardRef<EventsTableRef, EventsTableProps>(
       [sortConfig]
     );
 
-    // Expose refresh method to parent component
     useImperativeHandle(ref, () => ({
       refreshData: () => {
         fetchEvents(pagination.page, search, sortConfig);
@@ -153,13 +154,11 @@ const EventsTable = forwardRef<EventsTableRef, EventsTableProps>(
       fetchEvents();
     }, [fetchEvents]);
 
-    // Handle search
     const handleSearch = (e: React.FormEvent) => {
       e.preventDefault();
       fetchEvents(1, search, sortConfig);
     };
 
-    // Handle sorting
     const handleSort = (field: string) => {
       const newOrder: SortOrder =
         sortConfig.field === field && sortConfig.order === 'asc'
@@ -170,7 +169,6 @@ const EventsTable = forwardRef<EventsTableRef, EventsTableProps>(
       fetchEvents(pagination.page, search, newSortConfig);
     };
 
-    // Format date for display
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
       return date.toLocaleDateString('en-US', {
@@ -181,23 +179,47 @@ const EventsTable = forwardRef<EventsTableRef, EventsTableProps>(
       });
     };
 
-    // Determine which message/error to show (parent props take precedence)
+    // Parent props take precedence over internal state
     const displayMessage = message || internalMessage;
     const displayError = error || internalError;
+
+    const sortableHead = (field: string, label: string) => (
+      <Button
+        variant="ghost"
+        onClick={() => handleSort(field)}
+        className="h-auto p-0 text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase hover:bg-transparent hover:text-(--text-on-chrome)"
+      >
+        <span
+          className={cn(
+            sortConfig.field === field ? 'font-extrabold' : 'opacity-85'
+          )}
+        >
+          {label}
+        </span>
+        {sortConfig.field === field ? (
+          sortConfig.order === 'asc' ? (
+            <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+          ) : (
+            <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+          )
+        ) : (
+          <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-60" />
+        )}
+      </Button>
+    );
 
     return (
       <>
         {/* Messages */}
         {displayMessage && (
-          <Alert className="border-green-200 bg-green-50">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
+          <Alert className={cn(alertClass, successAlertClass, 'mb-4')}>
+            <AlertDescription className="text-[14px] text-foreground">
               {displayMessage}
             </AlertDescription>
             <Button
               variant="ghost"
               size="sm"
-              className="ml-auto"
+              className="ml-auto h-7 px-2"
               onClick={() => {
                 if (message && onClearMessage) {
                   onClearMessage();
@@ -212,13 +234,14 @@ const EventsTable = forwardRef<EventsTableRef, EventsTableProps>(
         )}
 
         {displayError && (
-          <Alert variant="destructive">
-            <XCircle className="h-4 w-4" />
-            <AlertDescription>{displayError}</AlertDescription>
+          <Alert variant="destructive" className={cn(alertClass, 'mb-4')}>
+            <AlertDescription className="text-[14px]">
+              {displayError}
+            </AlertDescription>
             <Button
               variant="ghost"
               size="sm"
-              className="ml-auto"
+              className="ml-auto h-7 px-2 text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)"
               onClick={() => {
                 if (error && onClearError) {
                   onClearError();
@@ -232,342 +255,164 @@ const EventsTable = forwardRef<EventsTableRef, EventsTableProps>(
           </Alert>
         )}
 
-        {/* Events Data Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Events ({pagination.total})
-                </CardTitle>
-                <CardDescription>
-                  Manage and organize community events and activities
-                </CardDescription>
-              </div>
+        <div className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card)">
+          <div className="flex flex-wrap items-center gap-4 border-b border-(--border-default) px-5 py-4">
+            <form
+              onSubmit={handleSearch}
+              className="relative flex w-[340px] max-w-full items-center"
+            >
+              <button
+                type="submit"
+                aria-label="Search"
+                className="absolute left-2.5 flex cursor-pointer text-(--bch-gray-500)"
+              >
+                <Search className="size-4" />
+              </button>
+              <Input
+                placeholder="Search by title, description, site, or activity type..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="h-9 rounded-(--radius-control) border-(--border-input) bg-(--surface-card) pl-8 text-sm shadow-none md:text-sm"
+              />
+            </form>
+          </div>
 
-              {/* Search Bar */}
-              <div className="w-full md:w-80">
-                <form onSubmit={handleSearch} className="flex gap-2">
-                  <Input
-                    placeholder="Search by title, description, site, or activity type..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button type="submit" variant="outline" size="icon">
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </form>
-              </div>
+          {loading ? (
+            <div className="space-y-2 p-5">
+              <Skeleton className="h-10 rounded-none bg-(--bch-gray-200)" />
+              {Array.from({ length: 5 }, (_, i) => (
+                <Skeleton
+                  key={i}
+                  className="h-9 rounded-none bg-(--surface-muted)"
+                />
+              ))}
             </div>
-          </CardHeader>
-
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8">Loading...</div>
-            ) : (
-              <>
-                <div className="rounded-md border">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>
-                            <Button
-                              variant="ghost"
-                              onClick={() => handleSort('title')}
-                              className="h-auto p-0 font-semibold hover:bg-transparent"
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <Table className="min-w-[1000px] border-collapse bg-(--surface-card) text-sm">
+                  <TableHeader>
+                    <TableRow className="border-0 hover:bg-transparent">
+                      <TableHead className={headCellClass}>
+                        {sortableHead('title', 'Title')}
+                      </TableHead>
+                      <TableHead className={headCellClass}>
+                        {sortableHead('eventDate', 'Date')}
+                      </TableHead>
+                      <TableHead className={headCellClass}>Site</TableHead>
+                      <TableHead className={headCellClass}>
+                        Activity Type
+                      </TableHead>
+                      <TableHead className={headCellClass}>Organizer</TableHead>
+                      <TableHead className={cn(headCellClass, 'text-right')}>
+                        Actions
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {events.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className={cn(
+                            bodyCellClass,
+                            'py-10 text-center whitespace-normal text-(--text-muted)'
+                          )}
+                        >
+                          {search ? (
+                            <>
+                              No events found matching "{search}".
+                              <Button
+                                variant="link"
+                                onClick={() => {
+                                  setSearch('');
+                                  fetchEvents(1, '', sortConfig);
+                                }}
+                                className="ml-1 h-auto p-0 text-[14px] text-(--action-primary)"
+                              >
+                                Clear search
+                              </Button>
+                            </>
+                          ) : (
+                            'No events found.'
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      events.map(event => (
+                        <TableRow key={event.id} className={bodyRowClass}>
+                          <TableCell
+                            className={cn(bodyCellClass, 'font-semibold')}
+                          >
+                            <Link
+                              href={`/events/${event.id}`}
+                              title="View event"
+                              className="text-(--text-body) hover:text-(--action-primary) hover:underline"
                             >
-                              Title
-                              {sortConfig.field === 'title' ? (
-                                sortConfig.order === 'asc' ? (
-                                  <ChevronUp className="ml-2 h-4 w-4" />
-                                ) : (
-                                  <ChevronDown className="ml-2 h-4 w-4" />
-                                )
-                              ) : (
-                                <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-                              )}
-                            </Button>
-                          </TableHead>
-                          <TableHead>
-                            <Button
-                              variant="ghost"
-                              onClick={() => handleSort('eventDate')}
-                              className="h-auto p-0 font-semibold hover:bg-transparent"
-                            >
-                              Date
-                              {sortConfig.field === 'eventDate' ? (
-                                sortConfig.order === 'asc' ? (
-                                  <ChevronUp className="ml-2 h-4 w-4" />
-                                ) : (
-                                  <ChevronDown className="ml-2 h-4 w-4" />
-                                )
-                              ) : (
-                                <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-                              )}
-                            </Button>
-                          </TableHead>
-                          <TableHead>Site</TableHead>
-                          <TableHead>Activity Type</TableHead>
-                          <TableHead>Organizer</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                              {event.title}
+                            </Link>
+                          </TableCell>
+                          <TableCell
+                            className={cn(bodyCellClass, 'text-(--text-muted)')}
+                          >
+                            {formatDate(event.eventDate)}
+                          </TableCell>
+                          <TableCell className={bodyCellClass}>
+                            {event.siteName}
+                          </TableCell>
+                          <TableCell className={bodyCellClass}>
+                            <span className="inline-block rounded-full bg-(--surface-muted) px-2.5 py-[3px] text-[12.5px] font-semibold text-(--text-body)">
+                              {event.activityTypeName}
+                            </span>
+                          </TableCell>
+                          <TableCell className={bodyCellClass}>
+                            {event.userName}
+                          </TableCell>
+                          <TableCell
+                            className={cn(bodyCellClass, 'text-right')}
+                          >
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Edit event"
+                                aria-label="Edit event"
+                                onClick={() =>
+                                  router.push(`/admin/events/${event.id}/edit`)
+                                }
+                                className={rowActionClass}
+                              >
+                                <PenLine className="size-[17px]" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Delete event"
+                                aria-label="Delete event"
+                                onClick={() => onDelete(event)}
+                                className={destructiveActionClass}
+                              >
+                                <Trash2 className="size-[17px]" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {events.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8">
-                              {search ? (
-                                <>
-                                  No events found matching "{search}".
-                                  <Button
-                                    variant="link"
-                                    onClick={() => {
-                                      setSearch('');
-                                      fetchEvents(1, '', sortConfig);
-                                    }}
-                                    className="ml-2"
-                                  >
-                                    Clear search
-                                  </Button>
-                                </>
-                              ) : (
-                                'No events found.'
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          events.map(event => (
-                            <TableRow key={event.id}>
-                              <TableCell className="font-medium">
-                                {event.title}
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm">
-                                  {formatDate(event.eventDate)}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm">{event.siteName}</div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="text-xs">
-                                  {event.activityTypeName}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm">{event.userName}</div>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      router.push(`/events/${event.id}`)
-                                    }
-                                    title="View event"
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      router.push(
-                                        `/admin/events/${event.id}/edit`
-                                      )
-                                    }
-                                    title="Edit event"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => onDelete(event)}
-                                    title="Delete event"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
-                {/* Enhanced Pagination */}
-                {pagination.pages > 1 && (
-                  <div className="flex flex-col space-y-4 mt-6 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-                    <div className="text-sm text-muted-foreground">
-                      Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                      {Math.min(
-                        pagination.page * pagination.limit,
-                        pagination.total
-                      )}{' '}
-                      of {pagination.total} results
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      {/* First page */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fetchEvents(1, search, sortConfig)}
-                        disabled={pagination.page <= 1}
-                        className="hidden sm:inline-flex"
-                      >
-                        First
-                      </Button>
-
-                      {/* Previous page */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          fetchEvents(pagination.page - 1, search, sortConfig)
-                        }
-                        disabled={pagination.page <= 1}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        <span className="hidden sm:inline ml-1">Previous</span>
-                      </Button>
-
-                      {/* Page numbers */}
-                      <div className="flex items-center space-x-1">
-                        {(() => {
-                          const pages = [];
-                          const currentPage = pagination.page;
-                          const totalPages = pagination.pages;
-
-                          // Always show first page
-                          if (currentPage > 3) {
-                            pages.push(
-                              <Button
-                                key={1}
-                                variant={
-                                  1 === currentPage ? 'default' : 'outline'
-                                }
-                                size="sm"
-                                onClick={() =>
-                                  fetchEvents(1, search, sortConfig)
-                                }
-                                className="w-10"
-                              >
-                                1
-                              </Button>
-                            );
-
-                            if (currentPage > 4) {
-                              pages.push(
-                                <span key="ellipsis1" className="px-2">
-                                  ...
-                                </span>
-                              );
-                            }
-                          }
-
-                          // Show pages around current page
-                          for (
-                            let i = Math.max(1, currentPage - 2);
-                            i <= Math.min(totalPages, currentPage + 2);
-                            i++
-                          ) {
-                            pages.push(
-                              <Button
-                                key={i}
-                                variant={
-                                  i === currentPage ? 'default' : 'outline'
-                                }
-                                size="sm"
-                                onClick={() =>
-                                  fetchEvents(i, search, sortConfig)
-                                }
-                                className="w-10"
-                              >
-                                {i}
-                              </Button>
-                            );
-                          }
-
-                          // Always show last page
-                          if (currentPage < totalPages - 2) {
-                            if (currentPage < totalPages - 3) {
-                              pages.push(
-                                <span key="ellipsis2" className="px-2">
-                                  ...
-                                </span>
-                              );
-                            }
-
-                            pages.push(
-                              <Button
-                                key={totalPages}
-                                variant={
-                                  totalPages === currentPage
-                                    ? 'default'
-                                    : 'outline'
-                                }
-                                size="sm"
-                                onClick={() =>
-                                  fetchEvents(totalPages, search, sortConfig)
-                                }
-                                className="w-10"
-                              >
-                                {totalPages}
-                              </Button>
-                            );
-                          }
-
-                          return pages;
-                        })()}
-                      </div>
-
-                      {/* Next page */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          fetchEvents(pagination.page + 1, search, sortConfig)
-                        }
-                        disabled={pagination.page >= pagination.pages}
-                      >
-                        <span className="hidden sm:inline mr-1">Next</span>
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-
-                      {/* Last page */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          fetchEvents(pagination.pages, search, sortConfig)
-                        }
-                        disabled={pagination.page >= pagination.pages}
-                        className="hidden sm:inline-flex"
-                      >
-                        Last
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Show pagination info even when only one page */}
-                {pagination.pages <= 1 && pagination.total > 0 && (
-                  <div className="mt-4 text-sm text-muted-foreground text-center">
-                    Showing all {pagination.total} results
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+              <PaginationFooter
+                page={pagination.page}
+                pages={pagination.pages}
+                total={pagination.total}
+                limit={pagination.limit}
+                onPageChange={page => fetchEvents(page, search, sortConfig)}
+              />
+            </>
+          )}
+        </div>
       </>
     );
   }

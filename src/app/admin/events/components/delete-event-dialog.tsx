@@ -2,13 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Modal } from '@/components/ui/modal';
 
 interface Event {
   id: string;
@@ -39,6 +33,11 @@ interface DeleteEventDialogProps {
   onRefresh: () => void;
 }
 
+const dangerButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--danger) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-[#98060D] disabled:opacity-100';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
+
 export default function DeleteEventDialog({
   open,
   onOpenChange,
@@ -49,7 +48,6 @@ export default function DeleteEventDialog({
 }: DeleteEventDialogProps) {
   const [loading, setLoading] = useState(false);
 
-  // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -87,58 +85,59 @@ export default function DeleteEventDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Delete Event</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete this event? This action cannot be
-            undone.
-          </DialogDescription>
-        </DialogHeader>
-        {event && (
-          <div className="space-y-4">
-            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-              <div className="text-sm text-red-800">
-                <p>
-                  <strong>Event:</strong> {event.title}
-                </p>
-                <p>
-                  <strong>Date:</strong> {formatDate(event.eventDate)}
-                </p>
-                <p>
-                  <strong>Site:</strong> {event.siteName}
-                </p>
-                <p>
-                  <strong>Organizer:</strong> {event.userName}
-                </p>
-                <p>
-                  <strong>Participants:</strong>{' '}
-                  {event.newParticipants + event.returningParticipants}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={loading}
-              >
-                {loading ? 'Deleting...' : 'Delete Event'}
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Delete Event"
+      className="sm:max-w-[480px]"
+      footer={
+        event && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className={outlineButtonClass}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading}
+              className={dangerButtonClass}
+            >
+              {loading ? 'Deleting...' : 'Delete Event'}
+            </Button>
+          </>
+        )
+      }
+    >
+      <p className="text-(--text-body)">
+        Are you sure you want to delete this event? This action cannot be
+        undone.
+      </p>
+      {event && (
+        <div className="mt-4 space-y-1 rounded-[2px] border-l-[5px] border-l-(--danger) bg-(--danger-surface) p-3.5 text-sm text-(--text-body)">
+          <p>
+            <strong>Event:</strong> {event.title}
+          </p>
+          <p>
+            <strong>Date:</strong> {formatDate(event.eventDate)}
+          </p>
+          <p>
+            <strong>Site:</strong> {event.siteName}
+          </p>
+          <p>
+            <strong>Organizer:</strong> {event.userName}
+          </p>
+          <p>
+            <strong>Participants:</strong>{' '}
+            {event.newParticipants + event.returningParticipants}
+          </p>
+        </div>
+      )}
+    </Modal>
   );
 }
