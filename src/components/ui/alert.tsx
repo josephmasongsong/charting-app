@@ -9,8 +9,17 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: "bg-card text-card-foreground",
+        // Design-system banner surfaces (design-system/guidelines/colors-banners):
+        // validation = page-top form-error summary, destructive = inline red-bar
+        // missing-artifact error, warning = deadline banner, notice = attention
+        // banner, empty = no-content state.
+        validation: "bg-(--danger-surface) text-foreground",
         destructive:
-          "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90",
+          "bg-(--danger-surface) text-(--danger) rounded-[2px] border-l-[5px] border-l-(--danger) [&>svg]:text-current *:data-[slot=alert-description]:text-(--danger)",
+        warning: "bg-(--warning-surface) text-(--warning-text)",
+        notice: "bg-[#FBEAEA] text-foreground",
+        empty:
+          "bg-(--bch-tan-50) text-(--bch-tan-700) border-[#F0E6C8]",
       },
     },
     defaultVariants: {
