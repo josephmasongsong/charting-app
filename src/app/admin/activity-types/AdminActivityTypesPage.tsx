@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
 import ActivityTypesTable from './components/activity-types-table';
 import CreateActivityTypeDialog from './components/create-activity-type-dialog';
@@ -17,9 +18,14 @@ interface AdminActivityTypesPageProps {
 
 function ActivityTypesTableSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-      <div className="h-64 bg-gray-100 rounded animate-pulse"></div>
+    <div className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) p-5 shadow-(--shadow-card)">
+      <Skeleton className="h-9 w-[340px] max-w-full rounded-(--radius-control) bg-(--surface-muted)" />
+      <div className="mt-5 space-y-2">
+        <Skeleton className="h-10 rounded-none bg-(--bch-gray-200)" />
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skeleton key={i} className="h-9 rounded-none bg-(--surface-muted)" />
+        ))}
+      </div>
     </div>
   );
 }
@@ -31,40 +37,41 @@ export default function AdminActivityTypesPage({
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // Create a ref to access the ActivityTypesTable's refresh function
   const activityTypesTableRef = useRef<{ refreshData: () => void }>(null);
 
   const handleRefresh = () => {
-    // Call the table's refresh method directly
     activityTypesTableRef.current?.refreshData();
   };
 
   const showMessage = (msg: string) => {
     setMessage(msg);
     setError('');
-    // Clear messages after 5 seconds
     setTimeout(() => setMessage(''), 5000);
   };
 
   const showError = (err: string) => {
     setError(err);
     setMessage('');
-    // Clear errors after 5 seconds
     setTimeout(() => setError(''), 5000);
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Activity Types Management</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-[30px] leading-tight font-bold tracking-[-.2px]">
+            Activity Types Management
+          </h1>
+          <p className="mt-1.5 text-[15px] text-(--text-muted)">
             Manage activity types and their associated program goals
           </p>
         </div>
 
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button
+          onClick={() => setCreateOpen(true)}
+          className="h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover)"
+        >
+          <Plus className="h-4 w-4" />
           Add Activity Type
         </Button>
       </div>

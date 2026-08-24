@@ -2,13 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Modal } from '@/components/ui/modal';
 
 interface ActivityType {
   id: string;
@@ -27,6 +21,11 @@ interface DeleteActivityTypeDialogProps {
   onError: (error: string) => void;
   onRefresh: () => void;
 }
+
+const dangerButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--danger) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-[#98060D] disabled:opacity-100';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
 
 export default function DeleteActivityTypeDialog({
   open,
@@ -68,46 +67,49 @@ export default function DeleteActivityTypeDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Delete Activity Type</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete this activity type? This action
-            cannot be undone.
-          </DialogDescription>
-        </DialogHeader>
-        {activityType && (
-          <div className="space-y-4">
-            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-800">
-                <strong>Activity Type:</strong> {activityType.name}
-              </p>
-              <p className="text-sm text-red-800">
-                <strong>Program Goal:</strong> {activityType.programGoalName}
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={loading}
-              >
-                {loading ? 'Deleting...' : 'Delete Activity Type'}
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Delete Activity Type"
+      className="sm:max-w-[480px]"
+      footer={
+        activityType && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className={outlineButtonClass}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading}
+              className={dangerButtonClass}
+            >
+              {loading ? 'Deleting...' : 'Delete Activity Type'}
+            </Button>
+          </>
+        )
+      }
+    >
+      <p className="text-(--text-body)">
+        Are you sure you want to delete this activity type? This action cannot
+        be undone.
+      </p>
+      {activityType && (
+        <div className="mt-4 rounded-[2px] border-l-[5px] border-l-(--danger) bg-(--danger-surface) p-3.5 text-sm text-(--text-body)">
+          <p>
+            <strong>Activity Type:</strong> {activityType.name}
+          </p>
+          <p className="mt-1">
+            <strong>Program Goal:</strong> {activityType.programGoalName}
+          </p>
+        </div>
+      )}
+    </Modal>
   );
 }
