@@ -20,6 +20,10 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Design-system-only variants. teal is reserved for top-level entry
+        // CTAs, never inside a form workflow; soft is the pale-sky secondary.
+        teal: "bg-(--surface-chrome) text-(--text-on-chrome) hover:bg-(--surface-chrome-dark)",
+        soft: "bg-[#6FC7E8] text-white hover:bg-[#58B8DD]",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
