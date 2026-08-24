@@ -1,5 +1,3 @@
-// @/components/reports/monthly/MonthlyReportExportButton.tsx
-
 'use client';
 
 import React, { useState } from 'react';
@@ -11,6 +9,9 @@ import * as XLSX from 'xlsx';
 interface MonthlyReportExportButtonProps {
   data: MonthlyActivityReportData;
 }
+
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary) disabled:border-(--bch-gray-300) disabled:text-(--bch-gray-500) disabled:opacity-100';
 
 export function MonthlyReportExportButton({
   data,
@@ -125,11 +126,11 @@ export function MonthlyReportExportButton({
   return (
     <Button
       variant="outline"
-      size="sm"
       disabled={isExporting}
       onClick={handleExportExcel}
+      className={outlineButtonClass}
     >
-      <FileSpreadsheet className="h-4 w-4 mr-2" />
+      <FileSpreadsheet className="h-4 w-4" />
       {isExporting ? 'Exporting...' : 'Export to Excel'}
     </Button>
   );

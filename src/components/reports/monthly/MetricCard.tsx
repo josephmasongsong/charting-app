@@ -1,7 +1,6 @@
-// @/components/reports/monthly/MetricCard.tsx
-
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 interface SubMetric {
   label: string;
@@ -27,50 +26,52 @@ export function MetricCard({
   className = '',
 }: MetricCardProps) {
   return (
-    <Card className={className}>
-      <CardContent className="pt-0">
-        {/* Header with title and icon */}
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-sm font-medium text-foreground">{title}</h3>
-          <div className="text-muted-foreground">
-            <Icon className="h-5 w-5" />
-          </div>
-        </div>
+    <Card
+      className={cn(
+        'gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) px-5 pt-[18px] pb-5 shadow-none',
+        className
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-[11.5px] font-bold tracking-[.06em] text-(--text-muted) uppercase">
+          {title}
+        </h3>
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-(--action-selected) text-(--surface-chrome)">
+          <Icon className="size-4" />
+        </span>
+      </div>
 
-        {/* Main value */}
-        <div className="mb-2">
-          <p className="text-2xl font-bold tracking-tight">
-            {formatter(value)}
-          </p>
-        </div>
+      <p className="mt-2.5 text-[30px] leading-none font-bold tracking-tight">
+        {formatter(value)}
+      </p>
 
-        {/* Sub-metrics */}
-        {subMetrics.length > 0 && (
-          <div className="space-y-1">
-            {subMetrics.map((subMetric, index) => (
-              <div
-                key={index}
-                className="text-xs text-muted-foreground flex items-center gap-1"
-              >
-                {React.isValidElement(subMetric.value) ? (
-                  <>
-                    {subMetric.value} {subMetric.label}
-                  </>
-                ) : (
-                  <>
-                    <span className="inline-flex items-center">
-                      {subMetric.formatter && (typeof subMetric.value === 'string' || typeof subMetric.value === 'number')
-                        ? subMetric.formatter(subMetric.value)
-                        : subMetric.value}
-                    </span>{' '}
-                    {subMetric.label}
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
+      {subMetrics.length > 0 && (
+        <div className="mt-2.5 space-y-1">
+          {subMetrics.map((subMetric, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-1 text-xs text-(--text-muted)"
+            >
+              {React.isValidElement(subMetric.value) ? (
+                <>
+                  {subMetric.value} {subMetric.label}
+                </>
+              ) : (
+                <>
+                  <span className="inline-flex items-center">
+                    {subMetric.formatter &&
+                    (typeof subMetric.value === 'string' ||
+                      typeof subMetric.value === 'number')
+                      ? subMetric.formatter(subMetric.value)
+                      : subMetric.value}
+                  </span>{' '}
+                  {subMetric.label}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }

@@ -1,19 +1,24 @@
-// @/components/reports/monthly/DateRangeDialog.tsx
-
 'use client';
 
-import React, { useState, useTransition, useEffect, useCallback, useRef } from 'react';
+import React, {
+  useState,
+  useTransition,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Modal } from '@/components/ui/modal';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Calendar, Loader2, Search } from 'lucide-react';
 
 interface DateRangeDialogProps {
@@ -40,6 +45,14 @@ const MONTHS = [
   { value: 11, label: 'November' },
   { value: 12, label: 'December' },
 ];
+
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
+const primaryButtonClass =
+  'h-auto w-full rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[11px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+const selectTriggerClass =
+  'w-full rounded-(--radius-control) border-(--border-input) bg-(--surface-card) shadow-none';
+const subLabelClass = 'text-[12.5px] font-semibold text-(--text-muted)';
 
 export function DateRangeDialog({
   currentParams,
@@ -213,7 +226,10 @@ export function DateRangeDialog({
         : maxYear;
 
       // Clamp start month to available months for the valid year
-      const validStartMonth = isMonthAvailable(validStartYear, currentParams.startMonth)
+      const validStartMonth = isMonthAvailable(
+        validStartYear,
+        currentParams.startMonth,
+      )
         ? currentParams.startMonth
         : getFirstAvailableMonth(validStartYear);
 
@@ -221,14 +237,17 @@ export function DateRangeDialog({
       setSelectedStartMonth(validStartMonth);
 
       // Clamp end year to available years if out of range
-      const validEndYear = currentParams.endYear && availableYears.includes(currentParams.endYear)
-        ? currentParams.endYear
-        : validStartYear;
+      const validEndYear =
+        currentParams.endYear && availableYears.includes(currentParams.endYear)
+          ? currentParams.endYear
+          : validStartYear;
 
       // Clamp end month to available months for the valid end year
-      const validEndMonth = currentParams.endMonth && isMonthAvailable(validEndYear, currentParams.endMonth)
-        ? currentParams.endMonth
-        : validStartMonth;
+      const validEndMonth =
+        currentParams.endMonth &&
+        isMonthAvailable(validEndYear, currentParams.endMonth)
+          ? currentParams.endMonth
+          : validStartMonth;
 
       setSelectedEndYear(validEndYear);
       setSelectedEndMonth(validEndMonth);
@@ -237,7 +256,14 @@ export function DateRangeDialog({
     }
 
     prevOpenRef.current = open;
-  }, [open, currentParams, availableYears, maxYear, isMonthAvailable, getFirstAvailableMonth]);
+  }, [
+    open,
+    currentParams,
+    availableYears,
+    maxYear,
+    isMonthAvailable,
+    getFirstAvailableMonth,
+  ]);
 
   const handleSubmit = () => {
     // Final validation check
@@ -269,178 +295,143 @@ export function DateRangeDialog({
     });
   };
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Calendar className="h-4 w-4 mr-2" />
-          Change Period
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Select Report Period</DialogTitle>
-          <DialogDescription>
-            Choose the date range for your monthly activity report.
-          </DialogDescription>
-        </DialogHeader>
+  const monthYearFields = (
+    which: 'start' | 'end',
+    selectedMonth: number,
+    selectedYear: number,
+    onMonth: (value: number) => void,
+    onYear: (value: number) => void,
+  ) => (
+    <div className="grid grid-cols-2 gap-3.5">
+      <div className="space-y-1">
+        <Label htmlFor={`${which}Month`} className={subLabelClass}>
+          Month
+        </Label>
+        <Select
+          value={String(selectedMonth)}
+          onValueChange={value => onMonth(parseInt(value))}
+        >
+          <SelectTrigger id={`${which}Month`} className={selectTriggerClass}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {getAvailableMonths(selectedYear).map(month => (
+              <SelectItem key={month.value} value={String(month.value)}>
+                {month.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor={`${which}Year`} className={subLabelClass}>
+          Year
+        </Label>
+        <Select
+          value={String(selectedYear)}
+          onValueChange={value => onYear(parseInt(value))}
+        >
+          <SelectTrigger id={`${which}Year`} className={selectTriggerClass}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {availableYears.map(year => (
+              <SelectItem key={year} value={String(year)}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <input
+  return (
+    <>
+      <Button
+        variant="outline"
+        onClick={() => setOpen(true)}
+        className={outlineButtonClass}
+      >
+        <Calendar className="h-4 w-4" />
+        Change Period
+      </Button>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Select Report Period"
+        className="sm:max-w-[480px]"
+      >
+        <p className="text-[13.5px] text-(--text-muted)">
+          Choose the date range for your monthly activity report.
+        </p>
+
+        <div className="mt-4 space-y-4">
+          <div className="flex items-center gap-2.5">
+            <Checkbox
               id="isRange"
-              type="checkbox"
               checked={isRange}
-              onChange={e => handleRangeModeToggle(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
+              onCheckedChange={checked =>
+                handleRangeModeToggle(checked as boolean)
+              }
             />
-            <Label htmlFor="isRange" className="text-sm font-medium">
+            <Label htmlFor="isRange" className="text-sm font-semibold">
               Date Range Mode
             </Label>
           </div>
 
-          <div className="space-y-4">
-            {validationError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-700">{validationError}</p>
-              </div>
-            )}
-
-            {/* Start Date */}
-            <div>
-              <Label className="text-sm font-medium text-muted-foreground mb-2 block">
-                {isRange ? 'Start Date' : 'Month & Year'}
-              </Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label
-                    htmlFor="startMonth"
-                    className="text-xs font-medium text-muted-foreground"
-                  >
-                    Month
-                  </Label>
-                  <select
-                    id="startMonth"
-                    name="startMonth"
-                    value={selectedStartMonth}
-                    onChange={e =>
-                      setSelectedStartMonth(parseInt(e.target.value))
-                    }
-                    className="w-full p-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                    required
-                  >
-                    {getAvailableMonths(selectedStartYear).map(month => (
-                      <option key={month.value} value={month.value}>
-                        {month.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Label
-                    htmlFor="startYear"
-                    className="text-xs font-medium text-muted-foreground"
-                  >
-                    Year
-                  </Label>
-                  <select
-                    id="startYear"
-                    name="startYear"
-                    value={selectedStartYear}
-                    onChange={e =>
-                      handleStartYearChange(parseInt(e.target.value))
-                    }
-                    className="w-full p-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                    required
-                  >
-                    {availableYears.map(year => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+          {validationError && (
+            <div className="rounded-[2px] border-l-[5px] border-l-(--danger) bg-(--danger-surface) p-3 text-sm text-(--danger)">
+              {validationError}
             </div>
+          )}
 
-            {/* End Date */}
-            {isRange && (
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground mb-2 block">
-                  End Date
-                </Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label
-                      htmlFor="endMonth"
-                      className="text-xs font-medium text-muted-foreground"
-                    >
-                      Month
-                    </Label>
-                    <select
-                      id="endMonth"
-                      name="endMonth"
-                      value={selectedEndMonth}
-                      onChange={e =>
-                        setSelectedEndMonth(parseInt(e.target.value))
-                      }
-                      className="w-full p-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      {getAvailableMonths(selectedEndYear).map(month => (
-                        <option key={month.value} value={month.value}>
-                          {month.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="endYear"
-                      className="text-xs font-medium text-muted-foreground"
-                    >
-                      Year
-                    </Label>
-                    <select
-                      id="endYear"
-                      name="endYear"
-                      value={selectedEndYear}
-                      onChange={e =>
-                        handleEndYearChange(parseInt(e.target.value))
-                      }
-                      className="w-full p-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      {availableYears.map(year => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
+          <div className="space-y-1.5">
+            <Label className="text-[13.5px] font-bold">
+              {isRange ? 'Start Date' : 'Month & Year'}
+            </Label>
+            {monthYearFields(
+              'start',
+              selectedStartMonth,
+              selectedStartYear,
+              setSelectedStartMonth,
+              handleStartYearChange,
             )}
-
-            <Button
-              type="button"
-              disabled={isPending || !!validationError}
-              className="w-full"
-              onClick={handleSubmit}
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generating Report...
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4 mr-2" />
-                  Generate Report
-                </>
-              )}
-            </Button>
           </div>
+
+          {isRange && (
+            <div className="space-y-1.5">
+              <Label className="text-[13.5px] font-bold">End Date</Label>
+              {monthYearFields(
+                'end',
+                selectedEndMonth,
+                selectedEndYear,
+                setSelectedEndMonth,
+                handleEndYearChange,
+              )}
+            </div>
+          )}
+
+          <Button
+            type="button"
+            disabled={isPending || !!validationError}
+            className={primaryButtonClass}
+            onClick={handleSubmit}
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating Report...
+              </>
+            ) : (
+              <>
+                <Search className="h-4 w-4" />
+                Generate Report
+              </>
+            )}
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </Modal>
+    </>
   );
 }
