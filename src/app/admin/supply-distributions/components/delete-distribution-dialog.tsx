@@ -2,15 +2,9 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Modal } from '@/components/ui/modal';
 import { AlertTriangle } from 'lucide-react';
+import { formatDistributionType } from './distribution-type-badge';
 
 interface Distribution {
   id: string;
@@ -38,6 +32,11 @@ interface DeleteDistributionDialogProps {
   onRefresh: () => void;
 }
 
+const dangerButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--danger) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-[#98060D] disabled:opacity-100';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
+
 export default function DeleteDistributionDialog({
   open,
   onOpenChange,
@@ -55,13 +54,6 @@ export default function DeleteDistributionDialog({
       month: 'short',
       day: 'numeric',
     });
-  };
-
-  const formatDistributionType = (type: string): string => {
-    return type
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
   };
 
   const handleDelete = async () => {
@@ -96,99 +88,114 @@ export default function DeleteDistributionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
-            Delete Distribution
-          </DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete this supply distribution? This
-            action will restore the distributed supplies back to the site
-            inventory and cannot be undone.
-          </DialogDescription>
-        </DialogHeader>
-        {distribution && (
-          <div className="space-y-4">
-            <Alert className="border-red-200 bg-red-50">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                <strong>Warning:</strong> Deleting this distribution will add
-                the distributed supplies back to the site inventory.
-              </AlertDescription>
-            </Alert>
+    <Modal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title={
+        <span className="flex items-center gap-2.5">
+          <AlertTriangle className="size-5" />
+          Delete Distribution
+        </span>
+      }
+      className="sm:max-w-[520px]"
+      footer={
+        distribution && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className={outlineButtonClass}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading}
+              className={dangerButtonClass}
+            >
+              {loading ? 'Deleting...' : 'Delete Distribution'}
+            </Button>
+          </>
+        )
+      }
+    >
+      <p className="text-(--text-body)">
+        Are you sure you want to delete this supply distribution? This action
+        will restore the distributed supplies back to the site inventory and
+        cannot be undone.
+      </p>
+      {distribution && (
+        <div className="mt-4 space-y-4">
+          <div className="flex gap-2.5 rounded-[2px] border-l-[5px] border-l-(--danger) bg-(--danger-surface) p-3.5 text-sm text-(--danger)">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <p>
+              <strong>Warning:</strong> Deleting this distribution will add the
+              distributed supplies back to the site inventory.
+            </p>
+          </div>
 
-            <div className="space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-md">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="font-medium text-gray-600">
-                  Distribution Date:
-                </div>
-                <div>{formatDate(distribution.distributionDate)}</div>
+          <div className="space-y-3 rounded-[2px] border-l-[5px] border-l-(--danger) bg-(--danger-surface) p-4 text-sm text-(--text-body)">
+            <div className="grid grid-cols-[150px_1fr] gap-x-3 gap-y-2">
+              <span className="font-semibold text-(--text-muted)">
+                Distribution Date:
+              </span>
+              <span>{formatDate(distribution.distributionDate)}</span>
 
-                <div className="font-medium text-gray-600">Site:</div>
-                <div>{distribution.siteName}</div>
+              <span className="font-semibold text-(--text-muted)">Site:</span>
+              <span>{distribution.siteName}</span>
 
-                <div className="font-medium text-gray-600">Type:</div>
-                <div>
-                  {formatDistributionType(distribution.distributionType)}
-                </div>
+              <span className="font-semibold text-(--text-muted)">Type:</span>
+              <span>
+                {formatDistributionType(distribution.distributionType)}
+              </span>
 
-                <div className="font-medium text-gray-600">Total Cost:</div>
-                <div className="font-mono">
-                  ${parseFloat(distribution.totalCost).toFixed(2)}
-                </div>
+              <span className="font-semibold text-(--text-muted)">
+                Total Cost:
+              </span>
+              <span className="tabular-nums">
+                ${parseFloat(distribution.totalCost).toFixed(2)}
+              </span>
 
-                <div className="font-medium text-gray-600">Distributed By:</div>
-                <div>{distribution.userName}</div>
+              <span className="font-semibold text-(--text-muted)">
+                Distributed By:
+              </span>
+              <span>{distribution.userName}</span>
 
-                {distribution.eventTitle && (
-                  <>
-                    <div className="font-medium text-gray-600">Event:</div>
-                    <div>{distribution.eventTitle}</div>
-                  </>
-                )}
-              </div>
-
-              <div className="pt-2 border-t border-gray-300">
-                <div className="font-medium text-gray-600 mb-1">
-                  Recipients:
-                </div>
-                <div className="text-sm bg-white p-2 rounded border">
-                  {distribution.recipientNotes}
-                </div>
-              </div>
-
-              {distribution.notes && (
-                <div>
-                  <div className="font-medium text-gray-600 mb-1">Notes:</div>
-                  <div className="text-sm bg-white p-2 rounded border">
-                    {distribution.notes}
-                  </div>
-                </div>
+              {distribution.eventTitle && (
+                <>
+                  <span className="font-semibold text-(--text-muted)">
+                    Event:
+                  </span>
+                  <span>{distribution.eventTitle}</span>
+                </>
               )}
             </div>
 
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={loading}
-              >
-                {loading ? 'Deleting...' : 'Delete Distribution'}
-              </Button>
+            <div className="border-t border-(--border-default) pt-2.5">
+              <div className="mb-1 font-semibold text-(--text-muted)">
+                Recipients:
+              </div>
+              <div className="rounded-(--radius-control) bg-(--surface-card) p-2.5 text-sm">
+                {distribution.recipientNotes}
+              </div>
             </div>
+
+            {distribution.notes && (
+              <div>
+                <div className="mb-1 font-semibold text-(--text-muted)">
+                  Notes:
+                </div>
+                <div className="rounded-(--radius-control) bg-(--surface-card) p-2.5 text-sm">
+                  {distribution.notes}
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        </div>
+      )}
+    </Modal>
   );
 }
