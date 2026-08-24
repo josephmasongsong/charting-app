@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Account Settings" description="Self-service profile page: name, email with verification status, role (read-only), account metadata, and save/reset actions — the Profile-pattern page a signed-in user lands on from the header avatar." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}</style>
+</helmet>
+<div data-screen-label="Account Settings" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="blue" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+
+<div style="width:100%;max-width:900px;margin:0 auto;padding:32px 24px 48px;flex:1">
+
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+<h1 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-.2px">Account Settings</h1>
+<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#fff;background:var(--surface-chrome);border-radius:999px;padding:5px 14px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Lock" size="12" hint-size="12px,12px"></x-import>{{ roleLabel }}
+</span>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);padding:32px">
+
+<h2 style="margin:0 0 4px;font-size:19px;font-weight:700">Profile Information</h2>
+<p style="margin:0 0 24px;font-size:14.5px;color:var(--text-muted)">Update your personal information and account settings.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+<div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.RequiredLabel" bold="{{ true }}" hint-size="100%,21px">First Name</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="text" value="{{ firstName }}" onChange="{{ setFirstName }}" hint-size="100%,38px"></x-import>
+</div>
+<div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.RequiredLabel" bold="{{ true }}" hint-size="100%,21px">Last Name</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="text" value="{{ lastName }}" onChange="{{ setLastName }}" hint-size="100%,38px"></x-import>
+</div>
+</div>
+
+<div style="margin-bottom:20px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.RequiredLabel" bold="{{ true }}" hint-size="100%,21px">Email</x-import>
+<div style="position:relative">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="email" value="{{ email }}" onChange="{{ setEmail }}" hint-size="100%,38px"></x-import>
+<sc-if value="{{ emailVerified }}" hint-placeholder-val="{{ true }}">
+<span title="Verified" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#1c7430;background:#e8f5eb;border:1px solid #bfe0c8;border-radius:999px;padding:3px 9px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Check" size="11" hint-size="11px,11px"></x-import>Verified</span>
+</sc-if>
+<sc-if value="{{ emailUnverified }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--warning-text);background:var(--warning-surface);border:1px solid #f0e2a3;border-radius:999px;padding:3px 9px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Info" size="11" hint-size="11px,11px"></x-import>Unverified</span>
+</sc-if>
+</div>
+</div>
+
+<div style="margin-bottom:28px;max-width:340px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.RequiredLabel" bold="{{ true }}" hint-size="100%,21px">Role</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ role }}" onChange="{{ setRole }}" hint-size="100%,38px">
+<option value="admin">Admin</option>
+<option value="staff">Staff user</option>
+<option value="partner">Partner</option>
+</x-import>
+<p style="margin:6px 0 0;font-size:12.5px;color:var(--text-muted)">Contact an administrator to change your role.</p>
+</div>
+
+<div style="border-top:1px solid var(--border-default);padding-top:18px;margin-bottom:24px;display:flex;flex-direction:column;gap:6px">
+<div style="font-size:14px"><b>Account created:</b> <span style="color:var(--text-muted)">{{ createdDate }}</span></div>
+<div style="font-size:14px"><b>Last updated:</b> <span style="color:var(--text-muted)">{{ updatedDate }}</span></div>
+</div>
+
+<div style="display:flex;gap:10px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" onClick="{{ saveChanges }}" hint-size="140px,38px">Save Changes</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ resetForm }}" hint-size="90px,38px">Reset</x-import>
+</div>
+
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:860},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;admin&quot;,&quot;staff&quot;,&quot;partner&quot;],&quot;default&quot;:&quot;admin&quot;,&quot;tsType&quot;:&quot;\&quot;admin\&quot; | \&quot;staff\&quot; | \&quot;partner\&quot;&quot;,&quot;section&quot;:&quot;Record&quot;},&quot;emailVerified&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Record&quot;},&quot;createdDate&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;5/23/2025&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Record&quot;},&quot;updatedDate&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;7/15/2025&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Record&quot;}}">
+const DEFAULTS = { firstName: "Joseph", lastName: "Masongsong", email: "jmasongsong@bchousing.org" };
+const ROLE_LABEL = { admin: "Admin", staff: "Staff user", partner: "Partner" };
+
+class Component extends DCLogic {
+  state = { firstName: DEFAULTS.firstName, lastName: DEFAULTS.lastName, email: DEFAULTS.email, role: null };
+
+  setField = (key) => (e) => this.setState({ [key]: e.target.value });
+  saveChanges = () => {};
+  resetForm = () => this.setState({ firstName: DEFAULTS.firstName, lastName: DEFAULTS.lastName, email: DEFAULTS.email, role: null });
+
+  renderVals() {
+    const role = this.state.role ?? this.props.role ?? "admin";
+    const verified = this.props.emailVerified ?? true;
+    return {
+      firstName: this.state.firstName, lastName: this.state.lastName, email: this.state.email,
+      setFirstName: this.setField("firstName"), setLastName: this.setField("lastName"), setEmail: this.setField("email"),
+      emailVerified: verified, emailUnverified: !verified,
+      role, roleLabel: ROLE_LABEL[role] ?? "Admin",
+      setRole: this.setField("role"),
+      createdDate: this.props.createdDate ?? "5/23/2025",
+      updatedDate: this.props.updatedDate ?? "7/15/2025",
+      year: new Date().getFullYear(),
+      saveChanges: this.saveChanges, resetForm: this.resetForm,
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14 } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--surface-chrome)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+</script>
+</body>
+</html>

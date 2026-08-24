@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="User Management" description="Admin user management: staff-directory list of accounts with role, program and status, plus a pending-invitations tab." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}#um-inv tbody tr:nth-child(even){background:var(--surface-muted)}#um-inv tbody tr:hover{background:var(--action-selected)}#um-list{background:#fff}#um-list>div:nth-child(even){background:var(--surface-muted)}#um-list>div:hover{background:var(--action-selected);box-shadow:inset 4px 0 0 var(--action-primary)}.um-avatar,.um-avatar *{border-radius:0!important}</style>
+</helmet>
+<div data-screen-label="User Management" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1240px;margin:0 auto;padding:24px 24px 48px;flex:1">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+<div>
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">User management</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">Manage accounts, roles, and outstanding invitations for the Tenant Engagement workspace.</p>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" onClick="{{ openInvite }}" hint-size="140px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Plus" size="16" hint-size="16px,16px"></x-import>Invite user</x-import>
+</div>
+
+<sc-if value="{{ showStats }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px">
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--surface-chrome);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Total accounts</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">17</div>
+</div>
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--bch-green-500);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Active</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">14</div>
+</div>
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--bch-seafoam);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Administrators</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">3</div>
+</div>
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--bch-gold-500);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Pending invitations</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">3</div>
+</div>
+</div>
+</sc-if>
+
+<div style="display:flex;gap:2px;margin-top:24px;border-bottom:1px solid var(--border-default)">
+<sc-if value="{{ isUsers }}" hint-placeholder-val="{{ true }}"><button type="button" style="font-family:var(--font-sans);font-size:14.5px;font-weight:700;padding:10px 18px;border:1px solid var(--border-default);border-bottom:1px solid var(--surface-card);background:var(--surface-card);color:var(--surface-chrome);border-radius:var(--radius-card) var(--radius-card) 0 0;margin-bottom:-1px;cursor:pointer">Users (17)</button></sc-if>
+<sc-if value="{{ notUsers }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ pickUsers }}" style="font-family:var(--font-sans);font-size:14.5px;font-weight:600;padding:10px 18px;border:1px solid transparent;background:transparent;color:var(--action-primary);border-radius:var(--radius-card) var(--radius-card) 0 0;cursor:pointer" style-hover="background:var(--action-selected)">Users (17)</button></sc-if>
+<sc-if value="{{ isInvites }}" hint-placeholder-val="{{ false }}"><button type="button" style="font-family:var(--font-sans);font-size:14.5px;font-weight:700;padding:10px 18px;border:1px solid var(--border-default);border-bottom:1px solid var(--surface-card);background:var(--surface-card);color:var(--surface-chrome);border-radius:var(--radius-card) var(--radius-card) 0 0;margin-bottom:-1px;cursor:pointer">Pending invitations (3)</button></sc-if>
+<sc-if value="{{ notInvites }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ pickInvites }}" style="font-family:var(--font-sans);font-size:14.5px;font-weight:600;padding:10px 18px;border:1px solid transparent;background:transparent;color:var(--action-primary);border-radius:var(--radius-card) var(--radius-card) 0 0;cursor:pointer" style-hover="background:var(--action-selected)">Pending invitations (3)</button></sc-if>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:0;border-radius:0 0 var(--radius-card) var(--radius-card);overflow:hidden">
+
+<sc-if value="{{ isUsers }}" hint-placeholder-val="{{ true }}">
+<div style="padding:14px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border-default)">
+<label style="position:relative;display:flex;align-items:center;flex:1;min-width:260px">
+<span style="position:absolute;left:10px;display:flex;color:var(--bch-gray-500);pointer-events:none"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="16" hint-size="16px,16px"></x-import></span>
+<input type="text" placeholder="Search by name or email" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:8px 12px 8px 32px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+</label>
+<select aria-label="Role" style="font-family:var(--font-sans);font-size:14px;padding:8px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+<option>All roles</option><option>Administrator</option><option>Staff user</option><option>Partner</option>
+</select>
+<select aria-label="Job title" style="font-family:var(--font-sans);font-size:14px;padding:8px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+<option>All job titles</option><option>Tenant Engagement Worker</option><option>People, Plants and Homes</option><option>Health Services Manager</option><option>Community Partner</option>
+</select>
+<select aria-label="Status" style="font-family:var(--font-sans);font-size:14px;padding:8px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+<option>All statuses</option><option>Active</option><option>Deactivated</option>
+</select>
+<span style="font-size:13px;color:var(--text-muted);margin-left:auto">17 accounts</span>
+</div>
+<div style="padding:12px 16px;border-bottom:1px solid var(--border-default);display:flex;flex-wrap:wrap;gap:5px;align-items:center">
+<span style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted);margin-right:6px">Jump to</span>
+<sc-for list="{{ letters }}" as="l" hint-placeholder-count="12">
+<sc-if value="{{ l.on }}" hint-placeholder-val="{{ true }}"><span style="width:28px;height:28px;display:grid;place-items:center;font-size:13px;font-weight:600;border-radius:var(--radius-control);background:var(--action-primary);color:#fff;cursor:pointer" style-hover="background:var(--action-primary-hover)">{{ l.ch }}</span></sc-if>
+<sc-if value="{{ l.off }}" hint-placeholder-val="{{ false }}"><span style="width:28px;height:28px;display:grid;place-items:center;font-size:13px;font-weight:600;border-radius:var(--radius-control);background:var(--bch-gray-100);color:var(--bch-gray-500)">{{ l.ch }}</span></sc-if>
+</sc-for>
+</div>
+<div id="um-list">
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+<div style="display:grid;grid-template-columns:56px 1.1fr .8fr .95fr 1.15fr 70px;gap:16px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bch-gray-200)">
+<span class="um-avatar"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AvatarTile" initials="{{ r.initials }}" size="{{ avatarSize }}" hint-size="56px,56px"></x-import></span>
+<div style="min-width:0">
+<a href="../user-detail/UserDetail.dc.html" style="font-size:15.5px;font-weight:700;color:var(--text-body)" style-hover="color:var(--action-primary)">{{ r.name }}</a>
+</div>
+<div>
+<sc-if value="{{ r.isAdmin }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;letter-spacing:.3px;padding:3px 9px;border-radius:var(--radius-control);background:var(--surface-chrome);color:#fff"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Lock" size="12" hint-size="12px,12px"></x-import>Administrator</span></sc-if>
+<sc-if value="{{ r.isStaff }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:var(--radius-control);background:var(--bch-blue-50);color:var(--bch-blue-700);border:1px solid var(--bch-blue-100)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.User" size="12" hint-size="12px,12px"></x-import>Staff user</span></sc-if>
+<sc-if value="{{ r.isPartner }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:var(--radius-control);background:var(--bch-gray-100);color:var(--text-muted);border:1px solid var(--border-default)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Users" size="12" hint-size="12px,12px"></x-import>Partner</span></sc-if>
+</div>
+<div style="font-size:14.5px;color:var(--text-muted)">{{ r.title }}</div>
+<div style="font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="#">{{ r.email }}</a></div>
+<div style="display:flex;align-items:center;gap:14px;color:var(--action-primary)">
+<a href="#" aria-label="Edit" title="Edit" onClick="{{ r.openEdit }}"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.PenLine" size="17" hint-size="17px,17px"></x-import></a>
+<a href="#" aria-label="Reset password" title="Reset password"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Lock" size="17" hint-size="17px,17px"></x-import></a>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 20px">
+<span style="font-size:13.5px;color:var(--text-muted)">Showing 1 to 10 of 17 accounts</span>
+<div style="display:flex;gap:6px;align-items:center">
+<button type="button" disabled style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--bch-gray-500);border-radius:var(--radius-control);cursor:not-allowed">Previous</button>
+<button type="button" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--action-primary);background:var(--action-primary);color:#fff;border-radius:var(--radius-control);cursor:pointer">1</button>
+<button type="button" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--action-selected)">2</button>
+<button type="button" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--action-selected)">Next</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isInvites }}" hint-placeholder-val="{{ false }}">
+<div style="padding:14px 16px;border-bottom:1px solid var(--border-default);display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--text-muted)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Mail" size="16" hint-size="16px,16px"></x-import>
+<span>Invitations expire 14 days after they are sent. Resending issues a new link and resets the expiry.</span>
+</div>
+<div style="overflow-x:auto"><table id="um-inv" style="width:100%;min-width:840px;border-collapse:collapse;font-size:14px;background:#fff">
+<thead><tr>
+<th style="background:var(--surface-chrome);color:#fff;font-weight:700;text-align:left;padding:10px 14px;border:1px solid #0a7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Email</th>
+<th style="background:var(--surface-chrome);color:#fff;font-weight:700;text-align:left;padding:10px 14px;border:1px solid #0a7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Role</th>
+<th style="background:var(--surface-chrome);color:#fff;font-weight:700;text-align:left;padding:10px 14px;border:1px solid #0a7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Invited by</th>
+<th style="background:var(--surface-chrome);color:#fff;font-weight:700;text-align:left;padding:10px 14px;border:1px solid #0a7276;white-space:nowrap;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Sent</th>
+<th style="background:var(--surface-chrome);color:#fff;font-weight:700;text-align:left;padding:10px 14px;border:1px solid #0a7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Status</th>
+<th style="background:var(--surface-chrome);color:#fff;font-weight:700;text-align:right;padding:10px 14px;border:1px solid #0a7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Actions</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{ invites }}" as="v" hint-placeholder-count="3">
+<tr>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);font-weight:600">{{ v.email }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);white-space:nowrap;color:var(--text-muted)">{{ v.role }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);color:var(--text-muted)">{{ v.invitedBy }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);white-space:nowrap;color:var(--text-muted)">{{ v.sent }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);white-space:nowrap">
+<sc-if value="{{ v.isPending }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:var(--radius-control);background:var(--warning-surface);color:var(--warning-text);border:1px solid #e8dca6"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Clock" size="12" hint-size="12px,12px"></x-import>{{ v.expiryLabel }}</span></sc-if>
+<sc-if value="{{ v.isExpired }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:var(--radius-control);background:var(--bch-red-50);color:var(--danger);border:1px solid var(--bch-red-100)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.TriangleAlert" size="12" hint-size="12px,12px"></x-import>Expired</span></sc-if>
+</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);text-align:right;white-space:nowrap"><span style="display:inline-flex;gap:12px;justify-content:flex-end"><a href="#">Resend</a><a href="#">Copy link</a><a href="#" style="color:var(--danger)">Revoke</a></span></td>
+</tr>
+</sc-for>
+</tbody>
+</table></div>
+<div style="padding:14px 20px;font-size:13.5px;color:var(--text-muted)">3 outstanding invitations</div>
+</sc-if>
+
+</div>
+</div>
+</div>
+
+<sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(0,48,50,.45);display:grid;place-items:center;z-index:100;padding:16px">
+<div role="dialog" aria-modal="true" onClick="{{ stop }}" style="background:#fff;border-radius:var(--radius-card);overflow:hidden;width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto;box-shadow:var(--shadow-modal);font-family:var(--font-sans)">
+<div style="background:var(--surface-chrome);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center">
+<div>
+<h4 style="font-size:21px;font-weight:700;margin:0">{{ modalTitle }}</h4>
+<p style="margin:4px 0 0;font-size:13.5px;color:var(--bch-seafoam)">{{ modalSubtitle }}</p>
+</div>
+<button type="button" onClick="{{ closeModal }}" aria-label="Close" style="background:transparent;border:none;color:#fff;cursor:pointer;display:flex;padding:4px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+<div style="padding:24px;display:flex;flex-direction:column;gap:18px">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<div><label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">First name</label><input type="text" value="{{ form.firstName }}" onChange="{{ setFirstName }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control)"></div>
+<div><label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Last name</label><input type="text" value="{{ form.lastName }}" onChange="{{ setLastName }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control)"></div>
+</div>
+<div><label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Email</label><input type="email" value="{{ form.email }}" onChange="{{ setEmail }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control)"></div>
+<div><label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Role</label>
+<select value="{{ form.role }}" onChange="{{ setRole }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:#fff">
+<option value="admin">Administrator</option><option value="staff">Staff user</option><option value="partner">Partner</option>
+</select>
+</div>
+<div><label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Job title</label>
+<select value="{{ form.title }}" onChange="{{ setTitle }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:#fff">
+<option>Tenant Engagement Worker</option><option>People, Plants and Homes</option><option>Health Services Manager</option><option>Community Partner</option>
+</select>
+</div>
+<sc-if value="{{ isEditMode }}" hint-placeholder-val="{{ true }}">
+<div>
+<label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Account status</label>
+<div style="display:flex;align-items:center;gap:10px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Toggle" checked="{{ form.active }}" onChange="{{ setActive }}" hint-size="40px,20px"></x-import>
+<sc-if value="{{ form.active }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--success)"><span style="width:8px;height:8px;border-radius:50%;background:var(--bch-green-500)"></span>Active</span></sc-if>
+<sc-if value="{{ form.notActive }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;color:var(--text-muted)"><span style="width:8px;height:8px;border-radius:50%;background:#fff;border:2px solid var(--bch-gray-500)"></span>Deactivated</span></sc-if>
+</div>
+<p style="margin:6px 0 0;font-size:12.5px;color:var(--text-muted)">Deactivated users cannot sign in and will be logged out automatically.</p>
+</div>
+</sc-if>
+</div>
+<div style="padding:16px 24px;border-top:1px solid var(--border-default);display:flex;justify-content:flex-end;gap:10px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ closeModal }}" hint-size="90px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" onClick="{{ closeModal }}" hint-size="140px,38px">{{ modalSubmitLabel }}</x-import>
+</div>
+</div>
+</div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1000},&quot;tab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Users&quot;,&quot;Invitations&quot;],&quot;default&quot;:&quot;Users&quot;,&quot;tsType&quot;:&quot;\&quot;Users\&quot; | \&quot;Invitations\&quot;&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;showStats&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+const TEW = "Tenant Engagement Worker";
+const PPH = "People, Plants and Homes";
+const HSM = "Health Services Manager";
+const PARTNER_TITLE = "Community Partner";
+
+// name, email, role, job title, deactivated?
+const RAW = [
+  ["Anna Mendez", "amendez@bchousing.org", "partner", PARTNER_TITLE, true],
+  ["Annette Fick", "afick@bchousing.org", "admin", HSM, false],
+  ["Chris Langer", "clanger@bchousing.org", "staff", TEW, false],
+  ["Cindy Wei", "cwei@bchousing.org", "staff", PPH, false],
+  ["Flora Wong", "fwong@bchousing.org", "staff", TEW, false],
+  ["Linda Helme", "lhelme@bchousing.org", "staff", PPH, false],
+  ["Mikayla Nguyen", "mnguyen@bchousing.org", "staff", TEW, true],
+  ["Natalie Boyle", "nboyle@bchousing.org", "admin", HSM, false],
+  ["Test User", "joseph+16@josephmasongsong.com", "staff", PPH, false],
+  ["Willie Tang", "wtang@bchousing.org", "admin", HSM, false],
+];
+
+const INVITES = [
+  ["dgrewal@bchousing.org", "Staff user", "Natalie Boyle", "Aug 11, 2026", "pending", "Expires in 9 days"],
+  ["mfontaine@bchousing.org", "Administrator", "Joseph Masongsong", "Aug 4, 2026", "pending", "Expires in 2 days"],
+  ["outreach@rainciti.ca", "Partner", "Natalie Boyle", "Jul 21, 2026", "expired", ""],
+];
+
+const initials = (n) => n.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+
+const ROLE_KEY = { Administrator: "admin", "Staff user": "staff", Partner: "partner" };
+
+class Component extends DCLogic {
+  state = { tab: null, modal: null, form: null };
+
+  openInvite = () => this.setState({
+    modal: "invite",
+    form: { firstName: "", lastName: "", email: "", role: "staff", title: "Tenant Engagement Worker", active: true },
+  });
+
+  openEdit = (r) => this.setState({
+    modal: "edit",
+    form: {
+      firstName: r.name.split(" ")[0], lastName: r.name.split(" ").slice(1).join(" "),
+      email: r.email, role: r.isAdmin ? "admin" : r.isPartner ? "partner" : "staff",
+      title: r.title, active: r.isActive,
+    },
+  });
+
+  closeModal = () => this.setState({ modal: null, form: null });
+  setField = (key) => (e) => this.setState((s) => ({ form: { ...s.form, [key]: e.target.value } }));
+
+  renderVals() {
+    const tab = this.state.tab ?? this.props.tab ?? "Users";
+    const showStats = this.props.showStats ?? true;
+
+    const rows = RAW.map((r) => ({
+      name: r[0],
+      initials: initials(r[0]),
+      email: r[1],
+      isAdmin: r[2] === "admin",
+      isStaff: r[2] === "staff",
+      isPartner: r[2] === "partner",
+      title: r[3],
+      isActive: !r[4],
+      isInactive: r[4],
+    }));
+    rows.forEach((r) => { r.openEdit = () => this.openEdit(r); });
+
+    const present = new Set(RAW.map((r) => r[0][0].toUpperCase()));
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((ch) => ({
+      ch, on: present.has(ch), off: !present.has(ch),
+    }));
+
+    const invites = INVITES.map((v) => ({
+      email: v[0], role: v[1], invitedBy: v[2], sent: v[3],
+      isPending: v[4] === "pending", isExpired: v[4] === "expired",
+      expiryLabel: v[5],
+    }));
+
+    return {
+      isUsers: tab === "Users",
+      notUsers: tab !== "Users",
+      isInvites: tab === "Invitations",
+      notInvites: tab !== "Invitations",
+      pickUsers: () => this.setState({ tab: "Users" }),
+      pickInvites: () => this.setState({ tab: "Invitations" }),
+      openInvite: this.openInvite,
+      closeModal: this.closeModal,
+      showStats,
+      avatarSize: 56,
+      rows,
+      letters,
+      invites,
+      modalOpen: !!this.state.modal,
+      isEditMode: this.state.modal === "edit",
+      modalTitle: this.state.modal === "edit" ? "Edit user" : "Invite user",
+      modalSubtitle: this.state.modal === "edit" ? "Update this person's role, job title, and account status." : "Send an email invitation to join this workspace.",
+      modalSubmitLabel: this.state.modal === "edit" ? "Save changes" : "Send invitation",
+      form: this.state.form ? { ...this.state.form, notActive: !this.state.form.active } : {
+        firstName: "", lastName: "", email: "", role: "staff", title: "Tenant Engagement Worker", active: true, notActive: false,
+      },
+      setFirstName: this.setField("firstName"),
+      setLastName: this.setField("lastName"),
+      setEmail: this.setField("email"),
+      setRole: this.setField("role"),
+      setTitle: this.setField("title"),
+      setActive: (v) => this.setState((s) => ({ form: { ...s.form, active: v } })),
+      stop: (e) => e.stopPropagation(),
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontFamily: "var(--font-sans)", color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--surface-chrome)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

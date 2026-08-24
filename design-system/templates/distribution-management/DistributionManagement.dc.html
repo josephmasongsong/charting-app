@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Distribution Management" description="Filterable, sortable log of supply distributions across sites and events, with cost totals and record-level actions." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}#dm-table tbody tr:nth-child(even){background:var(--surface-muted)}#dm-table tbody tr:hover{background:var(--action-selected)}</style>
+</helmet>
+<div data-screen-label="Distribution Management" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1280px;margin:0 auto;padding:24px 24px 48px;flex:1">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<div>
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">Supply Distributions</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">Track and manage supply distributions to sites and events.</p>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" onClick="{{ goLog }}" hint-size="170px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Plus" size="16" hint-size="16px,16px"></x-import>Log Distribution</x-import>
+</div>
+
+<sc-if value="{{ showStats }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px">
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--surface-chrome);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Total distributions</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">{{ totalDistributions }}</div>
+</div>
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--action-primary);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Total value distributed</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">{{ totalValue }}</div>
+</div>
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--bch-seafoam);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Total items distributed</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">{{ totalItems }}</div>
+</div>
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--bch-gold-500);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Avg. cost per distribution</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">{{ avgCost }}</div>
+</div>
+</div>
+</sc-if>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);margin-top:24px;overflow:hidden">
+
+<div style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--border-default)">
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+<select aria-label="Type" value="{{ type }}" onChange="{{ setType }}" style="font-family:var(--font-sans);font-size:14px;padding:8px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+<option value="">All types</option>
+<option value="Door To Door">Door To Door</option>
+<option value="Event Distribution">Event Distribution</option>
+<option value="Community Room Pickup">Community Room Pickup</option>
+</select>
+<select aria-label="Site" value="{{ site }}" onChange="{{ setSite }}" style="font-family:var(--font-sans);font-size:14px;padding:8px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+<option value="">All sites</option>
+<sc-for list="{{ siteOptions }}" as="opt" hint-placeholder-count="6"><option value="{{ opt.value }}">{{ opt.label }}</option></sc-for>
+</select>
+<sc-if value="{{ hasFilters }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ clearFilters }}" style="font-family:var(--font-sans);font-size:13.5px;background:transparent;border:none;color:var(--action-primary);cursor:pointer;text-decoration:underline;padding:0">Clear filters</button></sc-if>
+</div>
+<span style="font-size:13.5px;color:var(--text-muted)">{{ filteredCount }} distribution{{ filteredCountSuffix }}</span>
+</div>
+
+<div style="overflow-x:auto"><table id="dm-table" style="width:100%;min-width:900px;border-collapse:collapse;font-size:14px;background:#fff">
+<thead><tr>
+<th onClick="{{ sortByDate }}" style="cursor:pointer;user-select:none;padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em" style-hover="background:var(--surface-chrome-dark)">
+<span style="display:inline-flex;align-items:center;gap:6px">
+<sc-if value="{{ dateActive }}" hint-placeholder-val="{{ true }}"><span style="font-weight:800">Distribution Date</span><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" hint-size="14px,14px"></x-import></sc-if>
+<sc-if value="{{ dateInactive }}" hint-placeholder-val="{{ false }}"><span style="font-weight:700;opacity:.85">Distribution Date</span><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" style="opacity:.55" hint-size="14px,14px"></x-import></sc-if>
+</span>
+</th>
+<th onClick="{{ sortBySite }}" style="cursor:pointer;user-select:none;padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em" style-hover="background:var(--surface-chrome-dark)">
+<span style="display:inline-flex;align-items:center;gap:6px">
+<sc-if value="{{ siteActive }}" hint-placeholder-val="{{ false }}"><span style="font-weight:800">Site</span><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" hint-size="14px,14px"></x-import></sc-if>
+<sc-if value="{{ siteInactive }}" hint-placeholder-val="{{ true }}"><span style="font-weight:700;opacity:.85">Site</span><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" style="opacity:.55" hint-size="14px,14px"></x-import></sc-if>
+</span>
+</th>
+<th onClick="{{ sortByType }}" style="cursor:pointer;user-select:none;padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em" style-hover="background:var(--surface-chrome-dark)">
+<span style="display:inline-flex;align-items:center;gap:6px">
+<sc-if value="{{ typeActive }}" hint-placeholder-val="{{ false }}"><span style="font-weight:800">Type</span><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" hint-size="14px,14px"></x-import></sc-if>
+<sc-if value="{{ typeInactive }}" hint-placeholder-val="{{ true }}"><span style="font-weight:700;opacity:.85">Type</span><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" style="opacity:.55" hint-size="14px,14px"></x-import></sc-if>
+</span>
+</th>
+<th onClick="{{ sortByBy }}" style="cursor:pointer;user-select:none;padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em" style-hover="background:var(--surface-chrome-dark)">
+<span style="display:inline-flex;align-items:center;gap:6px">
+<sc-if value="{{ byActive }}" hint-placeholder-val="{{ false }}"><span style="font-weight:800">Distributed By</span><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" hint-size="14px,14px"></x-import></sc-if>
+<sc-if value="{{ byInactive }}" hint-placeholder-val="{{ true }}"><span style="font-weight:700;opacity:.85">Distributed By</span><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" style="opacity:.55" hint-size="14px,14px"></x-import></sc-if>
+</span>
+</th>
+<th onClick="{{ sortByCost }}" style="cursor:pointer;user-select:none;padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:right;font-size:12px;text-transform:uppercase;letter-spacing:.04em" style-hover="background:var(--surface-chrome-dark)">
+<span style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-end">
+<sc-if value="{{ costActive }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" hint-size="14px,14px"></x-import><span style="font-weight:800">Cost</span></sc-if>
+<sc-if value="{{ costInactive }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" style="opacity:.55" hint-size="14px,14px"></x-import><span style="font-weight:700;opacity:.85">Cost</span></sc-if>
+</span>
+</th>
+<th style="padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:right;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Actions</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{ pageRows }}" as="row" hint-placeholder-count="10">
+<tr>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);white-space:nowrap">{{ row.dateLabel }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);font-weight:600">{{ row.site }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);white-space:nowrap">
+<sc-if value="{{ row.isDoorToDoor }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:var(--radius-control);background:var(--surface-chrome);color:#fff">Door To Door</span></sc-if>
+<sc-if value="{{ row.isEvent }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);border:1px solid var(--bch-blue-100)">Event Distribution</span></sc-if>
+<sc-if value="{{ row.isPickup }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:var(--radius-control);background:#fdf2d9;color:var(--bch-tan-700);border:1px solid #f0e2b0">Community Room Pickup</span></sc-if>
+</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200)">{{ row.by }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);text-align:right;font-variant-numeric:tabular-nums">{{ row.costLabel }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);text-align:right;white-space:nowrap">
+<span style="display:inline-flex;gap:16px;justify-content:flex-end;align-items:center;color:var(--action-primary)">
+<a href="#" onClick="{{ row.view }}" aria-label="View" title="View" style="display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Eye" size="17" hint-size="17px,17px"></x-import></a>
+<a href="#" onClick="{{ row.remove }}" aria-label="Delete" title="Delete" style="display:flex;color:var(--danger)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Trash2" size="17" hint-size="17px,17px"></x-import></a>
+</span>
+</td>
+</tr>
+</sc-for>
+<sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+<tr><td colspan="6" style="padding:40px 14px;text-align:center;color:var(--text-muted);border:1px solid var(--bch-gray-200)">No distributions match your filters.</td></tr>
+</sc-if>
+</tbody>
+</table></div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 20px">
+<span style="font-size:13.5px;color:var(--text-muted)">{{ showingText }}</span>
+<div style="display:flex;gap:8px;align-items:center">
+<sc-if value="{{ canPrev }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ goFirst }}" style="font-family:var(--font-sans);font-size:13.5px;font-weight:600;padding:7px 14px;border:1px solid var(--border-default);background:#fff;color:var(--text-body);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--surface-muted)">First</button></sc-if>
+<sc-if value="{{ cannotPrev }}" hint-placeholder-val="{{ false }}"><button type="button" disabled style="font-family:var(--font-sans);font-size:13.5px;font-weight:600;padding:7px 14px;border:1px solid var(--border-default);background:var(--surface-muted);color:var(--bch-gray-500);border-radius:var(--radius-control);cursor:not-allowed">First</button></sc-if>
+<sc-if value="{{ canPrev }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ goPrev }}" style="font-family:var(--font-sans);font-size:13.5px;font-weight:600;padding:7px 14px;border:1px solid var(--border-default);background:#fff;color:var(--text-body);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--surface-muted)">‹ Previous</button></sc-if>
+<sc-if value="{{ cannotPrev }}" hint-placeholder-val="{{ false }}"><button type="button" disabled style="font-family:var(--font-sans);font-size:13.5px;font-weight:600;padding:7px 14px;border:1px solid var(--border-default);background:var(--surface-muted);color:var(--bch-gray-500);border-radius:var(--radius-control);cursor:not-allowed">‹ Previous</button></sc-if>
+<sc-for list="{{ pageNumbers }}" as="p" hint-placeholder-count="2">
+<sc-if value="{{ p.active }}" hint-placeholder-val="{{ true }}"><button type="button" style="font-family:var(--font-sans);font-size:13.5px;font-weight:700;padding:7px 14px;border:1px solid var(--surface-chrome);background:var(--surface-chrome);color:#fff;border-radius:var(--radius-control);cursor:default">{{ p.n }}</button></sc-if>
+<sc-if value="{{ p.notActive }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ p.go }}" style="font-family:var(--font-sans);font-size:13.5px;font-weight:600;padding:7px 14px;border:1px solid var(--border-default);background:#fff;color:var(--text-body);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--surface-muted)">{{ p.n }}</button></sc-if>
+</sc-for>
+<sc-if value="{{ canNext }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ goNext }}" style="font-family:var(--font-sans);font-size:13.5px;font-weight:600;padding:7px 14px;border:1px solid var(--border-default);background:#fff;color:var(--text-body);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--surface-muted)">Next ›</button></sc-if>
+<sc-if value="{{ cannotNext }}" hint-placeholder-val="{{ true }}"><button type="button" disabled style="font-family:var(--font-sans);font-size:13.5px;font-weight:600;padding:7px 14px;border:1px solid var(--border-default);background:var(--surface-muted);color:var(--bch-gray-500);border-radius:var(--radius-control);cursor:not-allowed">Next ›</button></sc-if>
+<sc-if value="{{ canNext }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ goLast }}" style="font-family:var(--font-sans);font-size:13.5px;font-weight:600;padding:7px 14px;border:1px solid var(--border-default);background:#fff;color:var(--text-body);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--surface-muted)">Last</button></sc-if>
+<sc-if value="{{ cannotNext }}" hint-placeholder-val="{{ true }}"><button type="button" disabled style="font-family:var(--font-sans);font-size:13.5px;font-weight:600;padding:7px 14px;border:1px solid var(--border-default);background:var(--surface-muted);color:var(--bch-gray-500);border-radius:var(--radius-control);cursor:not-allowed">Last</button></sc-if>
+</div>
+</div>
+
+<sc-if value="{{ deleteOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeDeleteModal }}" style="position:fixed;inset:0;background:rgba(0,48,50,.45);display:grid;place-items:center;z-index:100;padding:16px">
+<div role="dialog" aria-modal="true" onClick="{{ stop }}" style="background:#fff;border-radius:var(--radius-card);overflow:hidden;width:min(520px,100%);max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-modal);font-family:var(--font-sans);color:var(--text-body)">
+<div style="background:var(--surface-chrome);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+<span style="display:flex;align-items:center;gap:10px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.TriangleAlert" size="20" hint-size="20px,20px"></x-import><h4 style="font-size:20px;font-weight:700;margin:0">Delete Distribution</h4></span>
+<button type="button" onClick="{{ closeDeleteModal }}" aria-label="Close" style="background:none;border:none;color:#fff;cursor:pointer;line-height:1;opacity:.9;display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="18" hint-size="18px,18px"></x-import></button>
+</div>
+<div style="padding:24px;overflow-y:auto;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;gap:10px;padding:14px 16px;background:var(--danger-surface);border-radius:var(--radius-control)">
+<span style="flex-shrink:0;color:var(--danger);display:flex;margin-top:2px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.TriangleAlert" size="16" hint-size="16px,16px"></x-import></span>
+<p style="margin:0;font-size:13.5px;color:var(--danger);line-height:1.5"><strong>Warning:</strong> Deleting this distribution will add the distributed supplies back to the site inventory.</p>
+</div>
+<div style="display:grid;grid-template-columns:150px 1fr;gap:8px 12px;padding:16px;background:var(--surface-muted);border-radius:var(--radius-control);font-size:14px">
+<span style="color:var(--text-muted);font-weight:600">Distribution Date:</span><span>{{ deleteRow.dateLabel }}</span>
+<span style="color:var(--text-muted);font-weight:600">Site:</span><span>{{ deleteRow.site }}</span>
+<span style="color:var(--text-muted);font-weight:600">Type:</span><span>{{ deleteRow.type }}</span>
+<span style="color:var(--text-muted);font-weight:600">Total Cost:</span><span>{{ deleteRow.costLabel }}</span>
+<span style="color:var(--text-muted);font-weight:600">Distributed By:</span><span>{{ deleteRow.by }}</span>
+</div>
+<div>
+<div style="font-size:14px;font-weight:700;margin-bottom:8px">Items Distributed:</div>
+<div style="border:1px solid var(--border-default);border-radius:var(--radius-control);padding:10px 14px;font-size:14px">{{ deleteRow.itemsLabel }}</div>
+</div>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 24px 24px;flex-shrink:0">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ closeDeleteModal }}" hint-size="90px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="danger" onClick="{{ confirmDelete }}" hint-size="176px,38px">Delete Distribution</x-import>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1000},&quot;showStats&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;pageSize&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;5&quot;,&quot;10&quot;,&quot;25&quot;],&quot;default&quot;:&quot;10&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+const RAW = [
+  ["2026-06-02", "Maclean Park", "Event Distribution", "Nolan Murray", 145, [["Hygiene Kits", 10], ["Snack Packs", 8]]],
+  ["2026-06-02", "Rupert Lane", "Event Distribution", "Trevonne Garamukanwa", 210, [["Blankets", 14], ["Hygiene Kits", 12]]],
+  ["2026-05-27", "Carolina Court", "Event Distribution", "Trevonne Garamukanwa", 96, [["Snack Packs", 12]]],
+  ["2026-05-21", "Byrne Creek", "Door To Door", "Trevonne Garamukanwa", 170, [["Hygiene Kits", 9], ["Socks", 12]]],
+  ["2026-05-18", "Grandview Terrace", "Door To Door", "Nolan Murray", 88, [["Blankets", 11]]],
+  ["2026-05-13", "Maclean Park", "Door To Door", "Nolan Murray", 132, [["Hygiene Kits", 7], ["Snack Packs", 9]]],
+  ["2026-05-13", "Brant Villa", "Door To Door", "Trevonne Garamukanwa", 64, [["Socks", 8]]],
+  ["2026-04-14", "Bauer Villa", "Event Distribution", "Trevonne Garamukanwa", 178, [["Blankets", 10], ["Hygiene Kits", 12]]],
+  ["2025-10-07", "Seven Maples", "Community Room Pickup", "Joseph Masongsong", 52, [["Hygiene Kits", 6]]],
+  ["2025-09-30", "Steeves Manor", "Door To Door", "Joseph Masongsong", 120, [["Snack Packs", 15]]],
+  ["2025-09-02", "Killarney Gardens", "Door To Door", "Nolan Murray", 98, [["Blankets", 5], ["Socks", 7]]],
+  ["2025-08-15", "Stamps Place", "Event Distribution", "Joseph Masongsong", 156, [["Hygiene Kits", 9], ["Snack Packs", 10]]],
+  ["2025-07-28", "Rupert Lane", "Community Room Pickup", "Trevonne Garamukanwa", 44, [["Blankets", 5]]],
+];
+const money = (n) => "$" + n.toFixed(2);
+const fmtDate = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
+
+class Component extends DCLogic {
+  state = {
+    type: "", site: "", sortKey: "date", sortDir: "desc", page: 1, deleteId: null,
+    rows: RAW.map((r, i) => ({ id: i + 1, date: r[0], site: r[1], type: r[2], by: r[3], cost: r[4], items: r[5], itemCount: r[5].reduce((sum, it) => sum + it[1], 0) })),
+  };
+
+  openDelete(id) { return () => this.setState({ deleteId: id }); }
+  closeDeleteModal = () => this.setState({ deleteId: null });
+  stop = (e) => e.stopPropagation();
+  confirmDelete = () => this.setState((s) => ({ rows: s.rows.filter((r) => r.id !== s.deleteId), deleteId: null }));
+
+  setType = (e) => this.setState({ type: e.target.value, page: 1 });
+  setSite = (e) => this.setState({ site: e.target.value, page: 1 });
+  clearFilters = () => this.setState({ type: "", site: "", page: 1 });
+
+  sortBy(key) {
+    return () => this.setState((s) => ({
+      sortKey: key,
+      sortDir: s.sortKey === key ? (s.sortDir === "asc" ? "desc" : "asc") : (key === "date" ? "desc" : "asc"),
+      page: 1,
+    }));
+  }
+  removeRow(id) {
+    return () => {
+      if (window.confirm("Delete this distribution record? This can't be undone.")) {
+        this.setState((s) => ({ rows: s.rows.filter((r) => r.id !== id) }));
+      }
+    };
+  }
+  goPage(n) { return () => this.setState({ page: n }); }
+
+  renderVals() {
+    const s = this.state;
+    const pageSize = Number(this.props.pageSize) || 10;
+
+    let filtered = s.rows.filter((r) => (!s.type || r.type === s.type) && (!s.site || r.site === s.site));
+    const dir = s.sortDir === "asc" ? 1 : -1;
+    filtered = [...filtered].sort((a, b) => {
+      if (s.sortKey === "cost") return (a.cost - b.cost) * dir;
+      return String(a[s.sortKey]).localeCompare(String(b[s.sortKey])) * dir;
+    });
+
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const page = Math.min(s.page, totalPages);
+    const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize).map((r) => ({
+      ...r,
+      dateLabel: fmtDate(r.date),
+      costLabel: money(r.cost),
+      isDoorToDoor: r.type === "Door To Door",
+      isEvent: r.type === "Event Distribution",
+      isPickup: r.type === "Community Room Pickup",
+      remove: this.openDelete(r.id),
+      view: () => { window.location.href = "../distribution-detail/DistributionDetail.dc.html"; },
+    }));
+
+    const siteOptions = [...new Set(s.rows.map((r) => r.site))].sort();
+    const totalValue = s.rows.reduce((sum, r) => sum + r.cost, 0);
+    const totalItems = s.rows.reduce((sum, r) => sum + r.itemCount, 0);
+    const avgCost = money(s.rows.length ? totalValue / s.rows.length : 0);
+
+    const deleteSrc = s.rows.find((r) => r.id === s.deleteId);
+    const deleteRow = deleteSrc ? {
+      dateLabel: fmtDate(deleteSrc.date), site: deleteSrc.site, type: deleteSrc.type,
+      costLabel: money(deleteSrc.cost), by: deleteSrc.by,
+      itemsLabel: deleteSrc.items.map((it) => it[0] + " (" + it[1] + ")").join(", "),
+    } : { dateLabel: "", site: "", type: "", costLabel: "", by: "", itemsLabel: "" };
+
+    const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+    const to = Math.min(page * pageSize, total);
+    const pageNumbers = Array.from({ length: totalPages }, (_, i) => ({ n: i + 1, active: i + 1 === page, notActive: i + 1 !== page, go: this.goPage(i + 1) }));
+
+    return {
+      showStats: this.props.showStats ?? true,
+      totalDistributions: s.rows.length,
+      totalValue: money(totalValue),
+      totalItems,
+      avgCost,
+      type: s.type, site: s.site,
+      setType: this.setType, setSite: this.setSite,
+      siteOptions: siteOptions.map((v) => ({ value: v, label: v })),
+      hasFilters: !!(s.type || s.site),
+      clearFilters: this.clearFilters,
+      filteredCount: total,
+      filteredCountSuffix: total === 1 ? "" : "s",
+      sortByDate: this.sortBy("date"), sortBySite: this.sortBy("site"), sortByType: this.sortBy("type"),
+      sortByBy: this.sortBy("by"), sortByCost: this.sortBy("cost"),
+      dateActive: s.sortKey === "date", dateInactive: s.sortKey !== "date",
+      siteActive: s.sortKey === "site", siteInactive: s.sortKey !== "site",
+      typeActive: s.sortKey === "type", typeInactive: s.sortKey !== "type",
+      byActive: s.sortKey === "by", byInactive: s.sortKey !== "by",
+      costActive: s.sortKey === "cost", costInactive: s.sortKey !== "cost",
+      pageRows,
+      deleteOpen: !!s.deleteId,
+      deleteRow,
+      closeDeleteModal: this.closeDeleteModal,
+      confirmDelete: this.confirmDelete,
+      stop: this.stop,
+      noRows: pageRows.length === 0,
+      showingText: total === 0 ? "No distributions match your filters" : "Showing " + from + " to " + to + " of " + total + (total === 1 ? " result" : " results"),
+      pageNumbers,
+      canPrev: page > 1, cannotPrev: !(page > 1),
+      canNext: page < totalPages, cannotNext: !(page < totalPages),
+      goFirst: this.goPage(1), goLast: this.goPage(totalPages),
+      goPrev: () => this.setState((st) => ({ page: Math.max(1, st.page - 1) })),
+      goNext: () => this.setState((st) => ({ page: Math.min(totalPages, st.page + 1) })),
+      goLog: () => { window.location.href = "../log-distribution/LogDistribution.dc.html"; },
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--surface-chrome)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

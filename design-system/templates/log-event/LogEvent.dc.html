@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Log Event" description="Event intake form: grouped detail cards, live participation/time math, and a sticky summary rail with save actions." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}</style>
+</helmet>
+<div data-screen-label="Log New Event" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="blue" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1160px;margin:0 auto;padding:28px 24px 40px;flex:1">
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">Log New Event</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">Record details of a community event or activity at one of your sites.</p>
+
+<div style="display:flex;gap:24px;align-items:flex-start;margin-top:20px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:16px">
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Calendar" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Event details</div>
+<div style="font-size:13px;color:var(--text-muted)">What happened, where, and when</div>
+</div>
+</div>
+<div style="margin-top:20px">
+<div style="font-size:15px;margin-bottom:6px">Event title <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" placeholder="e.g. Community Health Fair" value="{{ title }}" on-change="{{ onTitle }}" hint-size="100%,36px"></x-import>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">Event date <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="date" value="{{ date }}" on-change="{{ onDate }}" hint-size="100%,36px"></x-import>
+</div>
+<div>
+<div style="font-size:15px;margin-bottom:6px">Site location <span style="color:var(--danger)">*</span></div>
+<div style="position:relative">
+<button type="button" onClick="{{ toggleSiteCombo }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;font-family:var(--font-sans);font-size:15px;padding:7px 10px;background:#fff;border:1px solid var(--border-input);border-radius:var(--radius-input);cursor:pointer;color:var(--text-body)">
+<span>{{ siteLabel }}</span>
+<span style="color:var(--text-muted);display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ChevronDown" size="16" hint-size="16px,16px"></x-import></span>
+</button>
+<sc-if value="{{ siteOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;z-index:20;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border-default);border-radius:var(--radius-control);box-shadow:var(--shadow-modal);overflow:hidden">
+<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--bch-gray-200)">
+<span style="color:var(--text-muted);display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="15" hint-size="15px,15px"></x-import></span>
+<input type="text" placeholder="Search sites…" value="{{ siteQuery }}" onChange="{{ onSiteQuery }}" style="flex:1;border:none;outline:none;font-family:var(--font-sans);font-size:14.5px;color:var(--text-body);background:transparent">
+</div>
+<div style="max-height:260px;overflow-y:auto;padding:4px 0">
+<sc-for list="{{ filteredSites }}" as="p" hint-placeholder-count="4">
+<button type="button" onClick="{{ p.on }}" style="display:block;width:100%;text-align:left;font-family:var(--font-sans);font-size:14.5px;padding:7px 14px;border:none;background:transparent;color:var(--text-body);cursor:pointer" style-hover="background:var(--action-selected)">{{ p.name }}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">Activity type <span style="color:var(--danger)">*</span></div>
+<div style="position:relative">
+<button type="button" onClick="{{ toggleActivityCombo }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;font-family:var(--font-sans);font-size:15px;padding:7px 10px;background:#fff;border:1px solid var(--border-input);border-radius:var(--radius-input);cursor:pointer;color:var(--text-body)">
+<span>{{ activityLabel }}</span>
+<span style="color:var(--text-muted);display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ChevronDown" size="16" hint-size="16px,16px"></x-import></span>
+</button>
+<sc-if value="{{ activityOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;z-index:20;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border-default);border-radius:var(--radius-control);box-shadow:var(--shadow-modal);overflow:hidden">
+<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--bch-gray-200)">
+<span style="color:var(--text-muted);display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="15" hint-size="15px,15px"></x-import></span>
+<input type="text" placeholder="Search activity types…" value="{{ activityQuery }}" onChange="{{ onActivityQuery }}" style="flex:1;border:none;outline:none;font-family:var(--font-sans);font-size:14.5px;color:var(--text-body);background:transparent">
+</div>
+<div style="max-height:260px;overflow-y:auto;padding:4px 0">
+<sc-for list="{{ filteredActivities }}" as="p" hint-placeholder-count="6">
+<button type="button" onClick="{{ p.on }}" style="display:block;width:100%;text-align:left;font-family:var(--font-sans);font-size:14.5px;padding:7px 14px;border:none;background:transparent;color:var(--text-body);cursor:pointer" style-hover="background:var(--action-selected)">{{ p.name }}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;justify-content:center;height:36px;margin-top:27px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Checkbox" label="This was a youth-focused event" checked="{{ youth }}" on-change="{{ onYouth }}" hint-size="180px,24px"></x-import>
+</div>
+</div>
+<div style="margin-top:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+<span style="font-size:15px">Description <span style="color:var(--danger)">*</span></span>
+<span style="font-size:12.5px;color:var(--text-muted)">{{ descCount }} / 600</span>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Textarea" placeholder="Describe what happened during the event, the activities run, and any outcomes worth noting." maxlength="600" value="{{ desc }}" on-change="{{ onDesc }}" hint-size="100%,110px"></x-import>
+</div>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Users" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Participation <span style="color:var(--danger)">*</span></div>
+<div style="font-size:13px;color:var(--text-muted)">Attendance counts for this event</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:end;margin-top:20px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">New participants</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="number" min="0" placeholder="0" value="{{ newP }}" on-change="{{ onNewP }}" hint-size="100%,36px"></x-import>
+</div>
+<div>
+<div style="font-size:15px;margin-bottom:6px">Returning participants</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="number" min="0" placeholder="0" value="{{ retP }}" on-change="{{ onRetP }}" hint-size="100%,36px"></x-import>
+</div>
+<div style="background:var(--surface-muted);border:1px solid var(--border-default);border-radius:var(--radius-control);padding:8px 16px;text-align:center;min-width:112px">
+<div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px">Total</div>
+<div style="font-size:22px;font-weight:700;line-height:1.2">{{ totalP }}</div>
+</div>
+</div>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Clock" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Time and cost <span style="color:var(--danger)">*</span></div>
+<div style="font-size:13px;color:var(--text-muted)">Staff time and expenses to attribute to this event</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">Event duration</div>
+<div style="display:flex;align-items:center;gap:8px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="number" min="0" step="15" placeholder="60" value="{{ dur }}" on-change="{{ onDur }}" hint-size="100%,36px"></x-import>
+<span style="font-size:14px;color:var(--text-muted)">min</span>
+</div>
+<sc-if value="{{ showQuickDurations }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:6px;margin-top:8px">
+<sc-for list="{{ durChips }}" as="chip" hint-placeholder-count="4">
+<button type="button" onClick="{{ chip.on }}" style="font-family:var(--font-sans);font-size:12.5px;padding:3px 10px;border:1px solid var(--border-default);border-radius:999px;background:#fff;color:var(--text-muted);cursor:pointer" style-hover="border-color:var(--action-primary);color:var(--action-primary)">{{ chip.label }}</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+<div>
+<div style="font-size:15px;margin-bottom:6px">Admin time</div>
+<div style="display:flex;align-items:center;gap:8px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="number" min="0" step="15" placeholder="30" value="{{ admin }}" on-change="{{ onAdmin }}" hint-size="100%,36px"></x-import>
+<span style="font-size:14px;color:var(--text-muted)">min</span>
+</div>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">Setup, cleanup, and planning time</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">Total cost</div>
+<div style="display:flex;align-items:center;gap:8px">
+<span style="font-size:15px;color:var(--text-muted)">$</span>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="number" min="0" step="0.01" placeholder="0.00" value="{{ cost }}" on-change="{{ onCost }}" hint-size="100%,36px"></x-import>
+</div>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">Supplies, food, materials, and other expenses</div>
+</div>
+</div>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Contact" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Community partnership</div>
+<div style="font-size:13px;color:var(--text-muted)">Optional — add a co-host organization</div>
+</div>
+</div>
+<div style="margin-top:18px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Checkbox" label="This event had a community partner co-host" checked="{{ partner }}" on-change="{{ onPartner }}" hint-size="360px,24px"></x-import>
+</div>
+<sc-if value="{{ partner }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:16px;border-top:1px solid var(--bch-gray-200);padding-top:16px;max-width:520px">
+<div style="font-size:15px;margin-bottom:6px">Community partner <span style="color:var(--danger)">*</span></div>
+<div style="position:relative">
+<button type="button" onClick="{{ toggleCombo }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;font-family:var(--font-sans);font-size:15px;padding:7px 10px;background:#fff;border:1px solid var(--border-input);border-radius:var(--radius-input);cursor:pointer;color:var(--text-body)">
+<span>{{ partnerLabel }}</span>
+<span style="color:var(--text-muted);display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ChevronDown" size="16" hint-size="16px,16px"></x-import></span>
+</button>
+<sc-if value="{{ comboOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;z-index:20;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border-default);border-radius:var(--radius-control);box-shadow:var(--shadow-modal);overflow:hidden">
+<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--bch-gray-200)">
+<span style="color:var(--text-muted);display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="15" hint-size="15px,15px"></x-import></span>
+<input type="text" placeholder="Search community partners…" value="{{ query }}" onChange="{{ onQuery }}" style="flex:1;border:none;outline:none;font-family:var(--font-sans);font-size:14.5px;color:var(--text-body);background:transparent">
+</div>
+<div style="max-height:260px;overflow-y:auto;padding:4px 0">
+<sc-for list="{{ filteredPartners }}" as="p" hint-placeholder-count="6">
+<button type="button" onClick="{{ p.on }}" style="display:block;width:100%;text-align:left;font-family:var(--font-sans);font-size:14.5px;padding:7px 14px;border:none;background:transparent;color:var(--text-body);cursor:pointer" style-hover="background:var(--action-selected)">{{ p.name }}</button>
+</sc-for>
+<sc-if value="{{ noMatches }}" hint-placeholder-val="{{ false }}">
+<div style="padding:12px 14px;font-size:14px;color:var(--text-muted)">No partners match that search.</div>
+</sc-if>
+</div>
+<div style="border-top:1px solid var(--bch-gray-200);padding:8px 14px"><a href="#" style="font-size:13.5px">Add a new community partner</a></div>
+</div>
+</sc-if>
+</div>
+
+</div>
+</sc-if>
+</div>
+
+<div style="position:sticky;bottom:0;background:var(--surface-page);border-top:1px solid var(--border-default);padding:14px 0 4px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<span style="font-size:13px;color:var(--text-muted)">{{ readyNote }}</span>
+<div style="display:flex;gap:12px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ onCancel }}" hint-size="100px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" disabled="{{ saveDisabled }}" onClick="{{ onSave }}" hint-size="130px,38px">Save event</x-import>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ showSummaryRail }}" hint-placeholder-val="{{ true }}">
+<div style="width:320px;flex-shrink:0;position:sticky;top:20px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden">
+<div style="padding:14px 20px;border-bottom:1px solid var(--bch-gray-200)">
+<div style="font-size:15px;font-weight:700">Required fields</div>
+<div style="font-size:12.5px;color:var(--text-muted)">Complete these to save</div>
+</div>
+<div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ checklist }}" as="item" hint-placeholder-count="7">
+<sc-if value="{{ item.ok }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--success)">
+<span style="width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;flex-shrink:0;font-size:10px;line-height:1">✓</span>
+<span>{{ item.label }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ item.pending }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--text-muted)">
+<span style="width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;flex-shrink:0"></span>
+<span>{{ item.label }}</span>
+</div>
+</sc-if>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:980},&quot;showSummaryRail&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;showQuickDurations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+const PARTNERS = [
+  { name: "Building Resilient Neighbourhoods", type: "Non-profit" },
+  { name: "Burnaby Neighbourhood House", type: "Neighbourhood house" },
+  { name: "Crime Stoppers", type: "Public safety" },
+  { name: "Kitsilano Neighbourhood House", type: "Neighbourhood house" },
+  { name: "Kiwassa Neighbourhood House", type: "Neighbourhood house" },
+  { name: "Mount Pleasant Neighbourhood House", type: "Neighbourhood house" },
+  { name: "Pacific Community Resources Society", type: "Non-profit" },
+  { name: "Quadra Village Community Centre", type: "Community centre" },
+  { name: "Recycling and Waste Management (BC Housing)", type: "Internal" },
+  { name: "Seniors First BC", type: "Non-profit" },
+  { name: "South Vancouver Neighbourhood House", type: "Neighbourhood house" },
+  { name: "Strathcona Community Policing Centre", type: "Public safety" },
+  { name: "Surrey Libraries", type: "Public library" },
+  { name: "Thunderbird Community Centre", type: "Community centre" },
+  { name: "Vancouver Coastal Health", type: "Health authority" },
+  { name: "Vancouver Fire Department", type: "Public safety" },
+  { name: "West Vancouver Seniors Activity Centre", type: "Community centre" },
+];
+
+const SITES = ["Grandview Terrace", "Maclean Park", "Killarney Gardens", "Stamps Place"];
+const ACTIVITIES = ["Information session", "Workshop or training", "Social or recreation", "Health and wellness", "Emergency preparedness", "Tenant meeting"];
+class Component extends DCLogic {
+  state = { title: "", date: "", time: "", site: "", activity: "", desc: "", youth: false, senior: false, newP: "", retP: "", dur: "", admin: "", cost: "", partner: false, partnerName: "", partnerType: "", comboOpen: false, query: "", siteOpen: false, siteQuery: "", activityOpen: false, activityQuery: "" };
+
+  set(k) { return (e) => this.setState({ [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }); }
+
+  fmtWhen() {
+    const { date, time, site } = this.state;
+    const parts = [];
+    if (date) {
+      const d = new Date(date + "T00:00:00");
+      parts.push(d.toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }));
+    }
+    if (time) parts.push(time);
+    if (site) parts.push(site);
+    return parts.length ? parts.join(" · ") : "Date and site not set";
+  }
+
+  renderVals() {
+    const s = this.state;
+    const n = (v) => (v === "" || isNaN(parseFloat(v)) ? 0 : parseFloat(v));
+    const totalP = n(s.newP) + n(s.retP);
+    const totalMin = n(s.dur) + n(s.admin);
+    const cost = n(s.cost);
+    const hrs = totalMin ? (totalMin / 60).toFixed(totalMin % 60 === 0 ? 0 : 1) + " hr" : "—";
+    const q = s.query.trim().toLowerCase();
+    const filtered = q ? PARTNERS.filter((p) => p.name.toLowerCase().includes(q)) : PARTNERS;
+    const sq = s.siteQuery.trim().toLowerCase();
+    const filteredSitesList = sq ? SITES.filter((v) => v.toLowerCase().includes(sq)) : SITES;
+    const aq = s.activityQuery.trim().toLowerCase();
+    const filteredActivitiesList = aq ? ACTIVITIES.filter((v) => v.toLowerCase().includes(aq)) : ACTIVITIES;
+    const missing = [
+      { label: "Event title", ok: !!s.title.trim() },
+      { label: "Date and site", ok: !!s.date && !!s.site },
+      { label: "Activity type", ok: !!s.activity },
+      { label: "Description", ok: s.desc.trim().length >= 20 },
+    ];
+    missing.push({ label: "Participation", ok: totalP > 0 });
+    missing.push({ label: "Event duration", ok: totalMin > 0 });
+    missing.push({ label: "Total cost", ok: cost > 0 });
+    if (s.partner) missing.push({ label: "Community partner", ok: !!s.partnerName });
+    const remaining = missing.filter((m) => !m.ok).length;
+    return {
+      ...s,
+      onTitle: this.set("title"), onDate: this.set("date"), onTime: this.set("time"), onSite: this.set("site"),
+      onActivity: this.set("activity"), onDesc: this.set("desc"), onYouth: this.set("youth"), onSenior: this.set("senior"),
+      toggleSiteCombo: () => this.setState((st) => ({ siteOpen: !st.siteOpen, siteQuery: "" })),
+      onSiteQuery: this.set("siteQuery"),
+      filteredSites: filteredSitesList.map((v) => ({ name: v, on: () => this.setState({ site: v, siteOpen: false, siteQuery: "" }) })),
+      siteLabel: s.site || "Select site…",
+      toggleActivityCombo: () => this.setState((st) => ({ activityOpen: !st.activityOpen, activityQuery: "" })),
+      onActivityQuery: this.set("activityQuery"),
+      filteredActivities: filteredActivitiesList.map((v) => ({ name: v, on: () => this.setState({ activity: v, activityOpen: false, activityQuery: "" }) })),
+      activityLabel: s.activity || "Select activity type…",
+      onNewP: this.set("newP"), onRetP: this.set("retP"), onDur: this.set("dur"), onAdmin: this.set("admin"), onCost: this.set("cost"),
+      onPartner: (e) => this.setState({ partner: e.target.checked, comboOpen: e.target.checked && !this.state.partnerName }),
+      onQuery: this.set("query"),
+      toggleCombo: () => this.setState((st) => ({ comboOpen: !st.comboOpen, query: "" })),
+      clearPartner: () => this.setState({ partnerName: "", partnerType: "" }),
+      filteredPartners: filtered.map((p) => ({ name: p.name, on: () => this.setState({ partnerName: p.name, partnerType: p.type, comboOpen: false, query: "" }) })),
+      noMatches: filtered.length === 0,
+      hasPartnerPick: !!s.partnerName,
+      partnerLabel: s.partnerName || "Select community partner…",
+      partnerMeta: s.partnerType ? s.partnerType + " · co-host" : "Co-host",
+      descCount: s.desc.length,
+      totalP,
+      durChips: [30, 60, 90, 120].map((m) => ({ label: m + " min", on: () => this.setState({ dur: String(m) }) })),
+      showSummaryRail: this.props.showSummaryRail ?? true,
+      showQuickDurations: this.props.showQuickDurations ?? true,
+      titleSummary: s.title.trim() || "Untitled event",
+      whenWhere: this.fmtWhen(),
+      checklist: missing.map((m) => ({ label: m.label, ok: m.ok, pending: !m.ok })),
+      saveDisabled: remaining > 0,
+      readyNote: remaining ? remaining + (remaining === 1 ? " required field left" : " required fields left") : "All required fields complete",
+      onCancel: () => { window.location.href = "../events/Events.dc.html"; },
+      onSave: () => { window.location.href = "../events/Events.dc.html"; },
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--action-primary)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+</script>
+</body>
+</html>

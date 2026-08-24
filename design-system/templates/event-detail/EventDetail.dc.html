@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Event Detail" description="Read-only event record in the Profile pattern (matches Site/Distribution Detail): KPI row, a profile card (icon, key fields, logged-by), then a reported-figures table with totals." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}</style>
+</helmet>
+<div data-screen-label="Event Detail" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1180px;margin:0 auto;padding:24px 24px 44px;flex:1">
+<div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;flex-wrap:wrap">
+<div style="display:flex;gap:10px;flex-shrink:0">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" hint-size="92px,38px">Duplicate</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" hint-size="86px,38px">Edit event</x-import>
+</div>
+</div>
+
+<h1 style="margin:16px 0 0;font-size:28px;font-weight:700;letter-spacing:-.2px">{{ title }}</h1>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px">
+<sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-left:4px solid var(--surface-chrome);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:14px 18px 16px">
+<div style="font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);font-weight:600">{{ k.label }}</div>
+<div style="font-size:30px;font-weight:700;line-height:1.1;margin-top:6px;color:var(--surface-chrome)">{{ k.value }}</div>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">{{ k.note }}</div>
+</div>
+</sc-for>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden;margin-top:20px;padding:32px;display:grid;grid-template-columns:120px 1fr 1fr;gap:28px">
+
+<div>
+<span style="width:72px;height:72px;border-radius:var(--radius-control);background:var(--surface-chrome);color:#fff;display:grid;place-items:center"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Calendar" size="34" hint-size="34px,34px"></x-import></span>
+</div>
+
+<div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Date" hint-size="100%,50px">{{ dateLong }}</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Site" hint-size="100%,50px"><a href="../site-detail/SiteDetail.dc.html">{{ site }}</a></x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Activity Type" hint-size="100%,50px">{{ activity }}</x-import>
+</div>
+
+<div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Community Partner" hint-size="100%,50px">{{ partner }}</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Youth Focused" hint-size="100%,50px">{{ youthFocused }}</x-import>
+<div>
+<div style="font-size:16px;font-weight:700;margin-bottom:8px">Logged By</div>
+<div style="display:flex;gap:12px;align-items:flex-start">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AvatarTile" initials="{{ organizerInitials }}" size="{{ avatarSize }}" hint-size="44px,44px"></x-import>
+<div style="min-width:0">
+<a href="../user-detail/UserDetail.dc.html" style="font-size:14.5px;font-weight:700">{{ organizer }}</a>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">{{ organizerEmail }}</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden;margin-top:20px">
+<div style="padding:18px 24px 14px">
+<div style="font-size:17px;font-weight:700">What Happened</div>
+<p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:var(--text-body);text-wrap:pretty">{{ description }}</p>
+</div>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden;margin-top:20px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:18px 24px 14px">
+<div style="font-size:17px;font-weight:700">Reported Figures</div>
+<a href="#" style="font-size:13.5px;flex-shrink:0">Export CSV</a>
+</div>
+<div style="padding:0 24px 24px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.DataTable" columns="{{ figureCols }}" rows="{{ figureRows }}" footer="{{ figureFooter }}" hint-size="100%,320px"></x-import>
+</div>
+</div>
+
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1080}}">
+const money = (n) => "$" + n.toFixed(2);
+
+class Component extends DCLogic {
+  renderVals() {
+    const newP = 2, retP = 5, totalP = 7, eventMin = 300, adminMin = 30, cost = 0;
+    const pct = (v) => ((v / totalP) * 100).toFixed(1) + "%";
+    const hm = (m) => Math.floor(m / 60) + "h " + String(m % 60).padStart(2, "0") + "m";
+    const organizer = "Joseph Masongsong";
+    const initials = organizer.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+    return {
+      recordId: "EVT-2026-0184",
+      title: "Resource Centre Drop-In",
+      dateLong: "Tuesday, May 26, 2026",
+      site: "Steeves Manor",
+      activity: "Office hours",
+      organizer,
+      organizerInitials: initials,
+      avatarSize: 44,
+      organizerEmail: "jmasongson@bchousing.org",
+      partner: "Kitsilano Neighbourhood House",
+      youthFocused: "No",
+      description: "Tenant Engagement Worker office hours at the Resource Centre in Steeves. Assisted one tenant with a job search and another with filling out the census online.",
+      kpis: [
+        { label: "Participants", value: String(totalP), note: newP + " new · " + retP + " returning" },
+        { label: "Event time", value: hm(eventMin), note: "On site" },
+        { label: "Admin time", value: hm(adminMin), note: "Setup, cleanup, reporting" },
+        { label: "Total cost", value: money(cost), note: cost ? "Supplies and materials" : "No expenses recorded" },
+      ],
+      figureCols: [
+        { key: "measure", label: "Measure" },
+        { key: "value", label: "Reported", num: true },
+        { key: "detail", label: "Detail" },
+      ],
+      figureRows: [
+        { measure: "New participants", value: newP, detail: pct(newP) + " of attendance" },
+        { measure: "Returning participants", value: retP, detail: pct(retP) + " of attendance" },
+        { measure: "Event duration", value: hm(eventMin), detail: eventMin + " minutes on site" },
+        { measure: "Admin time", value: hm(adminMin), detail: "Setup, cleanup, and reporting" },
+        { measure: "Total cost", value: money(cost), detail: cost ? "Supplies and materials" : "No expenses recorded" },
+        { measure: "Cost per participant", value: money(totalP ? cost / totalP : 0), detail: "Total cost ÷ participants" },
+      ],
+      figureFooter: { measure: "Totals", value: totalP + " participants", detail: hm(eventMin + adminMin) + " staff time · " + money(cost) },
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontFamily: "var(--font-sans)", color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--action-primary)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+</script>
+</body>
+</html>

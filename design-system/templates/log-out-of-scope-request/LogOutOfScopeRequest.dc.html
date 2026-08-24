@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Log Referral" description="Standalone log for referrals to services outside the tenant engagement program's scope — captured in person, by phone, or by email." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}</style>
+</helmet>
+<div data-screen-label="Log Referral" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="blue" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:840px;margin:0 auto;padding:28px 24px 40px;flex:1">
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">Log Referral</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">Record a referral you made when a tenant asked for something outside the tenant engagement program — whether it came up in person, by phone, or by email.</p>
+
+<div style="display:flex;flex-direction:column;gap:16px;margin-top:20px">
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.TriangleAlert" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">How it came up</div>
+<div style="font-size:13px;color:var(--text-muted)">Referrals aren't tied to a specific event</div>
+</div>
+</div>
+<div style="margin-top:20px">
+<div style="font-size:15px;margin-bottom:8px">Channel <span style="color:var(--danger)">*</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ channelOptions }}" as="c" hint-placeholder-count="4">
+<sc-if value="{{ c.selected }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ c.on }}" style="font-family:var(--font-sans);font-size:14.5px;padding:7px 14px;border:1px solid var(--action-primary);background:var(--action-selected);color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer">{{ c.label }}</button>
+</sc-if>
+<sc-if value="{{ c.unselected }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ c.on }}" style="font-family:var(--font-sans);font-size:14.5px;padding:7px 14px;border:1px solid var(--border-default);background:#fff;color:var(--text-body);border-radius:var(--radius-control);cursor:pointer" style-hover="border-color:var(--action-primary);color:var(--action-primary)">{{ c.label }}</button>
+</sc-if>
+</sc-for>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">Date <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="date" value="{{ date }}" on-change="{{ onDate }}" hint-size="100%,36px"></x-import>
+</div>
+<div>
+<div style="font-size:15px;margin-bottom:6px">Site <span style="color:var(--danger)">*</span></div>
+<div style="position:relative">
+<button type="button" onClick="{{ toggleSiteCombo }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;font-family:var(--font-sans);font-size:15px;padding:7px 10px;background:#fff;border:1px solid var(--border-input);border-radius:var(--radius-input);cursor:pointer;color:var(--text-body)">
+<span>{{ siteLabel }}</span>
+<span style="color:var(--text-muted);display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ChevronDown" size="16" hint-size="16px,16px"></x-import></span>
+</button>
+<sc-if value="{{ siteOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;z-index:20;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border-default);border-radius:var(--radius-control);box-shadow:var(--shadow-modal);overflow:hidden">
+<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--bch-gray-200)">
+<span style="color:var(--text-muted);display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="15" hint-size="15px,15px"></x-import></span>
+<input type="text" placeholder="Search sites…" value="{{ siteQuery }}" onChange="{{ onSiteQuery }}" style="flex:1;border:none;outline:none;font-family:var(--font-sans);font-size:14.5px;color:var(--text-body);background:transparent">
+</div>
+<div style="max-height:260px;overflow-y:auto;padding:4px 0">
+<sc-for list="{{ filteredSites }}" as="p" hint-placeholder-count="4">
+<button type="button" onClick="{{ p.on }}" style="display:block;width:100%;text-align:left;font-family:var(--font-sans);font-size:14.5px;padding:7px 14px;border:none;background:transparent;color:var(--text-body);cursor:pointer" style-hover="background:var(--action-selected)">{{ p.name }}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+<sc-if value="{{ isInPerson }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:16px">
+<div style="font-size:15px;margin-bottom:6px">Link to a logged event</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ linkedEvent }}" on-change="{{ onLinkedEvent }}" hint-size="100%,36px">
+<option value="">Not linked to an event</option>
+<option>Community Health Fair — Aug 12</option>
+<option>Emergency Preparedness Session — Aug 8</option>
+<option>Tenant Summer BBQ — Aug 2</option>
+</x-import>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:6px">Optional — link it if this came up during a specific logged event.</div>
+</div>
+</sc-if>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Info" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Referred to</div>
+<div style="font-size:13px;color:var(--text-muted)">Where you pointed the tenant — the details of the request stay between them and the referral</div>
+</div>
+</div>
+<div style="margin-top:20px">
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ referredToOptions }}" as="r" hint-placeholder-count="4">
+<sc-if value="{{ r.selected }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ r.on }}" style="font-family:var(--font-sans);font-size:14.5px;padding:7px 14px;border:1px solid var(--action-primary);background:var(--action-selected);color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer">{{ r.label }}</button>
+</sc-if>
+<sc-if value="{{ r.unselected }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ r.on }}" style="font-family:var(--font-sans);font-size:14.5px;padding:7px 14px;border:1px solid var(--border-default);background:#fff;color:var(--text-body);border-radius:var(--radius-control);cursor:pointer" style-hover="border-color:var(--action-primary);color:var(--action-primary)">{{ r.label }}</button>
+</sc-if>
+</sc-for>
+</div>
+</div>
+</div>
+
+<div style="position:sticky;bottom:0;background:var(--surface-page);border-top:1px solid var(--border-default);padding:14px 0 4px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<span style="font-size:13px;color:var(--text-muted)">{{ readyNote }}</span>
+<div style="display:flex;gap:12px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ onCancel }}" hint-size="100px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" disabled="{{ saveDisabled }}" onClick="{{ onSave }}" hint-size="130px,38px">Save referral</x-import>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1000,&quot;height&quot;:900}}">
+const CHANNELS = ["In person", "Phone call", "Email"];
+const REFERRED_TO = ["Building or site staff", "Tenant support worker", "Third-party provider", "Other"];
+const SITES = ["Bauer Villa", "Grandview Terrace", "Maclean Park", "Killarney Gardens", "Stamps Place"];
+
+class Component extends DCLogic {
+  state = { channel: "", date: new Date().toISOString().slice(0, 10), site: "", linkedEvent: "", referredTo: "", siteOpen: false, siteQuery: "" };
+
+  set(k) { return (e) => this.setState({ [k]: e.target.value }); }
+
+  renderVals() {
+    const s = this.state;
+    const checklist = [
+      { label: "Channel", ok: !!s.channel },
+      { label: "Date and site", ok: !!s.date && !!s.site },
+      { label: "Referred to", ok: !!s.referredTo },
+    ];
+    const remaining = checklist.filter((c) => !c.ok).length;
+    const sq = s.siteQuery.trim().toLowerCase();
+    const filteredSitesList = sq ? SITES.filter((v) => v.toLowerCase().includes(sq)) : SITES;
+    return {
+      ...s,
+      onDate: this.set("date"), onLinkedEvent: this.set("linkedEvent"),
+      toggleSiteCombo: () => this.setState((st) => ({ siteOpen: !st.siteOpen, siteQuery: "" })),
+      onSiteQuery: this.set("siteQuery"),
+      filteredSites: filteredSitesList.map((v) => ({ name: v, on: () => this.setState({ site: v, siteOpen: false, siteQuery: "" }) })),
+      siteLabel: s.site || "Select site…",
+      isInPerson: s.channel === "In person",
+      channelOptions: CHANNELS.map((label) => ({ label, selected: s.channel === label, unselected: s.channel !== label, on: () => this.setState({ channel: label }) })),
+      referredToOptions: REFERRED_TO.map((label) => ({ label, selected: s.referredTo === label, unselected: s.referredTo !== label, on: () => this.setState({ referredTo: label }) })),
+      saveDisabled: remaining > 0,
+      readyNote: remaining ? remaining + (remaining === 1 ? " required field left" : " required fields left") : "All required fields complete",
+      onCancel: () => { window.location.href = "../dashboard/Dashboard.dc.html"; },
+      onSave: () => { window.location.href = "../dashboard/Dashboard.dc.html"; },
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--action-primary)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+</script>
+</body>
+</html>

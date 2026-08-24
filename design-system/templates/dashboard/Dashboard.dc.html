@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Dashboard" description="Post-sign-in landing: time-filtered KPI cards with trend deltas, primary Quick Start action grid, and a condensed recent-activity rail." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}</style>
+</helmet>
+<div data-screen-label="Dashboard" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1200px;margin:0 auto;padding:32px 24px 48px;flex:1">
+<div>
+<h1 style="margin:0;font-size:30px;font-weight:700">Dashboard</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">Welcome back, Joseph Masongsong!</p>
+</div>
+<div style="margin-top:24px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px">
+<h2 style="margin:0;font-size:17px;font-weight:700">Needs Attention</h2>
+<span style="font-size:13px;color:var(--text-muted)">{{ attentionCount }} items need action</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">
+<sc-for list="{{ attentionItems }}" as="item" hint-placeholder-count="4">
+<sc-if value="{{ item.isUrgent }}" hint-placeholder-val="{{ true }}">
+<div style="background:#fff;border:1px solid var(--border-default);border-left:4px solid var(--bch-red-600);border-radius:var(--radius-card);padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="width:38px;height:38px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;background:var(--danger-surface);color:var(--bch-red-600)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.{{ item.icon }}" size="18" hint-size="18px,18px"></x-import></span>
+<div style="min-width:0">
+<div style="font-size:14.5px;font-weight:700">{{ item.title }}</div>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">{{ item.sub }}</div>
+</div>
+</div>
+<button onClick="{{ item.onClick }}" style="align-self:flex-start;background:none;border:none;padding:0;font-family:var(--font-sans);font-size:13px;font-weight:700;color:var(--action-primary);cursor:pointer">{{ item.actionLabel }} →</button>
+</div>
+</sc-if>
+<sc-if value="{{ item.isWarning }}" hint-placeholder-val="{{ false }}">
+<div style="background:#fff;border:1px solid var(--border-default);border-left:4px solid var(--bch-gold-600);border-radius:var(--radius-card);padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="width:38px;height:38px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;background:#FDF1D3;color:#B07C0A"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.{{ item.icon }}" size="18" hint-size="18px,18px"></x-import></span>
+<div style="min-width:0">
+<div style="font-size:14.5px;font-weight:700">{{ item.title }}</div>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">{{ item.sub }}</div>
+</div>
+</div>
+<button onClick="{{ item.onClick }}" style="align-self:flex-start;background:none;border:none;padding:0;font-family:var(--font-sans);font-size:13px;font-weight:700;color:var(--action-primary);cursor:pointer">{{ item.actionLabel }} →</button>
+</div>
+</sc-if>
+</sc-for>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start;margin-top:28px">
+<div>
+<h2 style="margin:0 0 14px;font-size:18px;font-weight:700">Quick Start</h2>
+<div style="display:flex;flex-direction:column;gap:16px">
+<sc-for list="{{ quickItems }}" as="qi" hint-placeholder-count="3">
+<button onClick="{{ qi.onClick }}" style="display:flex;align-items:flex-start;gap:14px;text-align:left;width:100%;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px;font-family:var(--font-sans);cursor:pointer">
+<span style="width:44px;height:44px;flex-shrink:0;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.{{ qi.icon }}" size="22" hint-size="22px,22px"></x-import></span>
+<span style="flex:1;min-width:0">
+<span style="display:block;font-size:15.5px;font-weight:700;color:var(--text-body)">{{ qi.label }}</span>
+<span style="display:block;font-size:13px;color:var(--text-muted);margin-top:3px">{{ qi.sub }}</span>
+</span>
+</button>
+</sc-for>
+</div>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ActivityFeed" title="Recent Activity" meta="{{ feedMeta }}" width="100%" items="{{ feedItems }}" page-size="{{ pageSize }}" initial-count="{{ pageSize }}" avatar-size="{{ avatarSize }}" hint-size="100%,640px"></x-import>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;pageSize&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:6,&quot;min&quot;:3,&quot;max&quot;:20,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;avatarSize&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:38,&quot;min&quot;:24,&quot;max&quot;:48,&quot;step&quot;:2,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+const EVT = "../event-detail/EventDetail.dc.html";
+const DIST = "../distribution-detail/DistributionDetail.dc.html";
+const FEED = [
+  { initials: "JM", actor: "Joseph Masongsong", action: "referred a tenant to", target: "Tenant support worker", time: "Grandview Terrace · via Phone call · Jun 3, 2026" },
+  { initials: "NM", actor: "Nolan Murray", action: "distributed", target: "10 Cooling Kit", time: "Grandview Terrace · Jun 3, 2026", href: DIST },
+  { initials: "SP", actor: "Sarah Patel", action: "distributed", target: "15 Cooling Kit", time: "Maclean Park · Jun 3, 2026", href: DIST },
+  { initials: "NM", actor: "Nolan Murray", action: "added", target: "20 Cooling Kit", time: "Grandview Terrace · Jun 3, 2026" },
+  { initials: "JM", actor: "Joseph Masongsong", action: "held an event", target: "Extreme Heat Information Session", time: "Grandview Terrace · 10 participants · Jun 3, 2026", href: EVT },
+  { initials: "RC", actor: "Ravi Chauhan", action: "changed the event date to", target: "2026-05-14", time: "was 2026-05-16 · Jun 3, 2026", href: EVT },
+  { initials: "SP", actor: "Sarah Patel", action: "held an event", target: "Extreme Heat Information Session", time: "Maclean Park · 15 participants · Jun 3, 2026", href: EVT },
+  { initials: "SP", actor: "Sarah Patel", action: "distributed", target: "23 Emergency Kit", time: "Maclean Park · Jun 3, 2026", href: DIST },
+  { initials: "JM", actor: "Joseph Masongsong", action: "added", target: "60 Cooling Kit and 50 Emergency Kit", time: "Maclean Park · Jun 3, 2026" },
+  { initials: "RC", actor: "Ravi Chauhan", action: "held an event", target: "Emergency Preparedness Presentation", time: "Maclean Park · 22 participants · Jun 3, 2026", href: EVT },
+  { initials: "EW", actor: "Emily Wong", action: "held an event", target: "Emergency Preparedness Presentation", time: "Killarney Gardens · 8 participants · Jun 3, 2026", href: EVT },
+  { initials: "EW", actor: "Emily Wong", action: "distributed", target: "12 Emergency Kit", time: "Killarney Gardens · May 28, 2026", href: DIST },
+  { initials: "NM", actor: "Nolan Murray", action: "held an event", target: "Cooling Centre Orientation", time: "Grandview Terrace · 18 participants · May 27, 2026", href: EVT },
+  { initials: "EW", actor: "Emily Wong", action: "added", target: "40 Emergency Kit", time: "Killarney Gardens · May 26, 2026" },
+  { initials: "RC", actor: "Ravi Chauhan", action: "distributed", target: "8 Cooling Kit", time: "Killarney Gardens · May 24, 2026", href: DIST },
+  { initials: "JM", actor: "Joseph Masongsong", action: "moved the location to", target: "Main Lobby", time: "was Community Room · May 22, 2026" },
+  { initials: "SP", actor: "Sarah Patel", action: "held an event", target: "Fire Safety Workshop", time: "Maclean Park · 25 participants · May 20, 2026", href: EVT },
+  { initials: "NM", actor: "Nolan Murray", action: "added", target: "30 Cooling Kit", time: "Grandview Terrace · May 18, 2026" },
+  { initials: "JM", actor: "Joseph Masongsong", action: "distributed", target: "16 Emergency Kit", time: "Grandview Terrace · May 16, 2026", href: DIST },
+  { initials: "EW", actor: "Emily Wong", action: "held an event", target: "Tenant Wellness Check-in", time: "Killarney Gardens · 12 participants · May 14, 2026", href: EVT },
+  { initials: "RC", actor: "Ravi Chauhan", action: "updated participant count for", target: "Cooling Centre Orientation", time: "Grandview Terrace · May 12, 2026", href: EVT },
+];
+
+class Component extends DCLogic {
+  renderVals() {
+    const goLogEvent = () => { window.location.href = "../log-event/LogEvent.dc.html"; };
+    const goSupplies = () => { window.location.href = "../supplies-management/SuppliesManagement.dc.html"; };
+    const attentionItems = [
+      { icon: "Calendar", title: "Grandview Terrace", sub: "No event logged in 9 days", actionLabel: "Log Event", isUrgent: true, isWarning: false, onClick: goLogEvent },
+      { icon: "TriangleAlert", title: "Cooling Kit — Maclean Park", sub: "Only 4 left, reorder soon", actionLabel: "View Supplies", isUrgent: false, isWarning: true, onClick: goSupplies },
+      { icon: "Calendar", title: "Killarney Gardens", sub: "No event logged in 6 days", actionLabel: "Log Event", isUrgent: true, isWarning: false, onClick: goLogEvent },
+      { icon: "Package", title: "Emergency Kit — Killarney Gardens", sub: "Only 8 left, reorder soon", actionLabel: "View Supplies", isUrgent: false, isWarning: true, onClick: goSupplies },
+    ];
+    return {
+      attentionItems,
+      attentionCount: attentionItems.length,
+      feedItems: FEED,
+      feedMeta: "Recent",
+      pageSize: this.props.pageSize ?? 6,
+      avatarSize: this.props.avatarSize ?? 38,
+      quickItems: [
+        { icon: "Calendar", label: "Log New Event", sub: "Record a community event", onClick: goLogEvent },
+        { icon: "Package", label: "Log Supply Distribution", sub: "Record supply delivery", onClick: () => { window.location.href = "../log-distribution/LogDistribution.dc.html"; } },
+        { icon: "FileText", label: "Log Referral", sub: "Record a tenant referral", onClick: () => { window.location.href = "../log-out-of-scope-request/LogOutOfScopeRequest.dc.html"; } },
+        { icon: "Newspaper", label: "Monthly Reports", sub: "View analytics and insights", onClick: () => { window.location.href = "../monthly-reports/MonthlyReports.dc.html"; } },
+      ],
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontFamily: "var(--font-sans)", color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--surface-chrome)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+</script>
+</body>
+</html>

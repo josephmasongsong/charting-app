@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Log Distribution" description="Supply distribution intake: inventory-aware line items with stock checks, recipient reach fields, and a live cost summary rail." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}</style>
+</helmet>
+<div data-screen-label="Log Supply Distribution" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="blue" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1220px;margin:0 auto;padding:28px 24px 40px;flex:1">
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">Log Supply Distribution</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">Record supplies distributed to tenants and community members. Quantities are deducted from site inventory when you submit.</p>
+<div style="display:flex;gap:24px;align-items:flex-start;margin-top:20px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:16px">
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Calendar" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Distribution details</div>
+<div style="font-size:13px;color:var(--text-muted)">Where and when the supplies were handed out</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">Site <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ site }}" on-change="{{ onSite }}" hint-size="100%,36px">
+<option value="">Select site…</option>
+<option>Bauer Villa</option>
+<option>Grandview Terrace</option>
+<option>Maclean Park</option>
+<option>Killarney Gardens</option>
+<option>Stamps Place</option>
+</x-import>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:6px">{{ siteStockNote }}</div>
+</div>
+<div>
+<div style="font-size:15px;margin-bottom:6px">Distribution date <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="date" value="{{ date }}" on-change="{{ onDate }}" hint-size="100%,36px"></x-import>
+<sc-if value="{{ dateIsPast }}" hint-placeholder-val="{{ false }}">
+<div style="font-size:12.5px;color:var(--warning-text);margin-top:6px">Backdated entry — a reason is required below.</div>
+</sc-if>
+</div>
+</div>
+<div style="margin-top:16px">
+<div style="font-size:15px;margin-bottom:8px">Distribution type <span style="color:var(--danger)">*</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ typeOptions }}" as="t" hint-placeholder-count="4">
+<sc-if value="{{ t.selected }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ t.on }}" style="font-family:var(--font-sans);font-size:14.5px;padding:7px 14px;border:1px solid var(--action-primary);background:var(--action-selected);color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer">{{ t.label }}</button>
+</sc-if>
+<sc-if value="{{ t.unselected }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ t.on }}" style="font-family:var(--font-sans);font-size:14.5px;padding:7px 14px;border:1px solid var(--border-default);background:#fff;color:var(--text-body);border-radius:var(--radius-control);cursor:pointer" style-hover="border-color:var(--action-primary);color:var(--action-primary)">{{ t.label }}</button>
+</sc-if>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{ isEvent }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:16px;max-width:560px">
+<div style="font-size:15px;margin-bottom:6px">Link to a logged event</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ linkedEvent }}" on-change="{{ onLinkedEvent }}" hint-size="100%,36px">
+<option value="">Not linked to an event</option>
+<option>Community Health Fair — Aug 12</option>
+<option>Emergency Preparedness Session — Aug 8</option>
+<option>Tenant Summer BBQ — Aug 2</option>
+</x-import>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:6px">Linking rolls this cost into the event's reporting instead of counting it twice.</div>
+</div>
+</sc-if>
+<sc-if value="{{ dateIsPast }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:16px;max-width:560px">
+<div style="font-size:15px;margin-bottom:6px">Reason for backdating <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" placeholder="e.g. Paper log entered after site visit" value="{{ backdateReason }}" on-change="{{ onBackdateReason }}" hint-size="100%,36px"></x-import>
+</div>
+</sc-if>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Package" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Supply items</div>
+<div style="font-size:13px;color:var(--text-muted)">Unit costs come from the site inventory record</div>
+</div>
+</div>
+<div style="display:flex;gap:10px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ repeatLast }}" hint-size="150px,38px">Repeat last log</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" onClick="{{ addRow }}" hint-size="120px,38px">Add item</x-import>
+</div>
+</div>
+<sc-if value="{{ hasDuplicates }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:16px;display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--warning-surface);border:1px solid #F0E2B0;border-left:5px solid var(--bch-gold-600);border-radius:var(--radius-control);padding:10px 16px">
+<span style="font-size:14px;color:var(--warning-text)">{{ duplicateNote }}</span>
+<button type="button" onClick="{{ mergeDuplicates }}" style="font-family:var(--font-sans);font-size:14px;background:transparent;border:none;color:var(--action-primary);cursor:pointer;text-decoration:underline;padding:0">Merge them</button>
+</div>
+</sc-if>
+<div style="margin-top:18px;border:1px solid var(--border-default);border-radius:var(--radius-control);overflow:auto">
+<div style="display:grid;grid-template-columns:minmax(190px,1fr) 76px 126px 92px 96px 34px;gap:10px;align-items:center;background:var(--surface-chrome);color:var(--text-on-chrome);padding:9px 14px;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">
+<span>Supply</span>
+<span style="text-align:right">On hand</span>
+<span style="text-align:center">Quantity</span>
+<span style="text-align:right">Unit cost</span>
+<span style="text-align:right">Line total</span>
+<span></span>
+</div>
+<sc-for list="{{ rows }}" as="row" hint-placeholder-count="2">
+<div style="border-top:1px solid var(--bch-gray-200);padding:12px 14px;background:#fff">
+<div style="display:grid;grid-template-columns:minmax(190px,1fr) 76px 126px 92px 96px 34px;gap:10px;align-items:center">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ row.supply }}" on-change="{{ row.onSupply }}" hint-size="100%,34px">
+<option value="">Select a supply…</option>
+<option>Emergency kit</option>
+<option>Hygiene kit</option>
+<option>Bottled water (case of 24)</option>
+<option>Wool blanket</option>
+<option>Food hamper</option>
+<option>Winter coat</option>
+<option>Naloxone kit</option>
+<option>Smoke alarm battery</option>
+</x-import>
+<span style="text-align:right;font-variant-numeric:tabular-nums">
+<sc-if value="{{ row.overStock }}" hint-placeholder-val="{{ false }}"><span style="font-size:14.5px;font-weight:600;color:var(--danger)">{{ row.onHand }}</span></sc-if>
+<sc-if value="{{ row.inStock }}" hint-placeholder-val="{{ true }}"><span style="font-size:14.5px;color:var(--text-muted)">{{ row.onHand }}</span></sc-if>
+</span>
+<div style="display:flex;align-items:center;justify-content:center;gap:4px">
+<button type="button" onClick="{{ row.dec }}" aria-label="Decrease quantity" style="width:30px;height:32px;border:1px solid var(--border-default);background:#fff;border-radius:var(--radius-input);color:var(--text-muted);font-size:16px;cursor:pointer;line-height:1" style-hover="border-color:var(--action-primary);color:var(--action-primary)">−</button>
+<input type="number" min="0" value="{{ row.qty }}" onChange="{{ row.onQty }}" style="width:52px;text-align:center;font-family:var(--font-sans);font-size:15px;padding:6px 4px;border:1px solid var(--border-input);border-radius:var(--radius-input);color:var(--text-body);font-variant-numeric:tabular-nums">
+<button type="button" onClick="{{ row.inc }}" aria-label="Increase quantity" style="width:30px;height:32px;border:1px solid var(--border-default);background:#fff;border-radius:var(--radius-input);color:var(--text-muted);font-size:16px;cursor:pointer;line-height:1" style-hover="border-color:var(--action-primary);color:var(--action-primary)">+</button>
+</div>
+<span style="text-align:right;font-size:14.5px;color:var(--text-muted);font-variant-numeric:tabular-nums">{{ row.unitCost }}</span>
+<span style="text-align:right;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums">{{ row.lineTotal }}</span>
+<button type="button" onClick="{{ row.remove }}" aria-label="Remove item" style="width:32px;height:32px;display:grid;place-items:center;border:none;background:transparent;color:var(--text-muted);cursor:pointer;border-radius:var(--radius-control)" style-hover="color:var(--danger);background:var(--danger-surface)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="16" hint-size="16px,16px"></x-import></button>
+</div>
+<sc-if value="{{ row.overStock }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13.5px;color:var(--danger)">
+<span style="display:flex;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.TriangleAlert" size="15" hint-size="15px,15px"></x-import></span>
+<span>{{ row.alertText }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ row.lowStock }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13.5px;color:var(--warning-text)">
+<span style="display:flex;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.TriangleAlert" size="15" hint-size="15px,15px"></x-import></span>
+<span>{{ row.alertText }}</span>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+<div style="border-top:1px solid var(--bch-gray-200);padding:26px 14px;text-align:center;font-size:14.5px;color:var(--text-muted)">No supplies added yet. Add an item, or repeat your last log for this site.</div>
+</sc-if>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-top:16px;padding-top:14px;border-top:1px solid var(--bch-gray-200)">
+<span style="font-size:13.5px;color:var(--text-muted)">{{ itemsNote }}</span>
+<div style="text-align:right">
+<div style="font-size:13px;color:var(--text-muted)">Total distribution cost</div>
+<div style="font-size:28px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums">{{ totalCost }}</div>
+</div>
+</div>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Users" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Who received the supplies</div>
+<div style="font-size:13px;color:var(--text-muted)">Counts drive reach reporting — the written detail is optional</div>
+</div>
+</div>
+<div style="margin-top:20px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+<span style="font-size:15px">Recipient detail</span>
+<span style="font-size:12.5px;color:var(--text-muted)">{{ detailCount }} / 300</span>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Textarea" placeholder="e.g. Unit 3B, family of four — or Event attendees, 12 people" maxlength="300" value="{{ detail }}" on-change="{{ onDetail }}" hint-size="100%,80px"></x-import>
+<div style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:12.5px;color:var(--text-muted)">
+<span style="display:flex;margin-top:1px;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Info" size="14" hint-size="14px,14px"></x-import></span>
+<span>Do not record health information, immigration status, or anything a tenant shared in confidence. Use unit numbers rather than names where you can.</span>
+</div>
+</div>
+</div>
+
+<div style="position:sticky;bottom:0;background:var(--surface-page);border-top:1px solid var(--border-default);padding:14px 0 4px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<sc-if value="{{ hasOverages }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--danger)">{{ readyNote }}</span></sc-if>
+<sc-if value="{{ noOverages }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;color:var(--text-muted)">{{ readyNote }}</span></sc-if>
+<div style="display:flex;gap:12px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ onCancel }}" hint-size="100px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" disabled="{{ saveDisabled }}" onClick="{{ onSave }}" hint-size="170px,38px">Log distribution</x-import>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ showSummaryRail }}" hint-placeholder-val="{{ true }}">
+<div style="width:320px;flex-shrink:0;position:sticky;top:20px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden">
+<div style="padding:14px 20px;border-bottom:1px solid var(--bch-gray-200)">
+<div style="font-size:15px;font-weight:700">Required fields</div>
+<div style="font-size:12.5px;color:var(--text-muted)">Complete these to save</div>
+</div>
+<div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ checklist }}" as="item" hint-placeholder-count="5">
+<sc-if value="{{ item.ok }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--success)">
+<span style="width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;flex-shrink:0;font-size:10px;line-height:1">✓</span>
+<span>{{ item.label }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ item.pending }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--text-muted)">
+<span style="width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;flex-shrink:0"></span>
+<span>{{ item.label }}</span>
+</div>
+</sc-if>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1120},&quot;showSummaryRail&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+const CATALOGUE = {
+  "Emergency kit": { cost: 12, onHand: 16 },
+  "Hygiene kit": { cost: 8.5, onHand: 42 },
+  "Bottled water (case of 24)": { cost: 6.75, onHand: 8 },
+  "Wool blanket": { cost: 14, onHand: 25 },
+  "Food hamper": { cost: 22, onHand: 5 },
+  "Winter coat": { cost: 35, onHand: 3 },
+  "Naloxone kit": { cost: 0, onHand: 60 },
+  "Smoke alarm battery": { cost: 2.25, onHand: 120 },
+};
+const TYPES = ["Door to door", "Community event", "Front desk pickup", "Outreach referral"];
+const LAST_LOG = [{ supply: "Emergency kit", qty: 2 }, { supply: "Hygiene kit", qty: 4 }];
+const money = (n) => "$" + n.toFixed(2);
+
+class Component extends DCLogic {
+  state = {
+    site: "Bauer Villa", date: new Date().toISOString().slice(0, 10), type: "Door to door",
+    linkedEvent: "", units: "", backdateReason: "",
+    households: "", people: "", detail: "",
+    staff: "Joseph Masongsong (you)", ack: false, again: false,
+    rows: [{ id: 1, supply: "Emergency kit", qty: 1 }],
+    nextId: 2,
+  };
+
+  set(k) { return (e) => this.setState({ [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }); }
+  patch(id, changes) { this.setState((s) => ({ rows: s.rows.map((r) => (r.id === id ? { ...r, ...changes } : r)) })); }
+
+  renderVals() {
+    const s = this.state;
+    const n = (v) => (v === "" || isNaN(parseFloat(v)) ? 0 : parseFloat(v));
+    const today = new Date().toISOString().slice(0, 10);
+    const dateIsPast = !!s.date && s.date < today;
+
+    const counts = {};
+    s.rows.forEach((r) => { if (r.supply) counts[r.supply] = (counts[r.supply] || 0) + n(r.qty); });
+    const dupNames = Object.keys(counts).filter((name) => s.rows.filter((r) => r.supply === name).length > 1);
+
+    let total = 0, units = 0, overages = 0;
+    const rows = s.rows.map((r) => {
+      const item = CATALOGUE[r.supply];
+      const qty = n(r.qty);
+      const line = item ? qty * item.cost : 0;
+      total += line;
+      units += qty;
+      const taken = item ? counts[r.supply] : 0;
+      const over = item && taken > item.onHand;
+      const low = item && !over && item.onHand - taken <= 3;
+      if (over) overages++;
+      return {
+        id: r.id, supply: r.supply, qty: r.qty,
+        onHand: item ? String(item.onHand) : "—",
+        unitCost: item ? money(item.cost) : "—",
+        lineTotal: item ? money(line) : "—",
+        overStock: !!over,
+        inStock: !over,
+        lowStock: !!low,
+        alertText: over
+          ? "Only " + item.onHand + " on hand at this site — reduce the quantity or request a transfer."
+          : low ? "This leaves " + (item.onHand - taken) + " on hand. Reorder soon." : "",
+        onSupply: (e) => this.patch(r.id, { supply: e.target.value }),
+        onQty: (e) => this.patch(r.id, { qty: e.target.value }),
+        inc: () => this.patch(r.id, { qty: String(n(r.qty) + 1) }),
+        dec: () => this.patch(r.id, { qty: String(Math.max(0, n(r.qty) - 1)) }),
+        remove: () => this.setState((st) => ({ rows: st.rows.filter((x) => x.id !== r.id) })),
+      };
+    });
+
+    const households = n(s.households);
+    const filledRows = s.rows.filter((r) => r.supply && n(r.qty) > 0);
+    const checklist = [
+      { label: "Site and date", ok: !!s.site && !!s.date },
+      { label: "Distribution type", ok: !!s.type },
+      { label: "At least one supply item", ok: filledRows.length > 0 },
+      { label: "Quantities within stock", ok: overages === 0 },
+    ];
+    if (dateIsPast) checklist.push({ label: "Backdating reason", ok: !!s.backdateReason.trim() });
+    const remaining = checklist.filter((c) => !c.ok).length;
+
+    const stockAfter = Object.keys(counts).filter((name) => CATALOGUE[name] && counts[name] > 0).map((name) => {
+      const left = CATALOGUE[name].onHand - counts[name];
+      return { name, left: left < 0 ? "short " + Math.abs(left) : String(left), short: left < 0, low: left >= 0 && left <= 3, fine: left > 3 };
+    });
+
+    return {
+      ...s,
+      dateIsPast,
+      isEvent: s.type === "Community event",
+      isDoorToDoor: s.type === "Door to door",
+      onSite: this.set("site"), onDate: this.set("date"), onLinkedEvent: this.set("linkedEvent"),
+      onUnits: this.set("units"), onBackdateReason: this.set("backdateReason"),
+      onHouseholds: this.set("households"), onPeople: this.set("people"), onDetail: this.set("detail"),
+      onStaff: this.set("staff"), onAck: this.set("ack"), onAgain: this.set("again"),
+      typeOptions: TYPES.map((label) => ({
+        label,
+        on: () => this.setState({ type: label }),
+        selected: s.type === label,
+        unselected: s.type !== label,
+      })),
+      siteStockNote: s.site ? "Drawing from " + s.site + " inventory" : "Pick a site to load its inventory",
+      detailCount: s.detail.length,
+      costPerHousehold: households && total ? money(total / households) : "—",
+      rows,
+      noRows: s.rows.length === 0,
+      hasDuplicates: dupNames.length > 0,
+      duplicateNote: dupNames.length === 1 ? dupNames[0] + " is listed on more than one line." : "Several supplies are listed on more than one line.",
+      mergeDuplicates: () => this.setState((st) => {
+        const merged = [];
+        st.rows.forEach((r) => {
+          const hit = r.supply && merged.find((m) => m.supply === r.supply);
+          if (hit) hit.qty = String(n(hit.qty) + n(r.qty));
+          else merged.push({ ...r });
+        });
+        return { rows: merged };
+      }),
+      addRow: () => this.setState((st) => ({ rows: [...st.rows, { id: st.nextId, supply: "", qty: "1" }], nextId: st.nextId + 1 })),
+      repeatLast: () => this.setState((st) => ({
+        rows: LAST_LOG.map((r, i) => ({ id: st.nextId + i, supply: r.supply, qty: String(r.qty) })),
+        nextId: st.nextId + LAST_LOG.length,
+      })),
+      itemsNote: filledRows.length
+        ? filledRows.length + (filledRows.length === 1 ? " item" : " items") + " · " + units + (units === 1 ? " unit" : " units")
+        : "No items counted yet",
+      totalCost: money(total),
+      showSummaryRail: this.props.showSummaryRail ?? true,
+      siteSummary: s.site || "No site selected",
+      whenWhat: [s.date ? new Date(s.date + "T00:00:00").toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }) : "No date", s.type].filter(Boolean).join(" · "),
+      stats: [
+        { label: "Items", value: filledRows.length || "—" },
+        { label: "Units handed out", value: units || "—" },
+        { label: "Households", value: households || "—" },
+        { label: "People", value: n(s.people) || "—" },
+        { label: "Total cost", value: total ? money(total) : "—" },
+      ],
+      hasStockImpact: stockAfter.length > 0,
+      stockAfter,
+      checklist: checklist.map((c) => ({ label: c.label, ok: c.ok, pending: !c.ok })),
+      saveDisabled: remaining > 0,
+      hasOverages: overages > 0,
+      noOverages: overages === 0,
+      readyNote: overages
+        ? "Quantities exceed stock on hand"
+        : remaining ? remaining + (remaining === 1 ? " required field left" : " required fields left") : "All required fields complete",
+      onCancel: () => { window.location.href = "../distribution-management/DistributionManagement.dc.html"; },
+      onSave: () => { window.location.href = "../distribution-management/DistributionManagement.dc.html"; },
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--action-primary)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

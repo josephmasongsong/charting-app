@@ -1,0 +1,16 @@
+:root{
+--space-1:4px;
+--space-2:8px;
+--space-3:12px;
+--space-4:16px;
+--space-6:24px;
+--space-8:32px;
+--space-12:48px;
+--space-16:64px;
+--radius-input:2px;
+--radius-control:4px;
+--radius-card:6px;
+--radius-avatar:3px;
+--shadow-card:0 2px 6px rgba(0,0,0,.12);
+--shadow-modal:0 8px 24px rgba(0,48,50,.22);
+}

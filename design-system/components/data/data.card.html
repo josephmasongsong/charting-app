@@ -1,0 +1,36 @@
+<!-- @dsCard group="Components" viewport="700x760" name="Data display" subtitle="KPI cards, table, stat cards, staff row, activity feed" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<div id="root" style="padding:16px;background:var(--surface-page)"></div>
+<script type="text/babel">
+const { KpiCard, DataTable, StatCard, StaffRow, ActivityFeed } = window.BCHousingDesignSystem_3b2feb;
+function Demo(){
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+        <KpiCard value="318.75" label="Total Approved FTE" />
+        <KpiCard value="7.00" label="Short Term" tint />
+      </div>
+      <DataTable columns={[{key:"b",label:"Branch"},{key:"t",label:"Total",num:true}]}
+        rows={[{b:"IT",t:"60.00"},{b:"HR",t:"10.00"}]} footer={{b:"Total",t:"70.00"}} />
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+        <StatCard tone="red" title="Appeals" sub="1 in progress" />
+        <StatCard tone="blue" title="Mailbox" sub="32 messages" />
+      </div>
+      <StaffRow person={{initials:"MH",name:"Michael Huynh",title:"Mgr, IT Programs",dept:"Enterprise Business Systems",branch:"IM&T",email:"mhuynh@bchousing.org",phone:"604-439-4140"}} selected />
+      <ActivityFeed title="Activity" meta="Provider: Hacienda MT" groups={[
+        {label:"Documents",icon:"Upload",items:[
+          {initials:"MC",actor:"Maria Chen",action:"uploaded",target:"Q2 Financial Statement.pdf",time:"10 minutes ago"},
+          {initials:"JT",actor:"James Tran",action:"downloaded",target:"Site Visit Checklist.docx",time:"1 hour ago"},
+          {initials:"SP",actor:"Sarah Patel",action:"uploaded",target:"Board Meeting Minutes.pdf",time:"Yesterday, 4:12 PM"}]},
+        {label:"Notifications",icon:"Bell",items:[
+          {action:"Document submission due in 5 days for",target:"Operational Review 2026",time:"Today, 8:00 AM",tone:"warning"}]},
+      ]} />
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>

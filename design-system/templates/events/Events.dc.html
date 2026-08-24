@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Events" description="Events index: filter toolbar with a grouped agenda list of upcoming and past events." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}.evt-row:hover{background:var(--surface-muted)}</style>
+</helmet>
+<div data-screen-label="Events" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1200px;margin:0 auto;padding:24px 24px 48px;flex:1">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+<div>
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">Events</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">{{ summary }}</p>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" onClick="{{ goAddEvent }}" hint-size="120px,38px">+ Add event</x-import>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);margin-top:20px;padding:14px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+<label style="position:relative;display:flex;align-items:center;flex:1;min-width:240px">
+<span style="position:absolute;left:10px;display:flex;color:var(--bch-gray-500);pointer-events:none"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="16" hint-size="16px,16px"></x-import></span>
+<input type="text" placeholder="Search title, site, or organizer" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:8px 12px 8px 32px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+</label>
+<select aria-label="Site" style="font-family:var(--font-sans);font-size:14px;padding:8px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+<option>All sites</option><option>Carolina Court</option><option>Steeves Manor</option><option>Byrne Creek</option><option>Grandview Terrace</option><option>Maclean Park</option><option>Brant Villa</option><option>Rupert Lane</option>
+</select>
+<select aria-label="Activity type" style="font-family:var(--font-sans);font-size:14px;padding:8px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+<option>All activity types</option><option>Extreme Heat Programming</option><option>Office Hours</option><option>Community Kitchen</option><option>Emergency Preparedness</option>
+</select>
+<select aria-label="Date range" style="font-family:var(--font-sans);font-size:14px;padding:8px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+<option>Last 90 days</option><option>This month</option><option>This year</option><option>All time</option>
+</select>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);margin-top:16px;overflow:hidden">
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+<div style="padding:14px 20px;background:var(--surface-chrome);display:flex;align-items:center;justify-content:space-between;gap:12px">
+<span style="display:flex;align-items:center;gap:8px;color:#fff"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Calendar" size="15" hint-size="15px,15px"></x-import><span style="font-size:13px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#fff">{{ g.label }}</span></span>
+<span style="font-size:12.5px;color:#fff;opacity:.85">{{ g.meta }}</span>
+</div>
+<sc-for list="{{ g.events }}" as="e" hint-placeholder-count="5">
+<div class="evt-row" style="display:flex;gap:16px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bch-gray-200)">
+<div style="width:52px;flex-shrink:0;text-align:center;border-right:1px solid var(--bch-gray-200);padding-right:14px">
+<div style="font-size:11px;font-weight:700;letter-spacing:.6px;color:var(--text-muted)">{{ e.dow }}</div>
+<div style="font-size:20px;font-weight:700;line-height:1.15">{{ e.day }}</div>
+</div>
+<div style="flex:1;min-width:0">
+<a href="../event-detail/EventDetail.dc.html" style="font-size:14.5px;font-weight:600;color:var(--text-body)" style-hover="color:var(--action-primary)">{{ e.title }}</a>
+<div style="display:flex;align-items:center;gap:14px;margin-top:4px;font-size:12.5px;color:var(--text-muted)">
+<span style="display:inline-flex;align-items:center;gap:5px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Contact" size="13" hint-size="13px,13px"></x-import>{{ e.organizer }}</span>
+<span style="display:inline-flex;align-items:center;gap:5px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.MapPin" size="13" hint-size="13px,13px"></x-import>{{ e.site }}</span>
+<span style="display:inline-flex;align-items:center;gap:5px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Users" size="13" hint-size="13px,13px"></x-import>{{ e.participants }} participants</span>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:16px;color:var(--action-primary);flex-shrink:0">
+<a href="#" aria-label="Edit" title="Edit"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.PenLine" size="17" hint-size="17px,17px"></x-import></a>
+<a href="#" aria-label="Duplicate" title="Duplicate"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Copy" size="17" hint-size="17px,17px"></x-import></a>
+<a href="#" aria-label="Delete" title="Delete" style="color:var(--danger)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Trash2" size="17" hint-size="17px,17px"></x-import></a>
+</div>
+</div>
+</sc-for>
+</sc-for>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 20px">
+<span style="font-size:13.5px;color:var(--text-muted)">{{ showingLabel }}</span>
+<div style="display:flex;gap:8px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" hint-size="110px,34px">Load 12 more</x-import>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:980},&quot;groupBy&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Month&quot;,&quot;Site&quot;],&quot;default&quot;:&quot;Month&quot;,&quot;tsType&quot;:&quot;\&quot;Month\&quot; | \&quot;Site\&quot;&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+const RAW = [
+  ["2026-05-27", "Extreme Heat Information Session", "Carolina Court", "Extreme Heat Programming", "Trevonne Garamukanwa", 14, 120],
+  ["2026-05-25", "Resource Centre Drop-In", "Steeves Manor", "Office Hours", "Joseph Masongsong", 7, 300],
+  ["2026-05-21", "Extreme Heat Information Session", "Byrne Creek", "Extreme Heat Programming", "Trevonne Garamukanwa", 22, 120],
+  ["2026-05-18", "Extreme Heat Information Session", "Grandview Terrace", "Extreme Heat Programming", "Nolan Murray", 9, 90],
+  ["2026-05-13", "Extreme Heat Information Session", "Maclean Park", "Extreme Heat Programming", "Nolan Murray", 18, 120],
+  ["2026-05-13", "Extreme Heat Information Session", "Brant Villa", "Extreme Heat Programming", "Trevonne Garamukanwa", 11, 90],
+  ["2026-05-11", "Resource Centre Drop-In", "Steeves Manor", "Office Hours", "Joseph Masongsong", 5, 300],
+  ["2026-05-06", "Community Kitchen", "Rupert Lane", "Community Kitchen", "Nolan Murray", 16, 180],
+  ["2026-05-04", "Extreme Heat Information Session", "Rupert Lane", "Extreme Heat Programming", "Trevonne Garamukanwa", 12, 120],
+  ["2026-04-29", "Emergency Preparedness Presentation", "Maclean Park", "Emergency Preparedness", "Nolan Murray", 25, 150],
+  ["2026-04-27", "Community Kitchen", "Carolina Court", "Community Kitchen", "Trevonne Garamukanwa", 19, 180],
+  ["2026-04-22", "Resource Centre Drop-In", "Steeves Manor", "Office Hours", "Joseph Masongsong", 6, 300],
+];
+
+const hm = (m) => (m % 60 ? Math.floor(m / 60) + "h " + (m % 60) + "m" : Math.floor(m / 60) + "h");
+const siteInitials = (s) => s.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
+const EVENTS = RAW.map((r, i) => {
+  const d = new Date(r[0] + "T12:00:00");
+  return {
+    id: i,
+    date: d,
+    y: d.getFullYear(),
+    m: d.getMonth(),
+    day: d.getDate(),
+    dow: DOW[d.getDay()].toUpperCase(),
+    mon: MON[d.getMonth()],
+    dateShort: DOW[d.getDay()] + ", " + MON[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear(),
+    title: r[1],
+    site: r[2],
+    activity: r[3],
+    organizer: r[4],
+    participants: r[5],
+    minutes: r[6],
+    duration: hm(r[6]),
+    isHeat: r[3] === "Extreme Heat Programming",
+    isOffice: r[3] === "Office Hours",
+    isKitchen: r[3] === "Community Kitchen",
+    isEmerg: r[3] === "Emergency Preparedness",
+    siteInitials: siteInitials(r[2]),
+  };
+});
+
+class Component extends DCLogic {
+  renderVals() {
+    const groupBy = this.props.groupBy ?? "Month";
+
+    const keyOf = (e) => groupBy === "Site" ? e.site : MONTH_FULL[e.m] + " " + e.y;
+    const order = [];
+    const bucket = {};
+    EVENTS.forEach((e) => {
+      const k = keyOf(e);
+      if (!bucket[k]) { bucket[k] = []; order.push(k); }
+      bucket[k].push(e);
+    });
+    const groups = order.map((k) => {
+      const list = bucket[k];
+      return { key: k, label: k, meta: list.length + " events", events: list };
+    });
+
+    return {
+      summary: "40 events logged · 12 shown · April – May 2026",
+      showingLabel: "Showing 1 to 12 of 40 events",
+      groups,
+      goAddEvent: () => { window.location.href = "../log-event/LogEvent.dc.html"; },
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontFamily: "var(--font-sans)", color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--action-primary)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!-- @dsCard group="Components" viewport="700x680" name="Charts" subtitle="Bar, donut, line — hand-rolled SVG, Power BI house style" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<div id="root" style="padding:16px;background:var(--surface-page)"></div>
+<script type="text/babel">
+const { BarChart, DonutChart, LineChart } = window.BCHousingDesignSystem_3b2feb;
+function Demo(){
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+      <BarChart title="FTE by Branch" xKey="branch" layout="vertical"
+        series={[{key:"regular",label:"Regular",color:"var(--chart-1)"},{key:"shortTerm",label:"Short Term",color:"var(--chart-2)"}]}
+        data={[{branch:"CORP",regular:104,shortTerm:1},{branch:"DAS",regular:70,shortTerm:0},{branch:"IT",regular:60,shortTerm:2}]} />
+      <BarChart title="FTE by Region" xKey="region" layout="horizontal"
+        series={[{key:"fte",label:"FTE",color:"var(--chart-1)"}]}
+        data={[{region:"FINANCIAL",fte:79},{region:"CAM",fte:59},{region:"IT",fte:48}]} />
+      <DonutChart title="FTE by Union Code" data={[
+        {name:"Administrative",value:207,color:"var(--chart-3)"},
+        {name:"Excluded",value:106,color:"var(--chart-1)"},
+        {name:"Maintenance",value:5.75,color:"var(--chart-4)"}]} />
+      <LineChart title="Occupied FTE trend" xKey="month"
+        series={[{key:"occupied",label:"Occupied",color:"var(--chart-1)"},{key:"target",label:"Target",color:"var(--chart-5)",dashed:true}]}
+        data={[{month:"Jan",occupied:256,target:252},{month:"Feb",occupied:258,target:254},{month:"Mar",occupied:264,target:257}]} />
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>

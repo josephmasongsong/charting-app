@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Monthly Report" description="Period-based KPI summary with region activity breakdowns, supply totals, and site participation." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}.mr-field label{display:block;font-size:12.5px;font-weight:600;color:var(--text-muted);margin-bottom:4px}</style>
+</helmet>
+<div data-screen-label="Monthly Reports" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1200px;margin:0 auto;padding:32px 24px 48px;flex:1">
+
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<div>
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">Monthly Activity Report</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">{{ periodLabel }}</p>
+</div>
+<div style="display:flex;gap:10px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ openPeriod }}" hint-size="150px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Calendar" size="16" hint-size="16px,16px"></x-import>Change Period</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ exportExcel }}" hint-size="150px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.FileText" size="16" hint-size="16px,16px"></x-import>Export to Excel</x-import>
+</div>
+</div>
+
+<sc-if value="{{ noPriorData }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:16px;background:var(--surface-muted);border:1px solid var(--border-default);border-radius:var(--radius-control);padding:10px 14px;font-size:13px;color:var(--text-muted)">This is the earliest period with data on record, so period-over-period comparisons aren't shown below.</div>
+</sc-if>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:24px">
+<sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6">
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);padding:18px 20px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">{{ k.label }}</span>
+<span style="width:32px;height:32px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;background:rgba(0,98,101,.08);color:var(--surface-chrome)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.{{ k.icon }}" size="16" hint-size="16px,16px"></x-import></span>
+</div>
+<div style="font-size:30px;font-weight:700;line-height:1">{{ k.value }}</div>
+<sc-if value="{{ k.hasSub }}" hint-placeholder-val="{{ false }}">
+<div style="font-size:12.5px;color:var(--text-muted)">{{ k.sub }}</div>
+</sc-if>
+<div style="font-size:12px">{{ k.note }}</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:24px;align-items:start;margin-top:28px">
+<div style="display:flex;flex-direction:column;gap:24px">
+<sc-for list="{{ regions }}" as="r" hint-placeholder-count="2">
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);overflow:hidden">
+<div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border-default)">
+<span style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.MapPin" size="16" hint-size="16px,16px"></x-import>{{ r.name }}</span>
+<span style="font-size:12.5px;color:var(--text-muted)">{{ r.typeCount }} activity types</span>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.DataTable" columns="{{ activityColumns }}" rows="{{ r.rows }}" footer="{{ r.footer }}" hint-size="100%,240px"></x-import>
+</div>
+</sc-for>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:24px">
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);overflow:hidden">
+<div style="padding:16px 20px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border-default);font-size:16px;font-weight:700"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Package" size="16" hint-size="16px,16px"></x-import>Supplies Distributed</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.DataTable" columns="{{ supplyColumns }}" rows="{{ supplyRows }}" footer="{{ supplyFooter }}" hint-size="100%,220px"></x-import>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);padding:20px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
+<span style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.MapPin" size="16" hint-size="16px,16px"></x-import>Most Visited Sites</span>
+<span style="font-size:12px;color:var(--text-muted)">by events</span>
+</div>
+<sc-for list="{{ sites }}" as="s" hint-placeholder-count="5">
+<div style="margin-bottom:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px">
+<span style="font-size:14.5px;font-weight:600">{{ s.name }}</span>
+<span style="font-size:12px;color:var(--text-muted);text-align:right;white-space:nowrap">{{ s.meta }}</span>
+</div>
+{{ s.bar }}
+</div>
+</sc-for>
+<div style="font-size:12.5px;color:var(--text-muted)">{{ siteCoverage }}</div>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);padding:20px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px">
+<span style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.FileText" size="16" hint-size="16px,16px"></x-import>Tenant Referrals</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 18px">
+<span style="font-size:30px;font-weight:700;line-height:1">{{ referralTotal }}</span>
+<span style="font-size:12px">{{ referralNote }}</span>
+</div>
+<div style="display:flex;align-items:center;gap:24px">
+{{ referralDonut }}
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;min-width:0">
+<sc-for list="{{ referralCategories }}" as="rc" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:8px">
+{{ rc.dot }}
+<span style="font-size:14px;font-weight:600;flex:1;min-width:0">{{ rc.name }}</span>
+<span style="font-size:12.5px;color:var(--text-muted);white-space:nowrap">{{ rc.meta }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-default)">
+<div style="font-size:12.5px;font-weight:600;color:var(--text-muted);margin-bottom:8px">By channel</div>
+{{ channelStackedBar }}
+<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px">
+<sc-for list="{{ channelLegend }}" as="cl" hint-placeholder-count="3">
+<span style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-muted)">{{ cl.dot }}{{ cl.label }}</span>
+</sc-for>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Modal" open="{{ periodOpen }}" onClose="{{ closePeriod }}" title="Select Report Period" hint-size="560px,420px">
+<p style="margin:0 0 16px;font-size:14px;color:var(--text-muted);text-align:left">Choose the period for your activity report.</p>
+<div class="mr-field" style="text-align:left;margin-bottom:8px"><label>Period Type</label>
+<div style="display:flex;gap:8px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="{{ monthBtnVariant }}" onClick="{{ setMonthType }}" hint-size="80px,36px">Month</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="{{ quarterBtnVariant }}" onClick="{{ setQuarterType }}" hint-size="80px,36px">Quarter</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="{{ yearBtnVariant }}" onClick="{{ setYearType }}" hint-size="80px,36px">Year</x-import>
+</div>
+</div>
+
+<sc-if value="{{ isMonth }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0">
+<div class="mr-field"><label>Month</label><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" defaultValue="September" hint-size="100%,38px"><option>January</option><option>February</option><option>March</option><option>April</option><option>May</option><option>June</option><option>July</option><option>August</option><option>September</option><option>October</option><option>November</option><option>December</option></x-import></div>
+<div class="mr-field"><label>Year</label><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" defaultValue="2025" hint-size="100%,38px"><option>2023</option><option>2024</option><option>2025</option><option>2026</option></x-import></div>
+</div>
+</sc-if>
+<sc-if value="{{ isQuarter }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0">
+<div class="mr-field"><label>Quarter</label><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" defaultValue="Q3" hint-size="100%,38px"><option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option></x-import></div>
+<div class="mr-field"><label>Year</label><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" defaultValue="2025" hint-size="100%,38px"><option>2023</option><option>2024</option><option>2025</option><option>2026</option></x-import></div>
+</div>
+</sc-if>
+<sc-if value="{{ isYear }}" hint-placeholder-val="{{ true }}">
+<div class="mr-field" style="margin:18px 0"><label>Year</label><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" defaultValue="2025" hint-size="100%,38px"><option>2023</option><option>2024</option><option>2025</option><option>2026</option></x-import></div>
+</sc-if>
+
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" onClick="{{ closePeriod }}" style="width:100%;justify-content:center" hint-size="100%,44px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="16" hint-size="16px,16px"></x-import>Generate Report</x-import>
+</x-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1500},&quot;showEfficiencyKpis&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;siteRowCount&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:3,&quot;max&quot;:5,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;hasPriorPeriodData&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+const fmtMoney = (n) => "$" + n.toFixed(2);
+
+function computeDelta(cur, prev, goodWhen) {
+  const pct = ((cur - prev) / prev) * 100;
+  const rounded = Math.round(pct);
+  if (rounded === 0) return { pct: 0, color: "var(--text-muted)", arrow: "—", label: "0%" };
+  const isGood = goodWhen === "up" ? pct > 0 : pct < 0;
+  return { pct, color: isGood ? "var(--success)" : "var(--danger)", arrow: pct > 0 ? "▲" : "▼", label: (pct > 0 ? "+" : "") + rounded + "%" };
+}
+function kpiNote(cur, prev, goodWhen, hasPrior) {
+  if (!hasPrior) return React.createElement("span", { style: { color: "var(--text-muted)" } }, "— No comparison data");
+  const d = computeDelta(cur, prev, goodWhen);
+  return React.createElement("span", { style: { color: "var(--text-muted)" } },
+    React.createElement("span", { style: { color: d.color, fontWeight: 700 } }, d.arrow + " " + d.label), " vs Previous Period");
+}
+function footerDelta(value, cur, prev, goodWhen, hasPrior) {
+  if (!hasPrior) return value;
+  const d = computeDelta(cur, prev, goodWhen);
+  return React.createElement(React.Fragment, null, value, " ",
+    React.createElement("span", { style: { color: d.color, fontWeight: 700, fontSize: 12.5, marginLeft: 4 } }, d.arrow + " " + d.label));
+}
+
+const ACTIVITY_COLUMNS = [
+  { key: "type", label: "Activity Type" },
+  { key: "events", label: "Events", num: true },
+  { key: "participants", label: "Participants", num: true },
+  { key: "cost", label: "Total Cost", num: true },
+];
+const SUPPLY_COLUMNS = [
+  { key: "supply", label: "Supply" },
+  { key: "distributions", label: "Distributions", num: true },
+  { key: "quantity", label: "Quantity", num: true },
+];
+const LMDM_RAW = [
+  ["Bingo", 5, 66, 250], ["Community Kitchen", 8, 151, 640], ["Community Pantry", 2, 40, 80],
+  ["DIY Air Purifier Workshop", 1, 9, 25], ["Emergency Preparedness Presentation", 3, 39, 0],
+  ["Extreme Heat Programming", 8, 201, 1545], ["Fire Safety Presentation", 2, 47, 100],
+  ["Office Hours", 2, 10, 0], ["Summer BBQ", 6, 256, 1725],
+];
+const VIR_RAW = [["DIY Air Purifier Workshop", 1, 10, 25], ["Karaoke", 1, 9, 21], ["Summer BBQ", 1, 50, 300]];
+const SUPPLY_RAW = [["Cooling Kit", 8, 168], ["Box Fan", 2, 18], ["HEPA Filter", 2, 18], ["Emergency Kit", 1, 9]];
+const SITES_RAW = [
+  { name: "Skeena Terrace", events: 7, participants: 113, units: 150 },
+  { name: "Steeves Manor", events: 3, participants: 110, units: 130 },
+  { name: "Orchard Park", events: 3, participants: 18, units: 90 },
+  { name: "Bauer Villa", events: 3, participants: 52, units: 70 },
+  { name: "Maclean Park", events: 3, participants: 202, units: 220 },
+];
+const PREV_LMDM = { events: 34, participants: 740, cost: 4100 };
+const PREV_VIR = { events: 4, participants: 90, cost: 500 };
+const PREV_ITEMS = 190;
+const REFERRALS_RAW = [["Tenant support worker", 18], ["Building or site staff", 11], ["Third-party provider", 7], ["Other", 3]];
+const PREV_REFERRALS_TOTAL = 31;
+const CHANNEL_RAW = [["In person", 20], ["Phone call", 13], ["Email", 6]];
+const TOTAL_UNIQUE_PARTICIPANTS = 640;
+const TOTAL_ELIGIBLE_SITES = 40;
+const DISTINCT_SITES_VISITED = 12;
+
+function regionFromRaw(name, raw, prevTotals, hasPrior) {
+  const rows = raw.map(([type, events, participants, cost]) => ({ type, events, participants, cost: fmtMoney(cost) }));
+  const totals = raw.reduce((a, [, e, p, c]) => ({ events: a.events + e, participants: a.participants + p, cost: a.cost + c }), { events: 0, participants: 0, cost: 0 });
+  return {
+    name, typeCount: raw.length, rows, totals,
+    footer: {
+      type: name + " Total",
+      events: footerDelta(totals.events, totals.events, prevTotals.events, "up", hasPrior),
+      participants: footerDelta(totals.participants, totals.participants, prevTotals.participants, "up", hasPrior),
+      cost: footerDelta(fmtMoney(totals.cost), totals.cost, prevTotals.cost, "down", hasPrior),
+    },
+  };
+}
+
+class Component extends DCLogic {
+  state = { periodOpen: false, periodType: "Year" };
+  renderVals() {
+    const hasPrior = this.props.hasPriorPeriodData ?? true;
+    const lmdm = regionFromRaw("LMDM Region", LMDM_RAW, PREV_LMDM, hasPrior);
+    const vir = regionFromRaw("VIR Region", VIR_RAW, PREV_VIR, hasPrior);
+    const totalEvents = lmdm.totals.events + vir.totals.events;
+    const totalParticipants = lmdm.totals.participants + vir.totals.participants;
+    const totalCost = lmdm.totals.cost + vir.totals.cost;
+    const prevEvents = PREV_LMDM.events + PREV_VIR.events;
+    const prevParticipants = PREV_LMDM.participants + PREV_VIR.participants;
+    const prevCost = PREV_LMDM.cost + PREV_VIR.cost;
+    const supplyTotals = SUPPLY_RAW.reduce((a, [, d, q]) => ({ distributions: a.distributions + d, quantity: a.quantity + q }), { distributions: 0, quantity: 0 });
+    const totalItems = supplyTotals.quantity;
+    const costPerParticipant = totalCost / totalParticipants;
+    const costPerItem = totalCost / totalItems;
+    const avgParticipants = totalParticipants / totalEvents;
+    const prevCostPerParticipant = prevCost / prevParticipants;
+    const prevCostPerItem = prevCost / PREV_ITEMS;
+    const prevAvgParticipants = prevParticipants / prevEvents;
+
+    const kpis = [
+      { icon: "Calendar", label: "Total Events", value: String(totalEvents), hasSub: false, sub: "", note: kpiNote(totalEvents, prevEvents, "up", hasPrior) },
+      { icon: "Users", label: "Total Participants", value: String(totalParticipants), hasSub: true, sub: TOTAL_UNIQUE_PARTICIPANTS + " unique residents", note: kpiNote(totalParticipants, prevParticipants, "up", hasPrior) },
+      { icon: "DollarSign", label: "Total Cost", value: fmtMoney(totalCost), hasSub: false, sub: "", note: kpiNote(totalCost, prevCost, "down", hasPrior) },
+    ];
+    if (this.props.showEfficiencyKpis ?? true) {
+      kpis.push(
+        { icon: "Target", label: "Cost per Participant", value: fmtMoney(costPerParticipant), hasSub: false, sub: "", note: kpiNote(costPerParticipant, prevCostPerParticipant, "down", hasPrior) },
+        { icon: "Contact", label: "Avg Participants / Event", value: avgParticipants.toFixed(1), hasSub: false, sub: "", note: kpiNote(avgParticipants, prevAvgParticipants, "up", hasPrior) },
+      );
+    }
+
+    const rowCount = this.props.siteRowCount ?? 5;
+    const rankedSites = [...SITES_RAW].sort((a, b) => b.events - a.events);
+    const totalSiteEvents = SITES_RAW.reduce((a, s) => a + s.events, 0);
+    const sites = rankedSites.slice(0, rowCount).map((s) => {
+      const share = Math.round((s.events / totalSiteEvents) * 100);
+      return { name: s.name, meta: s.events + " events (" + share + "%) · " + s.participants + " participants",
+        bar: React.createElement("div", { style: { height: 8, borderRadius: 4, background: "var(--bch-gray-200)", overflow: "hidden" } },
+          React.createElement("div", { style: { height: "100%", background: "var(--surface-chrome)", width: share + "%" } })) };
+    });
+
+    const supplyRows = SUPPLY_RAW.map(([supply, distributions, quantity]) => ({ supply, distributions, quantity }));
+
+    const CATEGORY_COLORS = ["var(--chart-3)", "var(--chart-2)", "var(--chart-1)", "var(--chart-4)"];
+    const referralTotal = REFERRALS_RAW.reduce((a, [, n]) => a + n, 0);
+    let acc = 0;
+    const gradientStops = REFERRALS_RAW.map(([, count], i) => {
+      const from = (acc / referralTotal) * 100;
+      acc += count;
+      const to = (acc / referralTotal) * 100;
+      return CATEGORY_COLORS[i] + " " + from + "% " + to + "%";
+    }).join(", ");
+    const referralDonut = React.createElement("div", { style: { position: "relative", width: 108, height: 108, flexShrink: 0, borderRadius: "50%", background: "conic-gradient(" + gradientStops + ")" } },
+      React.createElement("div", { style: { position: "absolute", inset: 18, borderRadius: "50%", background: "var(--surface-card)", display: "grid", placeItems: "center" } },
+        React.createElement("span", { style: { fontSize: 11, color: "var(--text-muted)", fontWeight: 600 } }, "referrals")));
+    const referralCategories = REFERRALS_RAW.map(([name, count], i) => {
+      const pct = Math.round((count / referralTotal) * 100);
+      return { name, dot: React.createElement("span", { style: { width: 10, height: 10, borderRadius: "50%", flexShrink: 0, background: CATEGORY_COLORS[i] } }), meta: count + " · " + pct + "%" };
+    });
+    const referralNote = kpiNote(referralTotal, PREV_REFERRALS_TOTAL, "up", hasPrior);
+
+    const CHANNEL_COLORS = ["var(--chart-3)", "var(--chart-2)", "var(--chart-1)"];
+    const channelTotal = CHANNEL_RAW.reduce((a, [, n]) => a + n, 0);
+    const channelStackedBar = React.createElement("div", { style: { display: "flex", height: 10, borderRadius: 5, overflow: "hidden", gap: 2 } },
+      CHANNEL_RAW.map(([label, n], i) => React.createElement("div", { key: label, style: { flex: n, background: CHANNEL_COLORS[i] } })));
+    const channelLegend = CHANNEL_RAW.map(([label, n], i) => ({ dot: React.createElement("span", { style: { width: 8, height: 8, borderRadius: "50%", background: CHANNEL_COLORS[i] } }), label: Math.round((n / channelTotal) * 100) + "% " + label.toLowerCase() + " (" + n + ")" }));
+
+    const pt = this.state.periodType;
+    const periodLabels = { Month: "September 2025", Quarter: "Q3 2025 (Jul – Sep)", Year: "2025" };
+
+    return {
+      periodLabel: periodLabels[pt],
+      periodOpen: this.state.periodOpen,
+      noPriorData: !hasPrior,
+      openPeriod: () => this.setState({ periodOpen: true }),
+      closePeriod: () => this.setState({ periodOpen: false }),
+      exportExcel: () => {},
+      isMonth: pt === "Month", isQuarter: pt === "Quarter", isYear: pt === "Year",
+      monthBtnVariant: pt === "Month" ? "primary" : "outline",
+      quarterBtnVariant: pt === "Quarter" ? "primary" : "outline",
+      yearBtnVariant: pt === "Year" ? "primary" : "outline",
+      setMonthType: () => this.setState({ periodType: "Month" }),
+      setQuarterType: () => this.setState({ periodType: "Quarter" }),
+      setYearType: () => this.setState({ periodType: "Year" }),
+      kpis,
+      activityColumns: ACTIVITY_COLUMNS,
+      regions: [lmdm, vir],
+      supplyColumns: SUPPLY_COLUMNS,
+      supplyRows,
+      supplyFooter: { supply: "Total", distributions: supplyTotals.distributions, quantity: supplyTotals.quantity },
+      sites,
+      siteCoverage: DISTINCT_SITES_VISITED + " of " + TOTAL_ELIGIBLE_SITES + " sites visited this period · " + totalEvents + " total visits",
+      referralTotal, referralCategories, referralNote, referralDonut, channelStackedBar, channelLegend,
+      coverageVisitedPct: Math.round((DISTINCT_SITES_VISITED / TOTAL_ELIGIBLE_SITES) * 100) + "%",
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontFamily: "var(--font-sans)", color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--surface-chrome)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

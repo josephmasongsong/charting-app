@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Site Detail" description="Read-only site record: KPIs, a profile card (location-marker avatar, key fields, assigned worker), and an event feed below." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}</style>
+</helmet>
+<div data-screen-label="Site Detail" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1180px;margin:0 auto;padding:24px 24px 44px;flex:1">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+<div>
+<h1 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-.2px;white-space:nowrap">{{ siteName }}</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">Site record and assigned worker.</p>
+</div>
+<div style="display:flex;gap:10px;flex-shrink:0">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ goLogEvent }}" hint-size="112px,38px">Log an event</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" hint-size="86px,38px">Edit site</x-import>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px">
+<sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-left:4px solid var(--surface-chrome);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:14px 18px 16px">
+<div style="font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);font-weight:600">{{ k.label }}</div>
+<div style="font-size:30px;font-weight:700;line-height:1.1;margin-top:6px;color:var(--surface-chrome)">{{ k.value }}</div>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">{{ k.note }}</div>
+</div>
+</sc-for>
+</div>
+
+<div style="margin-top:22px">
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden;padding:32px;display:grid;grid-template-columns:220px 1fr 1.1fr;gap:32px">
+
+<div>
+<iframe src="{{ mapEmbedSrc }}" style="width:220px;height:220px;border:0;border-radius:var(--radius-card)" loading="lazy"></iframe>
+<div style="font-size:22px;font-weight:700;margin-top:14px;line-height:1.25">{{ siteName }}</div>
+</div>
+
+<div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Address" hint-size="100%,50px">{{ address }}</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Region" hint-size="100%,50px">{{ region }}</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Tenancy Type" hint-size="100%,50px">{{ tenancyType }}</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Community Room" hint-size="100%,50px">{{ communityRoom }}</x-import>
+</div>
+
+<div>
+<div style="font-size:17px;font-weight:700;margin-bottom:12px">Assigned Worker</div>
+<div style="display:flex;gap:12px;align-items:flex-start">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AvatarTile" initials="{{ workerInitials }}" size="{{ workerAvatarSize }}" hint-size="44px,44px"></x-import>
+<div style="min-width:0">
+<a href="../user-detail/UserDetail.dc.html" style="font-size:14.5px;font-weight:700">{{ workerName }}</a>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">{{ workerTitle }}</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden;margin-top:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:18px 24px 14px">
+<div>
+<div style="font-size:17px;font-weight:700">Supply inventory</div>
+<div style="font-size:13px;color:var(--text-muted);margin-top:2px">Stock held at the site, counted against its par level</div>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" hint-size="124px,34px">Request stock</x-import>
+</div>
+<sc-if value="{{ hasLowStock }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:9px;align-items:flex-start;margin:0 24px 14px;padding:10px 14px;background:var(--warning-surface);border:1px solid #f0e2b0;border-radius:var(--radius-control);font-size:13.5px;color:var(--warning-text)">
+<span style="display:flex;margin-top:1px;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.TriangleAlert" size="15" hint-size="15px,15px"></x-import></span>
+<span>{{ lowStockText }}</span>
+</div>
+</sc-if>
+<div style="overflow-x:auto;padding:0 24px 20px">
+<table style="width:100%;border-collapse:collapse;font-size:14px">
+<thead><tr>
+<th style="text-align:left;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Item</th>
+<th style="text-align:right;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">On hand</th>
+<th style="text-align:right;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Unit cost</th>
+<th style="text-align:right;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Value</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{ supplies }}" as="s" hint-placeholder-count="4">
+<tr>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200)">
+<div style="font-size:15px;font-weight:600">{{ s.name }}</div>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">Par level {{ s.par }} · {{ s.updated }}</div>
+</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);text-align:right">
+<sc-if value="{{ s.low }}" hint-placeholder-val="{{ false }}">
+<span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:var(--warning-text);background:var(--warning-surface);border:1px solid #f0e2b0;border-radius:999px;padding:2px 10px">{{ s.qty }} low</span>
+</sc-if>
+<sc-if value="{{ s.ok }}" hint-placeholder-val="{{ true }}">
+<span style="font-size:15px;font-weight:600">{{ s.qty }}</span>
+</sc-if>
+</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);text-align:right;color:var(--text-muted)">{{ s.unit }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);text-align:right;font-weight:600">{{ s.value }}</td>
+</tr>
+</sc-for>
+<tr>
+<td style="padding:11px 14px;background:#AEDBD3;font-weight:700;border:1px solid var(--bch-gray-200)">{{ supplyCountLabel }}</td>
+<td style="padding:11px 14px;background:#AEDBD3;font-weight:700;text-align:right;border:1px solid var(--bch-gray-200)">{{ supplyUnits }}</td>
+<td style="padding:11px 14px;background:#AEDBD3;border:1px solid var(--bch-gray-200)"></td>
+<td style="padding:11px 14px;background:#AEDBD3;font-weight:700;text-align:right;border:1px solid var(--bch-gray-200)">{{ supplyValue }}</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1500}}">
+const EVENTS = [
+  { title: "Fire safety info session and building evacuation walkthrough", type: "Info session", staff: "Amber Bell", date: "10 Jun 2026", attended: 31, cost: "$0.00" },
+  { title: "Coffee & connect", type: "Office hours", staff: "Amber Bell", date: "3 May 2026", attended: 22, cost: "$46.00" },
+  { title: "Bingo afternoon", type: "Recreation", staff: "Tomas Nowak", date: "15 Apr 2026", attended: 27, cost: "$54.00" },
+];
+const SUPPLIES = [
+  { name: "Box Fan", qty: 8, par: 10, unit: 10, updated: "Counted 2 Jul 2026" },
+  { name: "HEPA Filter", qty: 10, par: 6, unit: 2, updated: "Counted 2 Jul 2026" },
+];
+const money = (n) => "$" + n.toFixed(2);
+
+class Component extends DCLogic {
+  renderVals() {
+    const supplies = SUPPLIES.map((s) => ({
+      name: s.name, par: s.par, updated: s.updated, qty: s.qty,
+      low: s.qty < s.par, ok: s.qty >= s.par,
+      unit: money(s.unit), value: money(s.unit * s.qty),
+    }));
+    const units = SUPPLIES.reduce((a, s) => a + s.qty, 0);
+    const value = SUPPLIES.reduce((a, s) => a + s.qty * s.unit, 0);
+    const low = supplies.filter((s) => s.low);
+    const attended = EVENTS.reduce((a, e) => a + e.attended, 0);
+    const avg = Math.round(attended / EVENTS.length);
+
+    return {
+      siteName: "Hampton House",
+      address: "1176 Yates Street, Victoria",
+      region: "Vancouver Island",
+      tenancyType: "Single seniors only",
+      communityRoom: "Yes — capacity 40, bookable",
+      mapEmbedSrc: "https://maps.google.com/maps?q=1176+Yates+Street,+Victoria,+BC&z=15&output=embed",
+      workerInitials: "AB",
+      workerAvatarSize: 44,
+      workerName: "Amber Bell",
+      workerTitle: "Tenant engagement worker",
+      kpis: [
+        { label: "Total tenants", value: "130", note: "Occupied units as of Jul 2026" },
+        { label: "Events held", value: String(EVENTS.length), note: "Last 12 months" },
+        { label: "Avg attendance", value: String(avg), note: Math.round((avg / 130) * 100) + "% of tenants per event" },
+        { label: "Inventory value", value: money(value), note: units + " units on hand" },
+      ],
+      recentEvents: EVENTS.slice(0, 3).map((e, i) => ({ title: e.title, date: e.date, first: i === 0, notFirst: i !== 0 })),
+      supplies,
+      supplyCountLabel: supplies.length + " items",
+      supplyUnits: String(units),
+      supplyValue: money(value),
+      hasLowStock: low.length > 0,
+      lowStockText: low.length
+        ? low.map((s) => s.name).join(", ") + (low.length === 1 ? " is" : " are") + " below par level — request stock before the next heat advisory."
+        : "",
+      goLogEvent: () => { window.location.href = "../log-event/LogEvent.dc.html"; },
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--action-primary)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

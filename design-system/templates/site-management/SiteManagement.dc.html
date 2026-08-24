@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Site Management" description="Filterable, sortable directory of housing sites with tenant counts, manager, and boolean property flags (community room/partner, senior-only), plus row actions." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}#sm-table tbody tr:nth-child(even){background:var(--surface-muted)}#sm-table tbody tr:hover{background:var(--action-selected)}</style>
+</helmet>
+<div data-screen-label="Site Management" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1280px;margin:0 auto;padding:24px 24px 48px;flex:1">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<div>
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">Sites Management</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">Manage sites, locations, and their properties.</p>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" onClick="{{ goCreate }}" hint-size="120px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Plus" size="16" hint-size="16px,16px"></x-import>Add Site</x-import>
+</div>
+
+<sc-if value="{{ showStats }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px">
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--surface-chrome);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Total sites</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">{{ totalSites }}</div>
+</div>
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--action-primary);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Total tenants</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">{{ totalTenants }}</div>
+</div>
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--bch-seafoam);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">With community room</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">{{ withRoom }}</div>
+</div>
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-top:3px solid var(--bch-gold-500);border-radius:var(--radius-card);padding:14px 16px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-muted)">Senior only</div>
+<div style="font-size:28px;font-weight:700;line-height:1.2;margin-top:4px">{{ seniorOnly }}</div>
+</div>
+</div>
+</sc-if>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);margin-top:24px;overflow:hidden">
+
+<div style="padding:16px 20px;display:flex;justify-content:flex-start;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--border-default)">
+<label style="position:relative;display:flex;align-items:center;width:340px;max-width:100%">
+<span style="position:absolute;left:10px;display:flex;color:var(--bch-gray-500);pointer-events:none"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="16" hint-size="16px,16px"></x-import></span>
+<input type="text" value="{{ query }}" onChange="{{ setQuery }}" placeholder="Search by name, address, user, or com" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:8px 12px 8px 32px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+</label>
+</div>
+
+<div style="overflow-x:auto"><table id="sm-table" style="width:100%;min-width:1080px;border-collapse:collapse;font-size:14px;background:#fff">
+<thead><tr>
+<th onClick="{{ sortByName }}" style="cursor:pointer;user-select:none;padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em">
+<span style="display:inline-flex;align-items:center;gap:6px">
+<sc-if value="{{ nameActive }}" hint-placeholder-val="{{ true }}"><span style="font-weight:800">Name</span><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" hint-size="14px,14px"></x-import></sc-if>
+<sc-if value="{{ nameInactive }}" hint-placeholder-val="{{ false }}"><span style="font-weight:700;opacity:.85">Name</span><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" style="opacity:.55" hint-size="14px,14px"></x-import></sc-if>
+</span>
+</th>
+<th style="padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:left;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Address</th>
+<th style="padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:left;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Assigned Worker</th>
+<th style="padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:left;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Community Room</th>
+<th style="padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:left;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Community Partner</th>
+<th style="padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:left;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Senior Only</th>
+<th style="padding:10px 14px;border:1px solid #0a7276;background:var(--surface-chrome);color:#fff;text-align:right;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Actions</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{ pageRows }}" as="r" hint-placeholder-count="10">
+<tr>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);font-weight:700"><a href="#" onClick="{{ r.view }}">{{ r.name }}</a></td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px">{{ r.address }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200)">{{ r.manager }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200)">
+<sc-if value="{{ r.communityRoom }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:var(--radius-control);background:var(--surface-chrome);color:#fff"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Check" size="12" hint-size="12px,12px"></x-import>Yes</span></sc-if>
+<sc-if value="{{ r.noCommunityRoom }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:var(--radius-control);background:var(--bch-gray-100);color:var(--text-muted);border:1px solid var(--border-default)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="12" hint-size="12px,12px"></x-import>No</span></sc-if>
+</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200)">
+<sc-if value="{{ r.communityPartner }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:var(--radius-control);background:var(--surface-chrome);color:#fff"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Check" size="12" hint-size="12px,12px"></x-import>Yes</span></sc-if>
+<sc-if value="{{ r.noCommunityPartner }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:var(--radius-control);background:var(--bch-gray-100);color:var(--text-muted);border:1px solid var(--border-default)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="12" hint-size="12px,12px"></x-import>No</span></sc-if>
+</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200)">
+<sc-if value="{{ r.seniorOnly }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:var(--radius-control);background:var(--surface-chrome);color:#fff"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Check" size="12" hint-size="12px,12px"></x-import>Yes</span></sc-if>
+<sc-if value="{{ r.notSeniorOnly }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:var(--radius-control);background:var(--bch-gray-100);color:var(--text-muted);border:1px solid var(--border-default)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="12" hint-size="12px,12px"></x-import>No</span></sc-if>
+</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);text-align:right;white-space:nowrap">
+<span style="display:inline-flex;gap:14px;justify-content:flex-end;color:var(--action-primary)">
+<a href="#" onClick="{{ r.edit }}" aria-label="Edit" title="Edit" style="display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.PenLine" size="17" hint-size="17px,17px"></x-import></a>
+<a href="#" onClick="{{ r.remove }}" aria-label="Delete" title="Delete" style="display:flex;color:var(--danger)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Trash2" size="17" hint-size="17px,17px"></x-import></a>
+</span>
+</td>
+</tr>
+</sc-for>
+<sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+<tr><td colspan="8" style="padding:40px 14px;text-align:center;color:var(--text-muted);border:1px solid var(--bch-gray-200)">No sites match your search.</td></tr>
+</sc-if>
+</tbody>
+</table></div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 20px">
+<span style="font-size:13.5px;color:var(--text-muted)">{{ showingText }}</span>
+<div style="display:flex;gap:6px;align-items:center">
+<sc-if value="{{ canPrev }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ goFirst }}" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--action-selected)">First</button></sc-if>
+<sc-if value="{{ cannotPrev }}" hint-placeholder-val="{{ false }}"><button type="button" disabled style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--bch-gray-500);border-radius:var(--radius-control);cursor:not-allowed">First</button></sc-if>
+<sc-if value="{{ canPrev }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ goPrev }}" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--action-selected)">Previous</button></sc-if>
+<sc-if value="{{ cannotPrev }}" hint-placeholder-val="{{ false }}"><button type="button" disabled style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--bch-gray-500);border-radius:var(--radius-control);cursor:not-allowed">Previous</button></sc-if>
+<sc-for list="{{ pageNumbers }}" as="p" hint-placeholder-count="5">
+<sc-if value="{{ p.active }}" hint-placeholder-val="{{ true }}"><button type="button" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--action-primary);background:var(--action-primary);color:#fff;border-radius:var(--radius-control);cursor:pointer">{{ p.n }}</button></sc-if>
+<sc-if value="{{ p.notActive }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ p.go }}" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--action-selected)">{{ p.n }}</button></sc-if>
+</sc-for>
+<sc-if value="{{ hasGap }}" hint-placeholder-val="{{ true }}"><span style="font-size:13.5px;color:var(--text-muted);padding:0 4px">…</span></sc-if>
+<sc-if value="{{ showLastNumber }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ lastActive }}" hint-placeholder-val="{{ false }}"><button type="button" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--action-primary);background:var(--action-primary);color:#fff;border-radius:var(--radius-control);cursor:pointer">{{ totalPages }}</button></sc-if>
+<sc-if value="{{ lastNotActive }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ goLast }}" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--action-selected)">{{ totalPages }}</button></sc-if>
+</sc-if>
+<sc-if value="{{ canNext }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ goNext }}" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--action-selected)">Next</button></sc-if>
+<sc-if value="{{ cannotNext }}" hint-placeholder-val="{{ false }}"><button type="button" disabled style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--bch-gray-500);border-radius:var(--radius-control);cursor:not-allowed">Next</button></sc-if>
+<sc-if value="{{ canNext }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ goLast }}" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--action-primary);border-radius:var(--radius-control);cursor:pointer" style-hover="background:var(--action-selected)">Last</button></sc-if>
+<sc-if value="{{ cannotNext }}" hint-placeholder-val="{{ false }}"><button type="button" disabled style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-default);background:#fff;color:var(--bch-gray-500);border-radius:var(--radius-control);cursor:not-allowed">Last</button></sc-if>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1100},&quot;showStats&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+const RAW = [
+  ["Hampton House", "1176 Yates Street, Victoria, BC", 130, "Amber Bell", true, false, true],
+  ["Evergreen Terrace", "2501 Blanshard Street, Victoria, BC", 400, "Amber Bell", true, true, false],
+  ["Seven Maples", "1987 West 7th Ave, Vancouver, BC", 25, "Joseph Masongsong", false, true, false],
+  ["Greenbrook", "13440 70b Ave, Surrey, BC", 150, "Natalie Boyle", false, true, false],
+  ["Cypress Walk", "2425 Cypress St, Vancouver, BC", 30, "Joseph Masongsong", false, false, false],
+  ["Rupert Lane", "4854 Rupert St, Vancouver, BC", 100, "Trevonne Garamukanwa", true, false, false],
+  ["Ross Tower", "45 Clute St, New Westminster, BC", 100, "Natalie Boyle", true, false, true],
+  ["Fernview", "McKenzie Rd, Abbotsford, BC", 40, "Natalie Boyle", true, false, false],
+  ["Matsqui", "32143 Marshall Rd, Abbotsford, BC", 10, "Natalie Boyle", false, false, true],
+  ["Len Shepherd", "15090 101 Ave, Surrey, BC", 100, "Natalie Boyle", true, true, true],
+  ["Byrne Creek", "7357 Cariboo Rd, Burnaby, BC", 60, "Trevonne Garamukanwa", false, false, false],
+  ["Grandview Terrace", "1651 Commercial Drive, Vancouver, BC", 84, "Joseph Masongsong", true, false, false],
+  ["Maclean Park", "955 Expo Blvd, Vancouver, BC", 72, "Amber Bell", true, false, false],
+  ["Carolina Court", "3585 Carolina St, Vancouver, BC", 45, "Trevonne Garamukanwa", false, false, true],
+  ["Brant Villa", "1338 Marine Dr, North Vancouver, BC", 38, "Trevonne Garamukanwa", false, false, false],
+  ["Bauer Villa", "8138 128 St, Surrey, BC", 96, "Trevonne Garamukanwa", true, true, false],
+  ["Steeves Manor", "10318 City Pkwy, Surrey, BC", 55, "Joseph Masongsong", false, false, true],
+  ["Killarney Gardens", "6350 Killarney St, Vancouver, BC", 62, "Natalie Boyle", true, false, false],
+  ["Stamps Place", "300 Alexander St, Vancouver, BC", 88, "Joseph Masongsong", true, true, false],
+];
+
+const money0 = (n) => String(n);
+
+class Component extends DCLogic {
+  state = {
+    query: "", sortDir: "asc", page: 1,
+    rows: RAW.map((r, i) => ({
+      id: i + 1, name: r[0], address: r[1], tenants: r[2], manager: r[3],
+      communityRoom: r[4], communityPartner: r[5], seniorOnly: r[6],
+    })),
+  };
+
+  setQuery = (e) => this.setState({ query: e.target.value, page: 1 });
+  sortByName = () => this.setState((s) => ({ sortDir: s.sortDir === "asc" ? "desc" : "asc", page: 1 }));
+  goPage(n) { return () => this.setState({ page: n }); }
+  removeRow(id) {
+    return () => {
+      if (window.confirm("Delete this site? This can't be undone.")) {
+        this.setState((s) => ({ rows: s.rows.filter((r) => r.id !== id) }));
+      }
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const pageSize = 10;
+    const q = s.query.trim().toLowerCase();
+
+    let filtered = s.rows.filter((r) =>
+      !q || r.name.toLowerCase().includes(q) || r.address.toLowerCase().includes(q) || r.manager.toLowerCase().includes(q)
+    );
+    const dir = s.sortDir === "asc" ? 1 : -1;
+    filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name) * dir);
+
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const page = Math.min(s.page, totalPages);
+    const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize).map((r) => ({
+      ...r,
+      noCommunityRoom: !r.communityRoom,
+      noCommunityPartner: !r.communityPartner,
+      notSeniorOnly: !r.seniorOnly,
+      view: () => { window.location.href = "../site-detail/SiteDetail.dc.html"; },
+      edit: () => {},
+      remove: this.removeRow(r.id),
+    }));
+
+    const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+    const to = Math.min(page * pageSize, total);
+
+    const windowSize = 3;
+    let pageNumbers = [];
+    for (let i = 1; i <= Math.min(windowSize, totalPages); i++) {
+      pageNumbers.push({ n: i, active: i === page, notActive: i !== page, go: this.goPage(i) });
+    }
+    const hasGap = totalPages > windowSize + 1;
+    const showLastNumber = totalPages > windowSize;
+
+    return {
+      showStats: true,
+      totalSites: s.rows.length,
+      totalTenants: s.rows.reduce((a, r) => a + r.tenants, 0),
+      withRoom: s.rows.filter((r) => r.communityRoom).length,
+      seniorOnly: s.rows.filter((r) => r.seniorOnly).length,
+      query: s.query,
+      setQuery: this.setQuery,
+      sortByName: this.sortByName,
+      nameActive: true, nameInactive: false,
+      pageRows,
+      noRows: pageRows.length === 0,
+      showingText: total === 0 ? "No sites match your search" : "Showing " + from + " to " + to + " of " + total + " results",
+      pageNumbers,
+      hasGap,
+      showLastNumber,
+      lastActive: page === totalPages,
+      lastNotActive: page !== totalPages,
+      totalPages,
+      goLast: this.goPage(totalPages),
+      canPrev: page > 1, cannotPrev: !(page > 1),
+      canNext: page < totalPages, cannotNext: !(page < totalPages),
+      goFirst: this.goPage(1),
+      goPrev: () => this.setState((st) => ({ page: Math.max(1, st.page - 1) })),
+      goNext: () => this.setState((st) => ({ page: Math.min(totalPages, st.page + 1) })),
+      goCreate: () => { window.location.href = "../create-site/CreateSite.dc.html"; },
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontFamily: "var(--font-sans)", color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--surface-chrome)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

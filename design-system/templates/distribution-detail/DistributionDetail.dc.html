@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Distribution Detail" description="Read-only supply distribution record in the Profile pattern: identity + key fields + recipients/notes in one card, followed by a line-items table with its total." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}</style>
+</helmet>
+<div data-screen-label="Distribution Detail" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1180px;margin:0 auto;padding:24px 24px 44px;flex:1">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<h1 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-.2px;flex:1;min-width:0">{{ subtitle }}</h1>
+<div style="display:flex;gap:10px;flex-shrink:0">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ onEdit }}" hint-size="96px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.PenLine" size="15" hint-size="15px,15px"></x-import>Edit</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="destructive" onClick="{{ onDelete }}" hint-size="102px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Trash2" size="15" hint-size="15px,15px"></x-import>Delete</x-import>
+</div>
+</div>
+<div style="margin-top:6px;font-size:13.5px;color:var(--text-muted)">Created {{ createdLabel }} · Updated {{ updatedLabel }}</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden;margin-top:20px;padding:32px;display:grid;grid-template-columns:180px 1fr 1fr;gap:28px">
+
+<div>
+<span style="width:72px;height:72px;border-radius:var(--radius-control);background:var(--surface-chrome);color:#fff;display:grid;place-items:center"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Truck" size="34" hint-size="34px,34px"></x-import></span>
+</div>
+
+<div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Distribution Date" hint-size="100%,50px">{{ dateLong }}</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Site" hint-size="100%,50px"><a href="../site-detail/SiteDetail.dc.html">{{ site }}</a></x-import>
+<div>
+<div style="font-size:16px;font-weight:700;margin-bottom:2px">Type</div>
+<div style="margin-top:6px">
+<sc-if value="{{ isDoorToDoor }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--action-primary);background:var(--action-selected);border:1px solid var(--bch-blue-100);border-radius:999px;padding:3px 10px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Truck" size="12" hint-size="12px,12px"></x-import>Door To Door</span></sc-if>
+<sc-if value="{{ isEvent }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--bch-teal-700);background:#eafaf5;border:1px solid var(--bch-teal-light);border-radius:999px;padding:3px 10px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Calendar" size="12" hint-size="12px,12px"></x-import>Community Event</span></sc-if>
+<sc-if value="{{ isPickup }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--bch-tan-700);background:var(--bch-tan-50);border:1px solid #f0e2b0;border-radius:999px;padding:3px 10px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Package" size="12" hint-size="12px,12px"></x-import>Community Room Pickup</span></sc-if>
+</div>
+</div>
+</div>
+
+<div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Total Items Distributed" hint-size="100%,50px">{{ itemBreakdown }}</x-import>
+<div style="margin-top:16px">
+<div style="font-size:16px;font-weight:700;margin-bottom:8px">Distributed By</div>
+<div style="display:flex;gap:12px;align-items:flex-start">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AvatarTile" initials="{{ distributedByInitials }}" size="{{ distributedByAvatarSize }}" hint-size="44px,44px"></x-import>
+<div style="min-width:0">
+<a href="../user-detail/UserDetail.dc.html" style="font-size:14.5px;font-weight:700">{{ distributedBy }}</a>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">{{ distributedByRole }}</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden;margin-top:20px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:18px 24px 14px">
+<div style="font-size:17px;font-weight:700">Distributed Items ({{ itemRowCount }})</div>
+<a href="#" style="font-size:13.5px;flex-shrink:0">Export CSV</a>
+</div>
+<div style="padding:0 24px 24px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.DataTable" columns="{{ itemCols }}" rows="{{ itemRows }}" footer="{{ itemFooter }}" hint-size="100%,120px"></x-import>
+</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;type&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Door To Door&quot;,&quot;Community Event&quot;,&quot;Community Room Pickup&quot;],&quot;default&quot;:&quot;Community Event&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+const money = (n) => "$" + n.toFixed(2);
+
+class Component extends DCLogic {
+  renderVals() {
+    const type = this.props.type ?? "Community Event";
+    const site = "Byrne Creek";
+    const items = [{ name: "Cooling Kit", qty: 17, unitCost: 10 }, { name: "Bottled Water (Case)", qty: 12, unitCost: 4.5 }];
+    const total = items.reduce((sum, i) => sum + i.qty * i.unitCost, 0);
+    const distributedBy = "Trevonne Garamukanwa";
+    const initials = distributedBy.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+    return {
+      isDoorToDoor: type === "Door To Door",
+      isEvent: type === "Community Event",
+      isPickup: type === "Community Room Pickup",
+      dateLong: "Thursday, May 21, 2026",
+      site,
+      subtitle: site + " — May 21, 2026",
+      distributedBy,
+      distributedByInitials: initials,
+      distributedByAvatarSize: 44,
+      distributedByRole: "Tenant Engagement Worker",
+      totalCostLabel: money(total),
+      createdLabel: "Jun 3, 2026, 7:16 AM",
+      updatedLabel: "Jun 3, 2026, 7:16 AM",
+      itemRowCount: items.length,
+      itemBreakdown: items.map((i) => i.name + " (" + i.qty + ")").join(", "),
+      itemCols: [
+        { key: "name", label: "Supply item" },
+        { key: "qty", label: "Quantity", num: true },
+        { key: "unitCost", label: "Unit cost", num: true },
+        { key: "lineTotal", label: "Line total", num: true },
+      ],
+      itemRows: items.map((i) => ({ name: i.name, qty: i.qty, unitCost: money(i.unitCost), lineTotal: money(i.qty * i.unitCost) })),
+      itemFooter: { name: "Total distribution value", qty: "", unitCost: "", lineTotal: money(total) },
+      onEdit: () => {},
+      onDelete: () => { if (window.confirm("Delete this distribution record? This can't be undone.")) {} },
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--surface-chrome)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

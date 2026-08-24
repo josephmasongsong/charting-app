@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<!-- @template name="User Detail" description="Admin view of a single user record: avatar and full name, account fields (role, region, job title, email, status), and the developments the user is assigned as primary — a Profile-pattern detail page for User Management." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}#dev-list span[style*="margin-left"]{display:none!important}#dev-list>*:last-child>div{border-bottom:none!important}</style>
+</helmet>
+<div data-screen-label="User Detail" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1240px;margin:0 auto;padding:24px 24px 48px;flex:1">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+<div>
+<h1 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-.2px">{{ fullName }}</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">User record and assigned developments.</p>
+</div>
+<div style="display:flex;gap:10px;flex-shrink:0">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" hint-size="140px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Lock" size="15" hint-size="15px,15px"></x-import>Reset password</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" onClick="{{ openEdit }}" hint-size="110px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.PenLine" size="15" hint-size="15px,15px"></x-import>Edit user</x-import>
+</div>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden;margin-top:20px;padding:32px;display:grid;grid-template-columns:220px 1fr 1.1fr;gap:32px">
+
+<div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AvatarTile" initials="{{ initials }}" size="{{ avatarSize }}" hint-size="180px,180px"></x-import>
+<div style="font-size:22px;font-weight:700;margin-top:14px;line-height:1.25">{{ fullName }}</div>
+</div>
+
+<div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Role" hint-size="100%,50px">{{ role }}</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Region" hint-size="100%,50px">{{ region }}</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Job Title" hint-size="100%,50px">{{ jobTitle }}</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="E-mail" hint-size="100%,50px"><a href="{{ mailtoHref }}">{{ email }}</a></x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ProfileField" label="Account Status" hint-size="100%,50px">
+<sc-if value="{{ isActive }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#1c7430;background:#e8f5eb;border:1px solid #bfe0c8;border-radius:999px;padding:3px 10px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Check" size="12" hint-size="12px,12px"></x-import>Active</span></sc-if>
+<sc-if value="{{ isInactive }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);background:var(--bch-gray-100);border:1px solid var(--border-default);border-radius:999px;padding:3px 10px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.User" size="12" hint-size="12px,12px"></x-import>Deactivated</span></sc-if>
+</x-import>
+</div>
+
+<sc-if value="{{ showDevelopments }}" hint-placeholder-val="{{ true }}">
+<div>
+<div style="font-size:17px;font-weight:700;margin-bottom:12px">Developments ({{ devCount }})</div>
+<div id="dev-list">
+<sc-for list="{{ developments }}" as="d" hint-placeholder-count="3">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.DevelopmentItem" dev="{{ d }}" hint-size="100%,66px"></x-import>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ hideDevelopments }}" hint-placeholder-val="{{ false }}">
+<div style="color:var(--text-muted);font-size:14px;padding-top:4px">Not assigned as primary on any developments.</div>
+</sc-if>
+
+</div>
+</div>
+</div>
+
+<sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(0,48,50,.45);display:grid;place-items:center;z-index:100;padding:16px">
+<div role="dialog" aria-modal="true" onClick="{{ stop }}" style="background:#fff;border-radius:var(--radius-card);overflow:hidden;width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto;box-shadow:var(--shadow-modal);font-family:var(--font-sans)">
+<div style="background:var(--surface-chrome);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center">
+<div>
+<h4 style="font-size:21px;font-weight:700;margin:0">Edit user</h4>
+<p style="margin:4px 0 0;font-size:13.5px;color:var(--bch-seafoam)">Update this person's role, job title, and account status.</p>
+</div>
+<button type="button" onClick="{{ closeModal }}" aria-label="Close" style="background:transparent;border:none;color:#fff;cursor:pointer;display:flex;padding:4px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+<div style="padding:24px;display:flex;flex-direction:column;gap:18px">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<div><label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">First name</label><input type="text" value="{{ form.firstName }}" onChange="{{ setFirstName }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control)"></div>
+<div><label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Last name</label><input type="text" value="{{ form.lastName }}" onChange="{{ setLastName }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control)"></div>
+</div>
+<div><label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Email</label><input type="email" value="{{ form.email }}" onChange="{{ setEmail }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control)"></div>
+<div><label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Role</label>
+<select value="{{ form.role }}" onChange="{{ setRole }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:#fff">
+<option value="admin">Administrator</option><option value="staff">Staff user</option><option value="partner">Partner</option>
+</select>
+</div>
+<div><label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Job title</label>
+<select value="{{ form.title }}" onChange="{{ setTitle }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:#fff">
+<option>Tenant Engagement Worker</option><option>People, Plants and Homes</option><option>Health Services Manager</option><option>Community Partner</option>
+</select>
+</div>
+<div>
+<label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Account status</label>
+<div style="display:flex;align-items:center;gap:10px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Toggle" checked="{{ form.active }}" onChange="{{ setActive }}" hint-size="40px,20px"></x-import>
+<sc-if value="{{ form.active }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--success)"><span style="width:8px;height:8px;border-radius:50%;background:var(--bch-green-500)"></span>Active</span></sc-if>
+<sc-if value="{{ form.notActive }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;color:var(--text-muted)"><span style="width:8px;height:8px;border-radius:50%;background:#fff;border:2px solid var(--bch-gray-500)"></span>Deactivated</span></sc-if>
+</div>
+<p style="margin:6px 0 0;font-size:12.5px;color:var(--text-muted)">Deactivated users cannot sign in and will be logged out automatically.</p>
+</div>
+</div>
+<div style="padding:16px 24px;border-top:1px solid var(--border-default);display:flex;justify-content:flex-end;gap:10px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ closeModal }}" hint-size="90px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" onClick="{{ saveEdit }}" hint-size="140px,38px">Save changes</x-import>
+</div>
+</div>
+</div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:760},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;User&quot;,&quot;Administrator&quot;],&quot;default&quot;:&quot;User&quot;,&quot;tsType&quot;:&quot;\&quot;User\&quot; | \&quot;Administrator\&quot;&quot;,&quot;section&quot;:&quot;Record&quot;},&quot;accountStatus&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Active&quot;,&quot;Deactivated&quot;],&quot;default&quot;:&quot;Active&quot;,&quot;tsType&quot;:&quot;\&quot;Active\&quot; | \&quot;Deactivated\&quot;&quot;,&quot;section&quot;:&quot;Record&quot;},&quot;showDevelopments&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+
+const DEVELOPMENTS = [
+  { name: "Sunrise Court", address: "2210 Fraser St, Vancouver", units: 51, status: "Operational" },
+  { name: "Harbourview Manor", address: "310 Esplanade Ave, North Vancouver", units: 33, status: "Operational" },
+  { name: "Maple Ridge Commons", address: "22488 Lougheed Hwy, Maple Ridge", units: 40, status: "In development" },
+];
+
+const ROLE_KEY = { Administrator: "admin", User: "staff" };
+
+class Component extends DCLogic {
+  state = { modalOpen: false, form: null };
+
+  openEdit = () => {
+    const firstName = "Flora", lastName = "Wong";
+    const role = this.props.role ?? "User";
+    const status = this.props.accountStatus ?? "Active";
+    this.setState({
+      modalOpen: true,
+      form: {
+        firstName, lastName, email: "fwong@bchousing.org",
+        role: ROLE_KEY[role] ?? "staff",
+        title: "People, Plants & Homes",
+        active: status === "Active",
+      },
+    });
+  };
+  closeModal = () => this.setState({ modalOpen: false, form: null });
+  saveEdit = () => this.setState({ modalOpen: false });
+  setField = (key) => (e) => this.setState((s) => ({ form: { ...s.form, [key]: e.target.value } }));
+
+  renderVals() {
+    const firstName = "Flora";
+    const lastName = "Wong";
+    const fullName = firstName + " " + lastName;
+    const initials = (firstName[0] + lastName[0]).toUpperCase();
+    const role = this.props.role ?? "User";
+    const status = this.props.accountStatus ?? "Active";
+    const showDevelopments = this.props.showDevelopments ?? true;
+    const isActive = status === "Active";
+    const form = this.state.form ? { ...this.state.form, notActive: !this.state.form.active } : {
+      firstName, lastName, email: "fwong@bchousing.org", role: ROLE_KEY[role] ?? "staff",
+      title: "People, Plants & Homes", active: isActive, notActive: !isActive,
+    };
+
+    return {
+      firstName, fullName, initials,
+      avatarSize: 96,
+      role,
+      region: "LMDM",
+      jobTitle: "People, Plants & Homes",
+      email: "fwong@bchousing.org",
+      mailtoHref: "mailto:fwong@bchousing.org",
+      isActive, isInactive: !isActive,
+      showDevelopments,
+      modalOpen: this.state.modalOpen,
+      openEdit: this.openEdit,
+      closeModal: this.closeModal,
+      saveEdit: this.saveEdit,
+      stop: (e) => e.stopPropagation(),
+      form,
+      setFirstName: this.setField("firstName"),
+      setLastName: this.setField("lastName"),
+      setEmail: this.setField("email"),
+      setRole: this.setField("role"),
+      setTitle: this.setField("title"),
+      setActive: (v) => this.setState((s) => ({ form: { ...s.form, active: v } })),
+      hideDevelopments: !showDevelopments,
+      developments: DEVELOPMENTS,
+      devCount: DEVELOPMENTS.length,
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontFamily: "var(--font-sans)", color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--surface-chrome)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

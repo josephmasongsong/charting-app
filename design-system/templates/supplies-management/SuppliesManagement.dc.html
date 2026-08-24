@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Supplies Management" description="Admin list of supplies with cost/quantity/value rollups, search, sort, pagination, and view/edit/delete via modals." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}#sp-rows tbody tr:nth-child(even){background:var(--surface-muted)}#sp-rows tbody tr:hover{background:var(--action-selected)}</style>
+</helmet>
+<div data-screen-label="Supplies Management" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1240px;margin:0 auto;padding:24px 24px 48px;flex:1">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<div>
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">Supplies Management</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">Manage supplies catalog for your application</p>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" onClick="{{ openAdd }}" hint-size="150px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Plus" size="16" hint-size="16px,16px"></x-import>Add Supply</x-import>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);margin-top:24px;overflow:hidden">
+
+<div style="padding:16px 20px;display:flex;justify-content:flex-start;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--border-default)">
+<label style="position:relative;display:flex;align-items:center;width:280px">
+<span style="position:absolute;left:10px;display:flex;color:var(--bch-gray-500);pointer-events:none"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="16" hint-size="16px,16px"></x-import></span>
+<input type="text" value="{{ search }}" onChange="{{ setSearch }}" placeholder="Search by name..." style="width:100%;font-family:var(--font-sans);font-size:14px;padding:8px 12px 8px 32px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+</label>
+</div>
+
+<div style="overflow-x:auto">
+<table id="sp-rows" style="width:100%;border-collapse:collapse;font-size:14px">
+<thead><tr>
+<th style="text-align:left;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em"><button type="button" onClick="{{ toggleSortName }}" style="display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;font:inherit;font-weight:700;color:#fff;cursor:pointer;padding:0;text-transform:uppercase">Name<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" hint-size="14px,14px"></x-import></button></th>
+<th style="text-align:left;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em"><button type="button" onClick="{{ toggleSortCost }}" style="display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;font:inherit;font-weight:700;color:#fff;cursor:pointer;padding:0;text-transform:uppercase">Cost Per Unit<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" hint-size="14px,14px"></x-import></button></th>
+<th style="text-align:left;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em"><button type="button" onClick="{{ toggleSortQty }}" style="display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;font:inherit;font-weight:700;color:#fff;cursor:pointer;padding:0;text-transform:uppercase">Total Quantity<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" hint-size="14px,14px"></x-import></button></th>
+<th style="text-align:left;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Total Value</th>
+<th style="text-align:right;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Actions</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{ rows }}" as="s" hint-placeholder-count="10">
+<tr>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);font-weight:600"><a href="#" onClick="{{ s.openView }}">{{ s.name }}</a></td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200)">{{ s.costLabel }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200)">{{ s.qty }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200)">{{ s.valueLabel }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);text-align:right">
+<span style="display:inline-flex;gap:14px;justify-content:flex-end;align-items:center">
+<a href="#" aria-label="Edit" title="Edit" onClick="{{ s.openEdit }}" style="display:flex;color:var(--action-primary);cursor:pointer" style-hover="color:var(--action-primary-hover)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.PenLine" size="17" hint-size="17px,17px"></x-import></a>
+<a href="#" aria-label="Delete" title="Delete" onClick="{{ s.openDelete }}" style="display:flex;color:var(--danger);cursor:pointer" style-hover="color:#b30000"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Trash2" size="17" hint-size="17px,17px"></x-import></a>
+</span>
+</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+
+<sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="padding:48px 20px;text-align:center;color:var(--text-muted);font-size:14.5px">No supplies match "{{ search }}".</div>
+</sc-if>
+
+<sc-if value="{{ showPagination }}" hint-placeholder-val="{{ true }}">
+<div style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<div style="font-size:13.5px;color:var(--text-muted)">{{ footerLabel }}</div>
+<div style="display:flex;align-items:center;gap:6px">
+<button type="button" onClick="{{ goFirst }}" disabled="{{ atFirst }}" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body);cursor:pointer" style-hover="background:var(--surface-muted)">First</button>
+<button type="button" onClick="{{ goPrev }}" disabled="{{ atFirst }}" style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body);cursor:pointer" style-hover="background:var(--surface-muted)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ChevronDown" size="14" hint-size="14px,14px" style="transform:rotate(90deg)"></x-import>Previous</button>
+<sc-for list="{{ pageNums }}" as="p" hint-placeholder-count="2">
+<sc-if value="{{ p.active }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ p.go }}" style="font-family:var(--font-sans);font-size:13.5px;min-width:34px;padding:6px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-chrome);color:#fff;cursor:pointer;font-weight:600">{{ p.label }}</button>
+</sc-if>
+<sc-if value="{{ p.inactive }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ p.go }}" style="font-family:var(--font-sans);font-size:13.5px;min-width:34px;padding:6px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body);cursor:pointer;font-weight:600">{{ p.label }}</button>
+</sc-if>
+</sc-for>
+<button type="button" onClick="{{ goNext }}" disabled="{{ atLast }}" style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body);cursor:pointer" style-hover="background:var(--surface-muted)">Next<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ChevronDown" size="14" hint-size="14px,14px" style="transform:rotate(-90deg)"></x-import></button>
+<button type="button" onClick="{{ goLast }}" disabled="{{ atLast }}" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body);cursor:pointer" style-hover="background:var(--surface-muted)">Last</button>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ formOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(0,48,50,.45);display:grid;place-items:center;z-index:100;padding:16px">
+<div role="dialog" aria-modal="true" onClick="{{ stop }}" style="background:#fff;border-radius:var(--radius-card);overflow:hidden;width:min(480px,100%);box-shadow:var(--shadow-modal);font-family:var(--font-sans)">
+<div style="background:var(--surface-chrome);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center">
+<div>
+<h4 style="font-size:21px;font-weight:700;margin:0">{{ modalTitle }}</h4>
+<p style="margin:4px 0 0;font-size:13.5px;color:var(--bch-seafoam)">{{ modalSubtitle }}</p>
+</div>
+<button type="button" onClick="{{ closeModal }}" aria-label="Close" style="background:none;border:none;color:#fff;cursor:pointer;line-height:1;opacity:.9;display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+<div style="padding:24px;font-size:15px;display:flex;flex-direction:column;gap:18px">
+<div>
+<label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Name <span style="color:var(--danger)">*</span></label>
+<input type="text" value="{{ formName }}" onChange="{{ setFormName }}" autofocus="{{ true }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control)">
+</div>
+<div>
+<label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Cost Per Unit ($)</label>
+<input type="text" inputmode="decimal" value="{{ formCost }}" onChange="{{ setFormCost }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control)">
+</div>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:12px;padding:0 24px 24px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ closeModal }}" hint-size="90px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" onClick="{{ saveForm }}" disabled="{{ formInvalid }}" hint-size="150px,38px">{{ modalSubmitLabel }}</x-import>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ viewOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(0,48,50,.45);display:grid;place-items:center;z-index:100;padding:16px">
+<div role="dialog" aria-modal="true" onClick="{{ stop }}" style="background:#fff;border-radius:var(--radius-card);overflow:hidden;width:min(580px,100%);max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-modal);font-family:var(--font-sans)">
+<div style="background:var(--surface-chrome);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:flex-start;flex-shrink:0">
+<div>
+<h4 style="font-size:21px;font-weight:700;margin:0">{{ viewName }}</h4>
+<p style="margin:6px 0 0;font-size:13.5px;color:var(--bch-seafoam)">View detailed information about this supply and its distribution across sites.</p>
+</div>
+<button type="button" onClick="{{ closeModal }}" aria-label="Close" style="background:none;border:none;color:#fff;cursor:pointer;line-height:1;opacity:.9;display:flex;flex-shrink:0;margin-left:12px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+<div style="padding:20px 24px 0;overflow-y:auto;display:flex;flex-direction:column;gap:16px">
+
+<div style="border:1px solid var(--border-default);border-radius:var(--radius-card);padding:18px 20px">
+<div style="font-size:11.5px;font-weight:700;letter-spacing:.05em;color:var(--text-muted);text-transform:uppercase;margin-bottom:14px">Supply Information</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 20px">
+<div><div style="font-size:13px;color:var(--text-muted)">Name</div><div style="font-size:16px;font-weight:700;margin-top:3px">{{ viewName }}</div></div>
+<div><div style="font-size:13px;color:var(--text-muted)">Cost per Unit</div><div style="font-size:16px;font-weight:700;margin-top:3px">{{ viewCost }}</div></div>
+<div><div style="font-size:13px;color:var(--text-muted)">Total Units</div><div style="font-size:16px;font-weight:700;margin-top:3px">{{ viewQty }} units</div></div>
+<div><div style="font-size:13px;color:var(--text-muted)">Total Value</div><div style="font-size:16px;font-weight:700;margin-top:3px">{{ viewValue }}</div></div>
+</div>
+</div>
+
+
+<div style="border:1px solid var(--border-default);border-radius:var(--radius-card);overflow:hidden">
+<button type="button" onClick="{{ toggleSites }}" style="width:100%;background:none;border:none;cursor:pointer;font:inherit;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;text-align:left">
+<span style="font-size:11.5px;font-weight:700;letter-spacing:.05em;color:var(--text-muted);text-transform:uppercase">Units at Each Site ({{ viewSiteCount }} sites)</span>
+<sc-if value="{{ sitesExpanded }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ChevronDown" size="16" hint-size="16px,16px" style="transform:rotate(180deg)"></x-import></sc-if>
+<sc-if value="{{ sitesCollapsed }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ChevronDown" size="16" hint-size="16px,16px"></x-import></sc-if>
+</button>
+<sc-if value="{{ sitesExpanded }}" hint-placeholder-val="{{ true }}">
+<div style="max-height:220px;overflow-y:auto">
+<sc-for list="{{ viewSites }}" as="site" hint-placeholder-count="3">
+<div style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border-default)">
+<div style="font-size:15px;font-weight:600">{{ site.name }}</div>
+<div style="text-align:right">
+<div style="font-size:13.5px;font-weight:700;background:var(--surface-muted);padding:3px 10px;border-radius:var(--radius-control);display:inline-block">{{ site.unitsLabel }}</div>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">{{ site.valueLabel }}</div>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ viewSitesEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="padding:16px 20px;border-top:1px solid var(--border-default);font-size:14px;color:var(--text-muted)">Not currently assigned to any sites.</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+
+</div>
+<div style="display:flex;justify-content:flex-end;gap:12px;padding:20px 24px 24px;flex-shrink:0">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" onClick="{{ closeModal }}" hint-size="90px,38px">Close</x-import>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ deleteOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(0,48,50,.45);display:grid;place-items:center;z-index:100;padding:16px">
+<div role="dialog" aria-modal="true" onClick="{{ stop }}" style="background:#fff;border-radius:var(--radius-card);overflow:hidden;width:min(480px,100%);box-shadow:var(--shadow-modal);font-family:var(--font-sans)">
+<div style="background:var(--surface-chrome);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center">
+<h4 style="font-size:21px;font-weight:700;margin:0">Delete supply?</h4>
+<button type="button" onClick="{{ closeModal }}" aria-label="Close" style="background:none;border:none;color:#fff;cursor:pointer;line-height:1;opacity:.9;display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+<div style="padding:24px;font-size:15px;text-align:center">
+<p style="margin:0">This will permanently remove "{{ deleteName }}". This action can't be undone.</p>
+</div>
+<div style="display:flex;justify-content:center;gap:12px;padding:0 24px 24px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ closeModal }}" hint-size="90px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="danger" onClick="{{ confirmDelete }}" hint-size="90px,38px">Delete</x-import>
+</div>
+</div>
+</div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1000}}">
+const SEED = [
+  ["s1", "Emergency Kit", 12.00, 65, "6/3/2025", "6/3/2026"],
+  ["s2", "Bandages", 0.05, 1200, "10/1/2025", "10/1/2025"],
+  ["s3", "Air Purifier", 60.00, 0, "9/23/2025", "9/23/2025"],
+  ["s4", "Air Conditioner", 400.00, 0, "9/23/2025", "9/23/2025"],
+  ["s5", "Grab And Go Kit", 20.00, 0, "9/23/2025", "9/23/2025"],
+  ["s6", "Desk Fan", 10.00, 0, "9/23/2025", "9/23/2025"],
+  ["s7", "Cooling Towel", 0.50, 0, "9/23/2025", "9/23/2025"],
+  ["s8", "Water Bottle", 0.75, 0, "9/23/2025", "9/23/2025"],
+  ["s9", "Fire Blanket", 1.00, 0, "9/23/2025", "9/23/2025"],
+  ["s10", "Tower Fan", 20.00, 21, "9/23/2025", "10/14/2025"],
+  ["s11", "First Aid Kit", 15.00, 40, "9/24/2025", "9/24/2025"],
+  ["s12", "Flashlight", 8.00, 30, "9/25/2025", "9/25/2025"],
+  ["s13", "Sunscreen", 6.00, 50, "9/26/2025", "9/26/2025"],
+];
+
+const PAGE_SIZE = 10;
+
+const today = () => {
+  const d = new Date();
+  return (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear();
+};
+
+const money = (n) => "$" + n.toFixed(2);
+const SITES = ["Bauer Villa", "Killarney Gardens", "Maclean Park"];
+const splitUnits = (id, qty) => {
+  if (!qty) return [];
+  let seed = 0;
+  for (let i = 0; i < id.length; i++) seed += id.charCodeAt(i);
+  const weights = SITES.map((_, i) => 1 + ((seed * (i + 3)) % 5));
+  const sum = weights.reduce((a, b) => a + b, 0);
+  let remaining = qty;
+  const out = SITES.map((name, i) => {
+    const units = i === SITES.length - 1 ? remaining : Math.round((weights[i] / sum) * qty);
+    remaining -= units;
+    return { name, units };
+  }).filter((s) => s.units > 0);
+  return out;
+};
+
+class Component extends DCLogic {
+  state = { supplies: null, search: "", sortKey: "name", sortAsc: true, page: 1, modal: null, formName: "", formCost: "", editingId: null, deleteId: null, viewId: null, sitesExpanded: true };
+
+  getSupplies() { return this.state.supplies || SEED.map((s) => ({ id: s[0], name: s[1], cost: s[2], qty: s[3], created: s[4], updated: s[5] })); }
+
+  openAdd = () => this.setState({ modal: "add", formName: "", formCost: "", editingId: null });
+  openEdit = (s) => this.setState({ modal: "edit", formName: s.name, formCost: s.cost.toFixed(2), editingId: s.id });
+  openView = (s) => this.setState({ modal: "view", viewId: s.id, sitesExpanded: true });
+  toggleSites = () => this.setState((s) => ({ sitesExpanded: !s.sitesExpanded }));
+  openDelete = (s) => this.setState({ modal: "delete", deleteId: s.id, formName: s.name });
+  closeModal = () => this.setState({ modal: null, formName: "", formCost: "", editingId: null, deleteId: null, viewId: null });
+  setFormName = (e) => this.setState({ formName: e.target.value });
+  setFormCost = (e) => this.setState({ formCost: e.target.value });
+  stop = (e) => e.stopPropagation();
+
+  saveForm = () => {
+    const name = this.state.formName.trim();
+    if (!name) return;
+    const cost = parseFloat(this.state.formCost) || 0;
+    const supplies = this.getSupplies();
+    if (this.state.editingId) {
+      this.setState({
+        supplies: supplies.map((s) => (s.id === this.state.editingId ? { ...s, name, cost, updated: today() } : s)),
+        modal: null, formName: "", formCost: "", editingId: null,
+      });
+    } else {
+      const id = "s" + Date.now();
+      this.setState({
+        supplies: [{ id, name, cost, qty: 0, created: today(), updated: today() }, ...supplies],
+        modal: null, formName: "", formCost: "",
+      });
+    }
+  };
+
+  confirmDelete = () => {
+    const supplies = this.getSupplies().filter((s) => s.id !== this.state.deleteId);
+    this.setState({ supplies, modal: null, deleteId: null, formName: "" });
+  };
+
+  toggleSortName = () => this.setState((s) => (s.sortKey === "name" ? { sortAsc: !s.sortAsc } : { sortKey: "name", sortAsc: true }));
+  toggleSortCost = () => this.setState((s) => (s.sortKey === "cost" ? { sortAsc: !s.sortAsc } : { sortKey: "cost", sortAsc: true }));
+  toggleSortQty = () => this.setState((s) => (s.sortKey === "qty" ? { sortAsc: !s.sortAsc } : { sortKey: "qty", sortAsc: true }));
+  setSearch = (e) => this.setState({ search: e.target.value, page: 1 });
+  setPage = (p) => this.setState({ page: p });
+
+  renderVals() {
+    const q = this.state.search.trim().toLowerCase();
+    let supplies = this.getSupplies();
+    if (q) supplies = supplies.filter((s) => s.name.toLowerCase().includes(q));
+    const key = this.state.sortKey;
+    supplies = [...supplies].sort((a, b) => {
+      let cmp;
+      if (key === "name") cmp = a.name.localeCompare(b.name);
+      else cmp = a[key] - b[key];
+      return this.state.sortAsc ? cmp : -cmp;
+    });
+
+    const total = supplies.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const page = Math.min(this.state.page, totalPages);
+    const start = (page - 1) * PAGE_SIZE;
+    const pageSupplies = supplies.slice(start, start + PAGE_SIZE);
+
+    const rows = pageSupplies.map((s) => ({
+      ...s,
+      costLabel: money(s.cost),
+      valueLabel: money(s.cost * s.qty),
+      openView: () => this.openView(s),
+      openEdit: () => this.openEdit(s),
+      openDelete: () => this.openDelete(s),
+    }));
+
+    const pageNums = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pageNums.push({ label: String(i), go: () => this.setPage(i), active: i === page, inactive: i !== page });
+    }
+
+    const viewSupply = this.state.viewId ? this.getSupplies().find((s) => s.id === this.state.viewId) : null;
+    const viewSiteSplit = viewSupply ? splitUnits(viewSupply.id, viewSupply.qty) : [];
+    const viewSites = viewSiteSplit.map((site) => ({ name: site.name, unitsLabel: site.units + " units", valueLabel: money(site.units * (viewSupply ? viewSupply.cost : 0)) + " value" }));
+
+    return {
+      count: this.getSupplies().length,
+      rows,
+      isEmpty: rows.length === 0,
+      search: this.state.search,
+      setSearch: this.setSearch,
+      toggleSortName: this.toggleSortName,
+      toggleSortCost: this.toggleSortCost,
+      toggleSortQty: this.toggleSortQty,
+      showPagination: total > 0,
+      footerLabel: total === 0 ? "No results" : ("Showing " + (start + 1) + " to " + Math.min(start + PAGE_SIZE, total) + " of " + total + " results"),
+      pageNums,
+      atFirst: page <= 1,
+      atLast: page >= totalPages,
+      goFirst: () => this.setPage(1),
+      goPrev: () => this.setPage(Math.max(1, page - 1)),
+      goNext: () => this.setPage(Math.min(totalPages, page + 1)),
+      goLast: () => this.setPage(totalPages),
+      openAdd: this.openAdd,
+      closeModal: this.closeModal,
+      stop: this.stop,
+      formOpen: this.state.modal === "add" || this.state.modal === "edit",
+      viewOpen: this.state.modal === "view",
+      deleteOpen: this.state.modal === "delete",
+      modalTitle: this.state.modal === "edit" ? "Edit Supply" : "Add Supply",
+      modalSubtitle: this.state.modal === "edit" ? "Update the supply name and cost. Quantities are managed separately through site assignments." : "Create a new supply for the catalog.",
+      modalSubmitLabel: this.state.modal === "edit" ? "Update Supply" : "Create Supply",
+      formName: this.state.formName,
+      setFormName: this.setFormName,
+      formCost: this.state.formCost,
+      setFormCost: this.setFormCost,
+      formInvalid: !this.state.formName.trim(),
+      saveForm: this.saveForm,
+      confirmDelete: this.confirmDelete,
+      deleteName: this.state.deleteId ? (this.getSupplies().find((s) => s.id === this.state.deleteId) || {}).name : "",
+      viewName: viewSupply ? viewSupply.name : "",
+      viewCost: viewSupply ? money(viewSupply.cost) : "",
+      viewQty: viewSupply ? String(viewSupply.qty) : "",
+      viewValue: viewSupply ? money(viewSupply.cost * viewSupply.qty) : "",
+      viewCreated: viewSupply ? viewSupply.created : "",
+      viewUpdated: viewSupply ? viewSupply.updated : "",
+      viewSites,
+      viewSiteCount: viewSiteSplit.length,
+      viewSitesEmpty: viewSiteSplit.length === 0,
+      sitesExpanded: this.state.sitesExpanded,
+      sitesCollapsed: !this.state.sitesExpanded,
+      toggleSites: this.toggleSites,
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontFamily: "var(--font-sans)", color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--surface-chrome)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+</script>
+</body>
+</html>

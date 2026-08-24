@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Activity Types Management" description="Admin list of activity types with program-goal assignment, search, sort, pagination, and add/edit/delete via modals." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}#at-rows tbody tr:nth-child(even){background:var(--surface-muted)}#at-rows tbody tr:hover{background:var(--action-selected)}</style>
+</helmet>
+<div data-screen-label="Activity Types Management" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="teal" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1240px;margin:0 auto;padding:24px 24px 48px;flex:1">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<div>
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">Activity Types Management</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted)">Manage activity types and their program goal assignments · {{ count }} types</p>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" onClick="{{ openAdd }}" hint-size="160px,38px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Plus" size="16" hint-size="16px,16px"></x-import>Add Activity Type</x-import>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);margin-top:24px;overflow:hidden">
+
+<div style="padding:14px 20px;display:flex;justify-content:flex-start;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--border-default)">
+<label style="position:relative;display:flex;align-items:center;width:320px">
+<span style="position:absolute;left:10px;display:flex;color:var(--bch-gray-500);pointer-events:none"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="16" hint-size="16px,16px"></x-import></span>
+<input type="text" value="{{ search }}" onChange="{{ setSearch }}" placeholder="Search by name or program goal..." style="width:100%;font-family:var(--font-sans);font-size:14px;padding:8px 12px 8px 32px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body)">
+</label>
+</div>
+
+<table id="at-rows" style="width:100%;border-collapse:collapse;font-size:14px">
+<thead><tr>
+<th style="text-align:left;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em"><button type="button" onClick="{{ toggleSort }}" style="display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;font:inherit;font-weight:700;color:#fff;cursor:pointer;padding:0;text-transform:uppercase">Name<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ArrowUpDown" size="14" hint-size="14px,14px"></x-import></button></th>
+<th style="text-align:left;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Program Goal</th>
+<th style="text-align:right;padding:10px 14px;font-weight:700;background:var(--surface-chrome);color:#fff;border:1px solid #0A7276;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Actions</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{ rows }}" as="t" hint-placeholder-count="10">
+<tr>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);font-weight:600">{{ t.name }}</td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200)"><span style="display:inline-block;padding:3px 10px;border-radius:999px;background:var(--surface-muted);color:var(--text-body);font-size:12.5px;font-weight:600">{{ t.goal }}</span></td>
+<td style="padding:9px 14px;border:1px solid var(--bch-gray-200);text-align:right">
+<span style="display:inline-flex;gap:14px;justify-content:flex-end;align-items:center">
+<a href="#" aria-label="Edit" title="Edit" onClick="{{ t.openEdit }}" style="display:flex;color:var(--action-primary);cursor:pointer" style-hover="color:var(--action-primary-hover)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.PenLine" size="17" hint-size="17px,17px"></x-import></a>
+<a href="#" aria-label="Delete" title="Delete" onClick="{{ t.openDelete }}" style="display:flex;color:var(--danger);cursor:pointer" style-hover="color:#b30000"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Trash2" size="17" hint-size="17px,17px"></x-import></a>
+</span>
+</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+
+<sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="padding:48px 20px;text-align:center;color:var(--text-muted);font-size:14.5px">No activity types match "{{ search }}".</div>
+</sc-if>
+
+<sc-if value="{{ showPagination }}" hint-placeholder-val="{{ true }}">
+<div style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<div style="font-size:13.5px;color:var(--text-muted)">{{ footerLabel }}</div>
+<div style="display:flex;align-items:center;gap:6px">
+<button type="button" onClick="{{ goFirst }}" disabled="{{ atFirst }}" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body);cursor:pointer" style-hover="background:var(--surface-muted)">First</button>
+<button type="button" onClick="{{ goPrev }}" disabled="{{ atFirst }}" style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body);cursor:pointer" style-hover="background:var(--surface-muted)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ChevronDown" size="14" hint-size="14px,14px" style="transform:rotate(90deg)"></x-import>Previous</button>
+<sc-for list="{{ pageNums }}" as="p" hint-placeholder-count="3">
+<sc-if value="{{ p.active }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ p.go }}" style="font-family:var(--font-sans);font-size:13.5px;min-width:34px;padding:6px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-chrome);color:#fff;cursor:pointer;font-weight:600">{{ p.label }}</button>
+</sc-if>
+<sc-if value="{{ p.inactive }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ p.go }}" style="font-family:var(--font-sans);font-size:13.5px;min-width:34px;padding:6px 10px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body);cursor:pointer;font-weight:600">{{ p.label }}</button>
+</sc-if>
+</sc-for>
+<button type="button" onClick="{{ goNext }}" disabled="{{ atLast }}" style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body);cursor:pointer" style-hover="background:var(--surface-muted)">Next<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.ChevronDown" size="14" hint-size="14px,14px" style="transform:rotate(-90deg)"></x-import></button>
+<button type="button" onClick="{{ goLast }}" disabled="{{ atLast }}" style="font-family:var(--font-sans);font-size:13.5px;padding:6px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control);background:var(--surface-card);color:var(--text-body);cursor:pointer" style-hover="background:var(--surface-muted)">Last</button>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ formOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(0,48,50,.45);display:grid;place-items:center;z-index:100;padding:16px">
+<div role="dialog" aria-modal="true" onClick="{{ stop }}" style="background:#fff;border-radius:var(--radius-card);overflow:hidden;width:min(480px,100%);box-shadow:var(--shadow-modal);font-family:var(--font-sans)">
+<div style="background:var(--surface-chrome);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center">
+<div>
+<h4 style="font-size:21px;font-weight:700;margin:0">{{ modalTitle }}</h4>
+<p style="margin:4px 0 0;font-size:13.5px;color:var(--bch-seafoam)">{{ modalSubtitle }}</p>
+</div>
+<button type="button" onClick="{{ closeModal }}" aria-label="Close" style="background:none;border:none;color:#fff;cursor:pointer;line-height:1;opacity:.9;display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+<div style="padding:24px;font-size:15px;display:flex;flex-direction:column;gap:18px">
+<div>
+<label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Name</label>
+<input type="text" value="{{ formName }}" onChange="{{ setFormName }}" autofocus="{{ true }}" style="width:100%;font-family:var(--font-sans);font-size:14px;padding:9px 12px;border:1px solid var(--border-input);border-radius:var(--radius-control)">
+</div>
+<div>
+<label style="display:block;font-size:13.5px;font-weight:700;margin-bottom:6px">Program Goal</label>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ formGoal }}" on-change="{{ setFormGoal }}" hint-size="100%,36px">
+<sc-for list="{{ goalOptions }}" as="g" hint-placeholder-count="8">
+<option>{{ g }}</option>
+</sc-for>
+</x-import>
+</div>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:12px;padding:0 24px 24px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ closeModal }}" hint-size="90px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" onClick="{{ saveForm }}" disabled="{{ formInvalid }}" hint-size="170px,38px">{{ modalSubmitLabel }}</x-import>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ deleteOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(0,48,50,.45);display:grid;place-items:center;z-index:100;padding:16px">
+<div role="dialog" aria-modal="true" onClick="{{ stop }}" style="background:#fff;border-radius:var(--radius-card);overflow:hidden;width:min(480px,100%);box-shadow:var(--shadow-modal);font-family:var(--font-sans)">
+<div style="background:var(--surface-chrome);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center">
+<h4 style="font-size:21px;font-weight:700;margin:0">Delete activity type?</h4>
+<button type="button" onClick="{{ closeModal }}" aria-label="Close" style="background:none;border:none;color:#fff;cursor:pointer;line-height:1;opacity:.9;display:flex"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+<div style="padding:24px;font-size:15px;text-align:center">
+<p style="margin:0">This will permanently remove "{{ deleteName }}". This action can't be undone.</p>
+</div>
+<div style="display:flex;justify-content:center;gap:12px;padding:0 24px 24px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ closeModal }}" hint-size="90px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="danger" onClick="{{ confirmDelete }}" hint-size="90px,38px">Delete</x-import>
+</div>
+</div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1000}}">
+const GOALS = ["Food Security", "Extreme Heat Preparation", "Capacity & Resilience", "Education & Learning", "Tenant Engagement", "Social Connectedness", "Health & Wellness", "Community Building"];
+
+const SEED = [
+  ["t1", "Arts & Crafts", "Social Connectedness", "9/12/2025", "6/2/2026"],
+  ["t2", "Office Hours", "Tenant Engagement", "9/12/2025", "6/2/2026"],
+  ["t3", "Board Games", "Social Connectedness", "10/1/2025", "10/1/2025"],
+  ["t4", "Karaoke", "Social Connectedness", "10/1/2025", "10/1/2025"],
+  ["t5", "Bingo", "Social Connectedness", "9/20/2025", "6/2/2026"],
+  ["t6", "Party", "Community Building", "9/30/2025", "9/30/2025"],
+  ["t7", "Garden Visit", "Community Building", "9/30/2025", "9/30/2025"],
+  ["t8", "Fire Safety Presentation", "Capacity & Resilience", "7/24/2025", "7/24/2025"],
+  ["t9", "Community Pantry", "Capacity & Resilience", "7/15/2025", "9/28/2025"],
+  ["t10", "Cooling Kit Distribution", "Extreme Heat Preparation", "7/15/2025", "7/15/2025"],
+  ["t11", "Movie Night", "Social Connectedness", "8/2/2025", "8/2/2025"],
+  ["t12", "Cooking Class", "Education & Learning", "8/5/2025", "8/5/2025"],
+  ["t13", "Financial Literacy Workshop", "Education & Learning", "8/10/2025", "8/10/2025"],
+  ["t14", "Health Screening", "Health & Wellness", "8/12/2025", "9/1/2025"],
+  ["t15", "Yoga Session", "Health & Wellness", "8/15/2025", "8/15/2025"],
+  ["t16", "Walking Group", "Health & Wellness", "8/18/2025", "8/18/2025"],
+  ["t17", "Tenant Advisory Meeting", "Tenant Engagement", "8/20/2025", "8/20/2025"],
+  ["t18", "Newsletter Distribution", "Tenant Engagement", "8/22/2025", "8/22/2025"],
+  ["t19", "Food Bank Pickup", "Food Security", "8/25/2025", "8/25/2025"],
+  ["t20", "Community Garden Harvest", "Food Security", "8/28/2025", "10/2/2025"],
+  ["t21", "Emergency Kit Assembly", "Extreme Heat Preparation", "9/1/2025", "9/1/2025"],
+  ["t22", "Cooling Center Info Session", "Extreme Heat Preparation", "9/3/2025", "9/3/2025"],
+  ["t23", "Holiday Potluck", "Community Building", "9/5/2025", "9/5/2025"],
+  ["t24", "Skills Swap", "Capacity & Resilience", "9/8/2025", "9/8/2025"],
+  ["t25", "Resume Workshop", "Capacity & Resilience", "9/10/2025", "9/12/2025"],
+];
+
+const PAGE_SIZE = 10;
+
+const today = () => {
+  const d = new Date();
+  return (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear();
+};
+
+class Component extends DCLogic {
+  state = { types: null, search: "", sortAsc: true, page: 1, modal: null, formName: "", formGoal: GOALS[0], editingId: null, deleteId: null };
+
+  getTypes() { return this.state.types || SEED.map((t) => ({ id: t[0], name: t[1], goal: t[2], created: t[3], updated: t[4] })); }
+
+  openAdd = () => this.setState({ modal: "add", formName: "", formGoal: GOALS[0], editingId: null });
+  openEdit = (t) => this.setState({ modal: "edit", formName: t.name, formGoal: t.goal, editingId: t.id });
+  openDelete = (t) => this.setState({ modal: "delete", deleteId: t.id, formName: t.name });
+  closeModal = () => this.setState({ modal: null, formName: "", editingId: null, deleteId: null });
+  setFormName = (e) => this.setState({ formName: e.target.value });
+  setFormGoal = (e) => this.setState({ formGoal: e.target.value });
+  stop = (e) => e.stopPropagation();
+
+  saveForm = () => {
+    const name = this.state.formName.trim();
+    if (!name) return;
+    const types = this.getTypes();
+    if (this.state.editingId) {
+      this.setState({
+        types: types.map((t) => (t.id === this.state.editingId ? { ...t, name, goal: this.state.formGoal, updated: today() } : t)),
+        modal: null, formName: "", editingId: null,
+      });
+    } else {
+      const id = "t" + Date.now();
+      this.setState({
+        types: [{ id, name, goal: this.state.formGoal, created: today(), updated: today() }, ...types],
+        modal: null, formName: "",
+      });
+    }
+  };
+
+  confirmDelete = () => {
+    const types = this.getTypes().filter((t) => t.id !== this.state.deleteId);
+    this.setState({ types, modal: null, deleteId: null, formName: "" });
+  };
+
+  toggleSort = () => this.setState((s) => ({ sortAsc: !s.sortAsc }));
+  setSearch = (e) => this.setState({ search: e.target.value, page: 1 });
+  setPage = (p) => this.setState({ page: p });
+
+  renderVals() {
+    const q = this.state.search.trim().toLowerCase();
+    let types = this.getTypes();
+    if (q) types = types.filter((t) => t.name.toLowerCase().includes(q) || t.goal.toLowerCase().includes(q));
+    types = [...types].sort((a, b) => this.state.sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+
+    const total = types.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const page = Math.min(this.state.page, totalPages);
+    const start = (page - 1) * PAGE_SIZE;
+    const pageTypes = types.slice(start, start + PAGE_SIZE);
+
+    const rows = pageTypes.map((t) => ({ ...t, openEdit: () => this.openEdit(t), openDelete: () => this.openDelete(t) }));
+
+    const pageNums = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pageNums.push({ label: String(i), go: () => this.setPage(i), active: i === page, inactive: i !== page });
+    }
+
+    return {
+      count: this.getTypes().length,
+      rows,
+      isEmpty: rows.length === 0,
+      search: this.state.search,
+      setSearch: this.setSearch,
+      toggleSort: this.toggleSort,
+      showPagination: total > 0,
+      footerLabel: total === 0 ? "No results" : ("Showing " + (start + 1) + " to " + Math.min(start + PAGE_SIZE, total) + " of " + total + " results"),
+      pageNums,
+      atFirst: page <= 1,
+      atLast: page >= totalPages,
+      goFirst: () => this.setPage(1),
+      goPrev: () => this.setPage(Math.max(1, page - 1)),
+      goNext: () => this.setPage(Math.min(totalPages, page + 1)),
+      goLast: () => this.setPage(totalPages),
+      openAdd: this.openAdd,
+      closeModal: this.closeModal,
+      stop: this.stop,
+      formOpen: this.state.modal === "add" || this.state.modal === "edit",
+      deleteOpen: this.state.modal === "delete",
+      modalTitle: this.state.modal === "edit" ? "Edit Activity Type" : "Add Activity Type",
+      modalSubtitle: this.state.modal === "edit" ? "Update the activity type information and program goal assignment." : "Create a new activity type and assign it to a program goal.",
+      modalSubmitLabel: this.state.modal === "edit" ? "Update Activity Type" : "Create Activity Type",
+      formName: this.state.formName,
+      setFormName: this.setFormName,
+      formGoal: this.state.formGoal,
+      setFormGoal: this.setFormGoal,
+      goalOptions: GOALS,
+      formInvalid: !this.state.formName.trim(),
+      saveForm: this.saveForm,
+      confirmDelete: this.confirmDelete,
+      deleteName: this.state.deleteId ? (this.getTypes().find((t) => t.id === this.state.deleteId) || {}).name : "",
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontFamily: "var(--font-sans)", color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--surface-chrome)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

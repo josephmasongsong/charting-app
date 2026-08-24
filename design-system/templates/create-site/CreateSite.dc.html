@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Create Site" description="Site intake form: address-first location with map confirm, property tiles, starter-supply rows with live inventory math, and a sticky summary rail." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;padding:0;background:var(--surface-page)}*{box-sizing:border-box}a{color:var(--action-primary);text-decoration:none}a:hover{color:var(--action-primary-hover);text-decoration:underline}</style>
+</helmet>
+<div data-screen-label="Create Site" style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);font-family:var(--font-sans);color:var(--text-body)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.AppHeader" variant="blue" right="{{ headerRight }}" hint-size="100%,56px"></x-import>
+<div style="width:100%;max-width:1180px;margin:0 auto;padding:28px 24px 40px;flex:1">
+<div style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px;margin-bottom:10px"><a href="../dashboard/Dashboard.dc.html">Dashboard</a><span>/</span><a href="../site-management/SiteManagement.dc.html">Sites</a><span>/</span><span>Create site</span></div>
+<div>
+<h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.2px">Create new site</h1>
+<p style="margin:6px 0 0;font-size:15px;color:var(--text-muted);max-width:620px">Register a building so events, supplies, and tenant engagement can be tracked against it. You can save a draft and finish later.</p>
+</div>
+
+<div style="display:flex;gap:24px;align-items:flex-start;margin-top:22px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:16px">
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Home" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Site identity</div>
+<div style="font-size:13px;color:var(--text-muted)">Name, size, and who looks after it</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-top:20px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">Site name <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" placeholder="e.g. Grandview Terrace" value="{{ name }}" on-change="{{ onName }}" hint-size="100%,36px"></x-import>
+<sc-if value="{{ dupWarning }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:7px;align-items:flex-start;margin-top:7px;font-size:13px;color:var(--warning-text)">
+<span style="display:flex;margin-top:1px"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.TriangleAlert" size="14" hint-size="14px,14px"></x-import></span>
+<span>{{ dupText }}</span>
+</div>
+</sc-if>
+</div>
+<div>
+<div style="font-size:15px;margin-bottom:6px">Number of tenants <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="number" min="1" placeholder="e.g. 84" value="{{ tenants }}" on-change="{{ onTenants }}" hint-size="100%,36px"></x-import>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:6px">Occupied units at move-in</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-top:16px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">Tenant engagement worker <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ tew }}" on-change="{{ onTew }}" hint-size="100%,36px">
+<option value="">Select a worker…</option>
+<option>Joseph Masongsong</option>
+<option>Amrit Dhaliwal</option>
+<option>Renée Beauchamp</option>
+<option>Tomas Nowak</option>
+<option>Wei Chen</option>
+</x-import>
+<sc-if value="{{ hasTew }}" hint-placeholder-val="{{ false }}">
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:6px">{{ tewLoad }}</div>
+</sc-if>
+</div>
+<div>
+<div style="font-size:15px;margin-bottom:6px">Region</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ region }}" on-change="{{ onRegion }}" hint-size="100%,36px">
+<option>Lower Mainland</option>
+<option>Vancouver Island</option>
+<option>Interior</option>
+<option>Northern</option>
+</x-import>
+</div>
+</div>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Search" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Address and location</div>
+<div style="font-size:13px;color:var(--text-muted)">Enter the address — coordinates are looked up for you</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:2fr 1.1fr .9fr;gap:16px;margin-top:20px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">Street address <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" placeholder="1651 Commercial Drive" value="{{ street }}" on-change="{{ onStreet }}" hint-size="100%,36px"></x-import>
+</div>
+<div>
+<div style="font-size:15px;margin-bottom:6px">City <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ city }}" on-change="{{ onCity }}" hint-size="100%,36px">
+<option value="">Select…</option>
+<option>Vancouver</option>
+<option>Burnaby</option>
+<option>Surrey</option>
+<option>Victoria</option>
+<option>Kelowna</option>
+<option>Prince George</option>
+</x-import>
+</div>
+<div>
+<div style="font-size:15px;margin-bottom:6px">Postal code</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" placeholder="V5L 3Y3" value="{{ postal }}" on-change="{{ onPostal }}" hint-size="100%,36px"></x-import>
+</div>
+</div>
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" disabled="{{ locateDisabled }}" onClick="{{ onLocate }}" hint-size="180px,38px">Find on map</x-import>
+<span style="font-size:13px;color:var(--text-muted)">{{ locateHint }}</span>
+</div>
+<sc-if value="{{ showMap }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:16px;border:1px solid var(--border-default);border-radius:var(--radius-control);overflow:hidden">
+<div style="height:170px;position:relative;background:repeating-linear-gradient(135deg,#eef1f3 0 12px,#e6eaee 12px 24px);display:grid;place-items:center">
+<sc-if value="{{ located }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+<span style="width:18px;height:18px;border-radius:50%;background:var(--action-primary);border:3px solid #fff;box-shadow:var(--shadow-card)"></span>
+<span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--text-muted);background:#fff;border:1px solid var(--border-default);border-radius:2px;padding:2px 8px">{{ coordLabel }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ notLocated }}" hint-placeholder-val="{{ true }}">
+<span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--text-muted)">map preview — pin appears once the address is located</span>
+</sc-if>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 14px;border-top:1px solid var(--border-default);background:var(--surface-muted)">
+<sc-if value="{{ located }}" hint-placeholder-val="{{ false }}">
+<span style="display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--success)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Check" size="15" hint-size="15px,15px"></x-import>Pin placed from address</span>
+</sc-if>
+<sc-if value="{{ notLocated }}" hint-placeholder-val="{{ true }}">
+<span style="font-size:13.5px;color:var(--text-muted)">No coordinates yet</span>
+</sc-if>
+<button type="button" onClick="{{ toggleManual }}" style="font-family:var(--font-sans);font-size:13.5px;background:none;border:none;color:var(--action-primary);cursor:pointer;padding:0">{{ manualLabel }}</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ manual }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;border-top:1px solid var(--bch-gray-200);padding-top:16px">
+<div>
+<div style="font-size:15px;margin-bottom:6px">Latitude</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" placeholder="49.2827" value="{{ lat }}" on-change="{{ onLat }}" hint-size="100%,36px"></x-import>
+</div>
+<div>
+<div style="font-size:15px;margin-bottom:6px">Longitude</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" placeholder="-123.1207" value="{{ lng }}" on-change="{{ onLng }}" hint-size="100%,36px"></x-import>
+</div>
+</div>
+</sc-if>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Users" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Site properties</div>
+<div style="font-size:13px;color:var(--text-muted)">These drive which programs and reports the site appears in</div>
+</div>
+</div>
+<sc-if value="{{ tilesMode }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px">
+<sc-for list="{{ tiles }}" as="t" hint-placeholder-count="3">
+<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ t.toggle }}" style="text-align:left;font-family:var(--font-sans);cursor:pointer;border:1px solid var(--action-primary);background:var(--action-selected);border-radius:var(--radius-control);padding:13px 14px;display:flex;flex-direction:column;gap:5px">
+<span style="display:flex;align-items:center;gap:8px"><span style="width:17px;height:17px;border-radius:2px;background:var(--action-primary);color:#fff;display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Check" size="12" hint-size="12px,12px"></x-import></span><span style="font-size:15px;font-weight:600">{{ t.label }}</span></span>
+<span style="font-size:13px;color:var(--text-muted);line-height:1.35">{{ t.desc }}</span>
+</button>
+</sc-if>
+<sc-if value="{{ t.off }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ t.toggle }}" style="text-align:left;font-family:var(--font-sans);cursor:pointer;border:1px solid var(--border-default);background:#fff;border-radius:var(--radius-control);padding:13px 14px;display:flex;flex-direction:column;gap:5px" style-hover="border-color:var(--action-primary)">
+<span style="display:flex;align-items:center;gap:8px"><span style="width:17px;height:17px;border-radius:2px;border:1px solid var(--border-input);background:#fff;flex-shrink:0"></span><span style="font-size:15px;font-weight:600">{{ t.label }}</span></span>
+<span style="font-size:13px;color:var(--text-muted);line-height:1.35">{{ t.desc }}</span>
+</button>
+</sc-if>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ listMode }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:18px">
+<sc-for list="{{ tiles }}" as="t" hint-placeholder-count="3">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Checkbox" label="{{ t.label }}" checked="{{ t.on }}" on-change="{{ t.toggle }}" hint-size="280px,24px"></x-import>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ partnerOn }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:16px;border-top:1px solid var(--bch-gray-200);padding-top:16px;max-width:460px">
+<div style="font-size:15px;margin-bottom:6px">Community partner <span style="color:var(--danger)">*</span></div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ partner }}" on-change="{{ onPartner }}" hint-size="100%,36px">
+<option value="">Select partner organization…</option>
+<option>Kiwassa Neighbourhood House</option>
+<option>Mount Pleasant Neighbourhood House</option>
+<option>Pacific Community Resources Society</option>
+<option>Seniors First BC</option>
+<option>Vancouver Coastal Health</option>
+</x-import>
+</div>
+</sc-if>
+</div>
+
+<div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px 24px">
+<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="width:30px;height:30px;border-radius:var(--radius-control);background:var(--action-selected);color:var(--action-primary);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Package" size="17" hint-size="17px,17px"></x-import></span>
+<div>
+<div style="font-size:17px;font-weight:700">Starting supplies</div>
+<div style="font-size:13px;color:var(--text-muted)">Optional — moves stock from main inventory to this site</div>
+</div>
+</div>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ addRow }}" hint-size="130px,38px">Add supply</x-import>
+</div>
+<sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:18px;border:1px solid var(--border-default);border-radius:var(--radius-control);overflow:hidden">
+<div style="display:grid;grid-template-columns:1fr 150px 150px 44px;gap:12px;padding:9px 14px;background:var(--surface-muted);border-bottom:1px solid var(--border-default);font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">
+<span>Supply</span><span>Quantity</span><span>Main inventory</span><span></span>
+</div>
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="2">
+<div style="display:grid;grid-template-columns:1fr 150px 150px 44px;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--bch-gray-200)">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Select" value="{{ r.supply }}" on-change="{{ r.onSupply }}" hint-size="100%,36px">
+<option value="">Select a supply…</option>
+<option>Coffee (2 kg bag)</option>
+<option>Craft supply kit</option>
+<option>Folding table</option>
+<option>Board game set</option>
+<option>First aid kit</option>
+<option>Paper cups (500)</option>
+<option>Bingo set</option>
+<option>Emergency flashlight</option>
+</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Input" type="number" min="0" placeholder="0" value="{{ r.qty }}" on-change="{{ r.onQty }}" hint-size="100%,36px"></x-import>
+<sc-if value="{{ r.ok }}" hint-placeholder-val="{{ true }}">
+<span style="font-size:13.5px;color:var(--text-muted)">{{ r.stockNote }}</span>
+</sc-if>
+<sc-if value="{{ r.over }}" hint-placeholder-val="{{ false }}">
+<span style="font-size:13.5px;color:var(--danger)">{{ r.stockNote }}</span>
+</sc-if>
+<button type="button" onClick="{{ r.remove }}" aria-label="Remove supply row" style="width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--border-default);border-radius:var(--radius-control);background:#fff;color:var(--text-muted);cursor:pointer" style-hover="border-color:var(--danger);color:var(--danger)"><x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.X" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+</sc-for>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-muted);font-size:13.5px">
+<span style="color:var(--text-muted)">{{ supplyTotalLabel }}</span>
+<button type="button" onClick="{{ clearRows }}" style="font-family:var(--font-sans);font-size:13.5px;background:none;border:none;color:var(--action-primary);cursor:pointer;padding:0">Clear all</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:18px;border:1px dashed var(--border-default);border-radius:var(--radius-control);padding:26px;text-align:center">
+<div style="font-size:14.5px;color:var(--text-muted)">No supplies allocated yet. You can also do this later from the site's inventory tab.</div>
+<sc-if value="{{ showStarterKit }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:12px;display:flex;justify-content:center">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ addKit }}" hint-size="210px,38px">Add standard starter kit</x-import>
+</div>
+<div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">Coffee, craft kit, folding table, first aid kit</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+
+<div style="position:sticky;bottom:0;background:var(--surface-page);border-top:1px solid var(--border-default);padding:14px 0 4px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<span style="font-size:13px;color:var(--text-muted)">{{ readyNote }}</span>
+<div style="display:flex;gap:12px">
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="outline" onClick="{{ onCancel }}" hint-size="100px,38px">Cancel</x-import>
+<x-import component-from-global-scope="BCHousingDesignSystem_3b2feb.Button" variant="primary" disabled="{{ saveDisabled }}" onClick="{{ onSave }}" hint-size="130px,38px">Create site</x-import>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ showSummaryRail }}" hint-placeholder-val="{{ true }}">
+<div style="width:320px;flex-shrink:0;position:sticky;top:20px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden">
+<div style="padding:14px 20px;border-bottom:1px solid var(--bch-gray-200)">
+<div style="font-size:15px;font-weight:700">Required fields</div>
+<div style="font-size:12.5px;color:var(--text-muted)">Complete these to save</div>
+</div>
+<div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ checklist }}" as="item" hint-placeholder-count="5">
+<sc-if value="{{ item.ok }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--success)">
+<span style="width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;flex-shrink:0;font-size:10px;line-height:1">✓</span>
+<span>{{ item.label }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ item.pending }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--text-muted)">
+<span style="width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;flex-shrink:0"></span>
+<span>{{ item.label }}</span>
+</div>
+</sc-if>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1040},&quot;showSummaryRail&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;showMapPreview&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;propertyStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tiles&quot;,&quot;Checkbox list&quot;],&quot;default&quot;:&quot;Tiles&quot;,&quot;tsType&quot;:&quot;\&quot;Tiles\&quot; | \&quot;Checkbox list\&quot;&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;showStarterKit&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+const STOCK = {
+  "Coffee (2 kg bag)": 42,
+  "Craft supply kit": 18,
+  "Folding table": 9,
+  "Board game set": 24,
+  "First aid kit": 31,
+  "Paper cups (500)": 12,
+  "Bingo set": 7,
+  "Emergency flashlight": 56,
+};
+const EXISTING = ["Grandview Terrace", "Maclean Park", "Killarney Gardens", "Stamps Place"];
+const CITY_COORDS = {
+  Vancouver: [49.2827, -123.1207],
+  Burnaby: [49.2488, -122.9805],
+  Surrey: [49.1913, -122.849],
+  Victoria: [48.4284, -123.3656],
+  Kelowna: [49.888, -119.496],
+  "Prince George": [53.9171, -122.7497],
+};
+const TEW_LOAD = {
+  "Joseph Masongsong": "Currently covers 6 sites · 412 tenants",
+  "Amrit Dhaliwal": "Currently covers 4 sites · 288 tenants",
+  "Renée Beauchamp": "Currently covers 7 sites · 503 tenants",
+  "Tomas Nowak": "Currently covers 3 sites · 176 tenants",
+  "Wei Chen": "Currently covers 5 sites · 344 tenants",
+};
+const KIT = ["Coffee (2 kg bag)", "Craft supply kit", "Folding table", "First aid kit"];
+
+class Component extends DCLogic {
+  state = {
+    name: "", tenants: "", tew: "", region: "Lower Mainland",
+    street: "", city: "", postal: "", lat: "", lng: "", manual: false,
+    community: true, senior: false, partnerFlag: false, partner: "",
+    rows: [], nextId: 1,
+  };
+
+  set(k) { return (e) => this.setState({ [k]: e.target.value }); }
+
+  addRows(names) {
+    this.setState((s) => {
+      let id = s.nextId;
+      const add = names.map((n) => ({ id: id++, supply: n, qty: n ? "1" : "" }));
+      return { rows: s.rows.concat(add), nextId: id };
+    });
+  }
+
+  patchRow(id, patch) {
+    this.setState((s) => ({ rows: s.rows.map((r) => (r.id === id ? { ...r, ...patch } : r)) }));
+  }
+
+  locate() {
+    const c = CITY_COORDS[this.state.city];
+    if (!c) return;
+    const jitter = (this.state.street.length % 9) * 0.0012;
+    this.setState({ lat: (c[0] + jitter).toFixed(4), lng: (c[1] - jitter).toFixed(4) });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const located = !!s.lat && !!s.lng;
+    const tenantsN = parseInt(s.tenants, 10) || 0;
+    const words = s.name.trim().split(/\s+/).filter(Boolean);
+    const stem = words.length ? words.map((w) => w[0]).join("").slice(0, 3).toUpperCase().padEnd(3, "X") : "—";
+    const siteCode = words.length ? "SITE-" + stem + "-" + String(47 + words.join("").length).slice(0, 3) : "SITE-000";
+    const dup = EXISTING.find((e) => s.name.trim().length > 2 && e.toLowerCase().startsWith(s.name.trim().toLowerCase().slice(0, 4)));
+
+    const tiles = [
+      { key: "community", label: "Community room", desc: "Has an indoor space bookable for events." },
+      { key: "senior", label: "Single seniors only", desc: "Tenancy restricted to single senior residents." },
+      { key: "partnerFlag", label: "Community partner", desc: "An outside organization delivers programs here." },
+    ].map((t) => ({
+      label: t.label, desc: t.desc, on: !!s[t.key], off: !s[t.key],
+      toggle: () => this.setState((st) => ({ [t.key]: !st[t.key] })),
+    }));
+
+    const rows = s.rows.map((r) => {
+      const stock = STOCK[r.supply];
+      const q = parseInt(r.qty, 10) || 0;
+      const over = stock !== undefined && q > stock;
+      let note = "—";
+      if (stock !== undefined) note = over ? "Only " + stock + " in stock" : stock - q + " will remain";
+      return {
+        supply: r.supply, qty: r.qty, stockNote: note, ok: !over, over,
+        onSupply: (e) => this.patchRow(r.id, { supply: e.target.value }),
+        onQty: (e) => this.patchRow(r.id, { qty: e.target.value }),
+        remove: () => this.setState((st) => ({ rows: st.rows.filter((x) => x.id !== r.id) })),
+      };
+    });
+    const units = s.rows.reduce((a, r) => a + (parseInt(r.qty, 10) || 0), 0);
+    const anyOver = rows.some((r) => r.over);
+
+    const checklist = [
+      { label: "Site name", ok: s.name.trim().length > 1 },
+      { label: "Number of tenants", ok: tenantsN > 0 },
+      { label: "Address and city", ok: !!s.street.trim() && !!s.city },
+      { label: "Location confirmed", ok: located },
+      { label: "Tenant engagement worker", ok: !!s.tew },
+    ];
+    if (s.partnerFlag) checklist.push({ label: "Community partner named", ok: !!s.partner });
+    const remaining = checklist.filter((c) => !c.ok).length;
+
+    return {
+      ...s,
+      onName: this.set("name"), onTenants: this.set("tenants"), onTew: this.set("tew"), onRegion: this.set("region"),
+      onStreet: this.set("street"), onCity: (e) => this.setState({ city: e.target.value, lat: "", lng: "" }),
+      onPostal: this.set("postal"), onLat: this.set("lat"), onLng: this.set("lng"), onPartner: this.set("partner"),
+      siteCode,
+      dupWarning: !!dup,
+      dupText: dup ? "A site named “" + dup + "” already exists. Check before creating a duplicate." : "",
+      hasTew: !!s.tew,
+      tewLoad: TEW_LOAD[s.tew] || "",
+      locateDisabled: !s.city || !s.street.trim(),
+      locateHint: located ? "Coordinates set from address — drag the pin or edit manually if it's off." : (!s.city || !s.street.trim() ? "Enter a street address and city first." : "We'll place the pin for you — no GPS typing needed."),
+      onLocate: () => this.locate(),
+      located, notLocated: !located,
+      coordLabel: located ? s.lat + ", " + s.lng : "",
+      manual: s.manual,
+      manualLabel: s.manual ? "Hide manual coordinates" : "Enter coordinates manually",
+      toggleManual: () => this.setState((st) => ({ manual: !st.manual })),
+      showMap: this.props.showMapPreview ?? true,
+      showSummaryRail: this.props.showSummaryRail ?? true,
+      showStarterKit: this.props.showStarterKit ?? true,
+      tilesMode: (this.props.propertyStyle ?? "Tiles") === "Tiles",
+      listMode: (this.props.propertyStyle ?? "Tiles") === "Checkbox list",
+      tiles,
+      partnerOn: s.partnerFlag,
+      rows, hasRows: rows.length > 0, noRows: rows.length === 0,
+      addRow: () => this.addRows([""]),
+      addKit: () => this.addRows(KIT),
+      clearRows: () => this.setState({ rows: [] }),
+      supplyTotalLabel: rows.length + (rows.length === 1 ? " supply · " : " supplies · ") + units + " units to transfer",
+      checklist: checklist.map((c) => ({ label: c.label, ok: c.ok, pending: !c.ok })),
+      saveDisabled: remaining > 0 || anyOver,
+      readyNote: anyOver ? "A supply quantity exceeds main inventory" : (remaining ? remaining + (remaining === 1 ? " required field left" : " required fields left") : "All required fields complete"),
+      onCancel: () => { window.location.href = "../site-management/SiteManagement.dc.html"; },
+      onSave: () => { window.location.href = "../site-management/SiteManagement.dc.html"; },
+      headerRight: React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 18 } },
+        React.createElement("a", { href: "../dashboard/Dashboard.dc.html", style: { display: "flex", color: "#fff" }, "aria-label": "Dashboard" }, React.createElement(window.BCHousingDesignSystem_3b2feb.Home, { size: 19 })),
+        React.createElement("a", { href: "../account-settings/AccountSettings.dc.html", style: { display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#fff", textDecoration: "none" } },
+          React.createElement("div", { style: { width: 32, height: 32, borderRadius: "var(--radius-avatar)", background: "#fff", color: "var(--action-primary)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12.5 } }, "JM"),
+          "Joseph Masongsong")),
+    };
+  }
+}
+
+</script>
+</body>
+</html>
