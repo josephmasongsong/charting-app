@@ -3,13 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,8 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, User, Shield, UserCheck } from 'lucide-react';
+import { User, Shield, UserCheck, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface UserData {
   id: string;
@@ -33,6 +27,34 @@ interface UserData {
   createdAt: string;
   updatedAt: string;
 }
+
+const primaryButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
+const labelClass = 'text-[13.5px] font-bold';
+const inputClass =
+  'rounded-(--radius-control) border-(--border-input) bg-(--surface-card) shadow-none md:text-sm';
+const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
+const successAlertClass =
+  'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
+
+const roleChips: Record<string, { className: string; label: string }> = {
+  admin: {
+    className: 'bg-(--surface-chrome) text-(--text-on-chrome)',
+    label: 'Administrator',
+  },
+  user: {
+    className:
+      'border border-(--bch-blue-100) bg-(--bch-blue-50) text-(--bch-blue-700)',
+    label: 'Staff user',
+  },
+  partner: {
+    className:
+      'border border-(--border-default) bg-(--bch-gray-100) text-(--text-muted)',
+    label: 'Partner',
+  },
+};
 
 function SettingsContent() {
   const { data: session, update } = useSession();
@@ -49,44 +71,22 @@ function SettingsContent() {
   const [error, setError] = useState('');
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
 
-  // Add debug logging
-  useEffect(() => {
-    console.log('Session data:', session);
-    console.log('User ID:', session?.user?.id);
-  }, [session]);
-
-  // Fetch user data
-  // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log('Starting fetchUserData...');
-
       if (!session?.user?.id) {
-        console.log('No session or user ID, returning early');
         return;
       }
 
-      console.log('Fetching user data for ID:', session.user.id);
-
       try {
         const response = await fetch(`/api/users/${session.user.id}`);
-        console.log('API Response status:', response.status);
 
         if (!response.ok) {
-          console.error(
-            'API response not OK:',
-            response.status,
-            response.statusText
-          );
-          const errorText = await response.text();
-          console.error('Error response body:', errorText);
           setError(`Failed to load user data: ${response.status}`);
           setIsLoading(false);
           return;
         }
 
         const data = await response.json();
-        console.log('API Response data:', data);
 
         if (data.user) {
           setUserData(data.user);
@@ -97,16 +97,12 @@ function SettingsContent() {
             role: data.user.role || 'user',
           });
           setCurrentUserRole(data.user.role || 'user');
-          console.log('User data set successfully');
         } else {
-          console.log('No user data in response');
           setError('No user data found');
         }
       } catch (error) {
-        console.error('Fetch error:', error);
         setError('Network error occurred');
       } finally {
-        console.log('Setting loading to false');
         setIsLoading(false);
       }
     };
@@ -148,7 +144,6 @@ function SettingsContent() {
         setError(data.error || 'Failed to update profile');
       }
     } catch (error) {
-      console.error('Update error:', error);
       setError('An error occurred while updating your profile');
     } finally {
       setIsSaving(false);
@@ -158,79 +153,78 @@ function SettingsContent() {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin':
-        return <Shield className="h-4 w-4" />;
+        return <Shield className="size-3" />;
       case 'partner':
-        return <UserCheck className="h-4 w-4" />;
+        return <UserCheck className="size-3" />;
       default:
-        return <User className="h-4 w-4" />;
+        return <User className="size-3" />;
     }
   };
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'destructive';
-      case 'partner':
-        return 'secondary';
-      default:
-        return 'default';
-    }
-  };
+  const roleChip = roleChips[currentUserRole];
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4 max-w-2xl">
-        <Card>
-          <CardContent className="flex items-center justify-center p-6">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-            <span className="ml-2">Loading...</span>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-(--surface-page) px-6 pt-8 pb-12">
+        <div className="mx-auto max-w-[900px]">
+          <Card className="gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) shadow-none">
+            <div className="flex items-center justify-center gap-2 p-6 text-(--text-muted)">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Loading...</span>
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-2xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Account Settings</h1>
-        <Badge
-          variant={getRoleBadgeVariant(currentUserRole)}
-          className="flex items-center gap-1"
-        >
-          {getRoleIcon(currentUserRole)}
-          {currentUserRole}
-        </Badge>
-      </div>
+    <div className="min-h-screen bg-(--surface-page) px-6 pt-8 pb-12">
+      <div className="mx-auto max-w-[900px]">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <h1 className="text-[28px] leading-tight font-bold tracking-[-.2px]">
+            Account Settings
+          </h1>
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3.5 py-[5px] text-xs font-bold tracking-[.5px] uppercase',
+              roleChip?.className ??
+                'bg-(--surface-muted) text-(--text-body)'
+            )}
+          >
+            {getRoleIcon(currentUserRole)}
+            {roleChip?.label ?? currentUserRole}
+          </span>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-          <CardDescription>
+        <Card className="gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) p-8 shadow-none">
+          <h2 className="text-[19px] font-bold">Profile Information</h2>
+          <p className="mt-1 text-[14.5px] text-(--text-muted)">
             Update your personal information and account settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
             {message && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
+              <Alert className={cn(alertClass, successAlertClass)}>
+                <AlertDescription className="text-[14px] text-foreground">
                   {message}
                 </AlertDescription>
               </Alert>
             )}
 
             {error && (
-              <Alert variant="destructive">
-                <XCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" className={alertClass}>
+                <AlertDescription className="text-[14px]">
+                  {error}
+                </AlertDescription>
               </Alert>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="firstName" className={labelClass}>
+                  First Name
+                </Label>
                 <Input
                   id="firstName"
                   value={formData.firstName}
@@ -239,11 +233,14 @@ function SettingsContent() {
                   }
                   placeholder="Enter your first name"
                   disabled={isSaving}
+                  className={inputClass}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="lastName" className={labelClass}>
+                  Last Name
+                </Label>
                 <Input
                   id="lastName"
                   value={formData.lastName}
@@ -252,12 +249,15 @@ function SettingsContent() {
                   }
                   placeholder="Enter your last name"
                   disabled={isSaving}
+                  className={inputClass}
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className={labelClass}>
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -267,11 +267,14 @@ function SettingsContent() {
                 }
                 placeholder="Enter your email"
                 disabled={isSaving}
+                className={inputClass}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+            <div className="max-w-[340px] space-y-1.5">
+              <Label htmlFor="role" className={labelClass}>
+                Role
+              </Label>
               <Select
                 value={formData.role}
                 onValueChange={(value: 'admin' | 'user' | 'partner') =>
@@ -279,7 +282,10 @@ function SettingsContent() {
                 }
                 disabled={isSaving || currentUserRole !== 'admin'}
               >
-                <SelectTrigger>
+                <SelectTrigger
+                  id="role"
+                  className="w-full rounded-(--radius-control) border-(--border-input) bg-(--surface-card) shadow-none"
+                >
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -304,27 +310,35 @@ function SettingsContent() {
                 </SelectContent>
               </Select>
               {currentUserRole !== 'admin' && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-[12.5px] text-(--text-muted)">
                   Only administrators can change user roles.
                 </p>
               )}
             </div>
 
             {userData && (
-              <div className="pt-4 space-y-2 text-sm text-muted-foreground">
+              <div className="space-y-1.5 border-t border-(--border-default) pt-[18px] text-sm">
                 <p>
                   <strong>Account created:</strong>{' '}
-                  {new Date(userData.createdAt).toLocaleDateString()}
+                  <span className="text-(--text-muted)">
+                    {new Date(userData.createdAt).toLocaleDateString()}
+                  </span>
                 </p>
                 <p>
                   <strong>Last updated:</strong>{' '}
-                  {new Date(userData.updatedAt).toLocaleDateString()}
+                  <span className="text-(--text-muted)">
+                    {new Date(userData.updatedAt).toLocaleDateString()}
+                  </span>
                 </p>
               </div>
             )}
 
-            <div className="flex gap-2 pt-4">
-              <Button type="submit" disabled={isSaving}>
+            <div className="flex gap-2.5 pt-2">
+              <Button
+                type="submit"
+                disabled={isSaving}
+                className={primaryButtonClass}
+              >
                 {isSaving ? 'Saving...' : 'Save Changes'}
               </Button>
               <Button
@@ -341,13 +355,14 @@ function SettingsContent() {
                   }
                 }}
                 disabled={isSaving}
+                className={outlineButtonClass}
               >
                 Reset
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
