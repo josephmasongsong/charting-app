@@ -1,21 +1,16 @@
-// app/components/EventForm.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Popover,
   PopoverContent,
@@ -28,23 +23,20 @@ import {
   CommandInput,
   CommandItem,
 } from '@/components/ui/command';
-import { Calendar as CalIcon } from 'lucide-react';
-import { Clock } from 'lucide-react';
-import { Users } from 'lucide-react';
-import { MapPin } from 'lucide-react';
-import { Activity } from 'lucide-react';
-import { DollarSign } from 'lucide-react';
-import { AlertTriangle } from 'lucide-react';
-import { Copy } from 'lucide-react';
-import { Building } from 'lucide-react';
-import { FileText } from 'lucide-react';
-import { Save } from 'lucide-react';
-import { X } from 'lucide-react';
-import { AlertCircle } from 'lucide-react';
-import { CheckCircle } from 'lucide-react';
-import { Target } from 'lucide-react';
-import { Check } from 'lucide-react';
-import { ChevronsUpDown } from 'lucide-react';
+import {
+  Calendar as CalIcon,
+  Clock,
+  Users,
+  Contact,
+  Copy,
+  Save,
+  X,
+  Check,
+  CheckIcon,
+  ChevronDown,
+  Loader2,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -58,8 +50,72 @@ interface EventFormProps {
   mode: 'create' | 'edit';
   eventId?: string;
   initialData?: any;
-  isDuplicated?: boolean; // NEW
-  isAdmin?: boolean; // NEW
+  isDuplicated?: boolean;
+  isAdmin?: boolean;
+}
+
+const pageClass = 'min-h-screen bg-(--surface-page) px-6 pt-7 pb-10';
+const containerClass = 'mx-auto max-w-[1160px]';
+const cardClass =
+  'gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) px-6 pt-5 pb-6 shadow-(--shadow-card)';
+const labelClass = 'text-[15px] font-normal';
+const inputClass =
+  'h-9 rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)';
+const comboTriggerClass =
+  'h-9 w-full justify-between rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] font-normal shadow-none hover:bg-(--surface-card) hover:text-(--text-body) focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)';
+const comboPanelClass =
+  'w-[var(--radix-popover-trigger-width)] rounded-(--radius-control) border-(--border-default) p-0 shadow-(--shadow-modal)';
+const helperClass = 'mt-2 text-[12.5px] text-(--text-muted)';
+const errorClass = 'mt-1.5 text-xs text-(--danger)';
+const totalTileClass =
+  'rounded-(--radius-control) border border-(--border-default) bg-(--surface-muted) px-4 py-2 text-center';
+const primaryButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
+const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
+const infoAlertClass =
+  'rounded-[2px] border-l-[5px] border-l-(--action-primary) bg-(--action-selected) text-foreground';
+const successAlertClass =
+  'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
+
+function Required() {
+  return (
+    <span aria-hidden="true" className="ml-0.5 text-(--danger)">
+      *
+    </span>
+  );
+}
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  sub,
+  required = false,
+}: {
+  icon: LucideIcon;
+  title: string;
+  sub: string;
+  required?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="grid size-[30px] shrink-0 place-items-center rounded-(--radius-control) bg-(--action-selected) text-(--action-primary)">
+        <Icon size={17} />
+      </span>
+      <div>
+        <div className="text-[17px] font-bold">
+          {title}
+          {required && <Required />}
+        </div>
+        <div className="text-[13px] text-(--text-muted)">{sub}</div>
+      </div>
+    </div>
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  return message ? <p className={errorClass}>{message}</p> : null;
 }
 
 export default function EventForm({
@@ -219,14 +275,10 @@ export default function EventForm({
       communityPartnerId: formData.hasCoHost
         ? formData.communityPartnerId
         : null,
-      isFirstSaveAfterDuplication: isDuplicated, // NEW
+      isFirstSaveAfterDuplication: isDuplicated,
     };
 
     try {
-      // const url =
-      //   mode === 'create' ? '/api/events' : `/api/admin/events/${eventId}`;
-      // const method = mode === 'create' ? 'POST' : 'PATCH';
-
       let url: string;
       let method: string;
 
@@ -294,132 +346,129 @@ export default function EventForm({
     partner => partner.id === formData.communityPartnerId
   );
 
+  // Checklist mirrors validateForm()'s required rules; it is display only.
+  const checklist = [
+    { label: 'Event title', ok: !!formData.title.trim() },
+    { label: 'Date and site', ok: !!formData.eventDate && !!formData.siteId },
+    { label: 'Activity type', ok: !!formData.activityTypeId },
+    { label: 'Description', ok: !!formData.description.trim() },
+    ...(formData.hasCoHost
+      ? [{ label: 'Community partner', ok: !!formData.communityPartnerId }]
+      : []),
+  ];
+  const remaining = checklist.filter(item => !item.ok).length;
+  const readyNote =
+    remaining > 0
+      ? `${remaining} required field${remaining === 1 ? '' : 's'} left`
+      : 'All required fields complete';
+
   if (optionsLoading) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center py-8">Loading...</div>
+      <div className={pageClass}>
+        <div className={cn(containerClass, 'flex items-center justify-center py-8 text-(--text-muted)')}>
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+          Loading...
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {mode === 'create' ? 'Log New Event' : 'Edit Event'}
-          </h1>
-          <p className="text-muted-foreground">
-            Record details of a community event or activity
-          </p>
-        </div>
+    <div className={pageClass}>
+      <div className={containerClass}>
+        <h1 className="text-[30px] leading-tight font-bold tracking-[-.2px]">
+          {mode === 'create' ? 'Log New Event' : 'Edit Event'}
+        </h1>
+        <p className="mt-1.5 text-[15px] text-(--text-muted)">
+          Record details of a community event or activity
+        </p>
 
-        {isDuplicated && (
-          <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-            <div className="flex items-center gap-3">
-              <Copy className="h-5 w-5 text-blue-600" />
-              <div>
-                <div className="font-semibold text-blue-900">
-                  Editing Duplicated Event
-                </div>
-                <p className="text-sm text-blue-700">
+        <div className="mt-5 flex flex-col items-start gap-6 lg:flex-row">
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            {isDuplicated && (
+              <Alert className={cn(alertClass, infoAlertClass)}>
+                <Copy className="text-(--action-primary)" />
+                <AlertTitle className="font-semibold">Editing Duplicated Event</AlertTitle>
+                <AlertDescription className="text-foreground">
                   This event was duplicated. When you save, it will be logged to
                   the activity feed.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+                </AlertDescription>
+              </Alert>
+            )}
 
-        {!isAdmin && (
-          <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-              <div>
-                <div className="font-semibold text-yellow-900">
+            {!isAdmin && (
+              <Alert variant="warning" className={alertClass}>
+                <AlertTitle className="font-semibold">
                   Review Carefully Before Submitting
-                </div>
-                <p className="text-sm text-yellow-700">
+                </AlertTitle>
+                <AlertDescription className="text-(--warning-text)">
                   Once submitted, you will not be able to edit this event.
                   Please ensure all information is accurate before saving.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+                </AlertDescription>
+              </Alert>
+            )}
 
-        {submitStatus === 'success' && (
-          <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 border border-green-200">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <div className="flex-1">
-              <div className="font-semibold text-green-900">
-                Event {mode === 'create' ? 'logged' : 'updated'} successfully!
-              </div>
-              <p className="text-sm text-green-700">
-                Your event has been {mode === 'create' ? 'recorded' : 'updated'}{' '}
-                in the system.
-              </p>
-            </div>
-          </div>
-        )}
+            {submitStatus === 'success' && (
+              <Alert className={cn(alertClass, successAlertClass)}>
+                <CheckIcon className="text-(--success)" />
+                <AlertTitle className="font-semibold">
+                  Event {mode === 'create' ? 'logged' : 'updated'} successfully!
+                </AlertTitle>
+                <AlertDescription className="text-foreground">
+                  Your event has been {mode === 'create' ? 'recorded' : 'updated'}{' '}
+                  in the system.
+                </AlertDescription>
+              </Alert>
+            )}
 
-        {submitStatus === 'error' && (
-          <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 border border-red-200">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <div className="flex-1">
-              <div className="font-semibold text-red-900">
-                Please fix the errors below
-              </div>
-              <p className="text-sm text-red-700">
-                Some required fields are missing or invalid.
-              </p>
-            </div>
-          </div>
-        )}
+            {submitStatus === 'error' && (
+              <Alert variant="destructive" className={alertClass}>
+                <AlertTitle className="font-semibold">Please fix the errors below</AlertTitle>
+                <AlertDescription>
+                  Some required fields are missing or invalid.
+                </AlertDescription>
+              </Alert>
+            )}
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Basic Information
-              </CardTitle>
-              <CardDescription>
-                Essential details about the event
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">
-                  Event Title <span className="text-red-500">*</span>
+            <Card className={cardClass}>
+              <SectionHeader
+                icon={CalIcon}
+                title="Event details"
+                sub="What happened, where, and when"
+              />
+
+              <div className="mt-5">
+                <Label htmlFor="title" className={labelClass}>
+                  Event Title
+                  <Required />
                 </Label>
                 <Input
                   id="title"
                   placeholder="e.g., Community Health Fair"
                   value={formData.title}
                   onChange={e => handleInputChange('title', e.target.value)}
-                  className={errors.title ? 'border-red-500' : ''}
+                  aria-invalid={!!errors.title}
+                  className={cn(inputClass, 'mt-1.5')}
                 />
-                {errors.title && (
-                  <p className="text-xs text-red-600">{errors.title}</p>
-                )}
+                <FieldError message={errors.title} />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="eventDate">
-                    Event Date <span className="text-red-500">*</span>
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="eventDate" className={labelClass}>
+                    Event Date
+                    <Required />
                   </Label>
                   <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                     <PopoverTrigger asChild>
                       <Button
+                        id="eventDate"
                         variant="outline"
+                        aria-invalid={!!errors.eventDate}
                         className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !selectedDate && 'text-muted-foreground',
-                          errors.eventDate && 'border-red-500'
+                          comboTriggerClass,
+                          'mt-1.5 justify-start',
+                          !selectedDate && 'text-(--text-muted)'
                         )}
                       >
                         <CalIcon className="mr-2 h-4 w-4" />
@@ -447,14 +496,13 @@ export default function EventForm({
                       />
                     </PopoverContent>
                   </Popover>
-                  {errors.eventDate && (
-                    <p className="text-xs text-red-600">{errors.eventDate}</p>
-                  )}
+                  <FieldError message={errors.eventDate} />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>
-                    Site Location <span className="text-red-500">*</span>
+                <div>
+                  <Label className={labelClass}>
+                    Site Location
+                    <Required />
                   </Label>
                   <Popover open={siteOpen} onOpenChange={setSiteOpen}>
                     <PopoverTrigger asChild>
@@ -462,16 +510,14 @@ export default function EventForm({
                         variant="outline"
                         role="combobox"
                         aria-expanded={siteOpen}
-                        className={cn(
-                          'w-full justify-between',
-                          errors.siteId && 'border-red-500'
-                        )}
+                        aria-invalid={!!errors.siteId}
+                        className={cn(comboTriggerClass, 'mt-1.5')}
                       >
                         {selectedSite ? selectedSite.name : 'Select site...'}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-(--text-muted)" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
+                    <PopoverContent className={comboPanelClass}>
                       <Command>
                         <CommandInput placeholder="Search sites..." />
                         <CommandEmpty>No site found.</CommandEmpty>
@@ -500,16 +546,94 @@ export default function EventForm({
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  {errors.siteId && (
-                    <p className="text-xs text-red-600">{errors.siteId}</p>
-                  )}
+                  <FieldError message={errors.siteId} />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">
-                  Description <span className="text-red-500">*</span>
-                </Label>
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <Label className={labelClass}>
+                    Activity Type
+                    <Required />
+                  </Label>
+                  <Popover
+                    open={activityTypeOpen}
+                    onOpenChange={setActivityTypeOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={activityTypeOpen}
+                        aria-invalid={!!errors.activityTypeId}
+                        className={cn(comboTriggerClass, 'mt-1.5')}
+                      >
+                        {selectedActivityType
+                          ? selectedActivityType.name
+                          : 'Select activity type...'}
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-(--text-muted)" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className={comboPanelClass}>
+                      <Command>
+                        <CommandInput placeholder="Search activity types..." />
+                        <CommandEmpty>No activity type found.</CommandEmpty>
+                        <CommandGroup>
+                          {options.activityTypes.map(type => (
+                            <CommandItem
+                              key={type.id}
+                              value={`${type.name} ${type.programGoalName}`}
+                              onSelect={() => {
+                                handleInputChange('activityTypeId', type.id);
+                                setActivityTypeOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  formData.activityTypeId === type.id
+                                    ? 'opacity-100'
+                                    : 'opacity-0'
+                                )}
+                              />
+                              {type.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FieldError message={errors.activityTypeId} />
+                </div>
+
+                <div className="flex h-9 items-center gap-2 md:mt-[27px]">
+                  <Checkbox
+                    id="eventIsYouthFocused"
+                    checked={formData.eventIsYouthFocused}
+                    onCheckedChange={() =>
+                      handleCheckboxChange('eventIsYouthFocused')
+                    }
+                    className="rounded-[2px] border-(--border-input) data-[state=checked]:border-(--action-primary) data-[state=checked]:bg-(--action-primary)"
+                  />
+                  <Label
+                    htmlFor="eventIsYouthFocused"
+                    className={cn(labelClass, 'cursor-pointer')}
+                  >
+                    This is a youth-focused event
+                  </Label>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <div className="flex items-baseline justify-between">
+                  <Label htmlFor="description" className={labelClass}>
+                    Description
+                    <Required />
+                  </Label>
+                  <span className="text-[12.5px] text-(--text-muted)">
+                    {formData.description.length} characters
+                  </span>
+                </div>
                 <Textarea
                   id="description"
                   placeholder="Describe what happened during the event, activities, and outcomes..."
@@ -518,117 +642,27 @@ export default function EventForm({
                   onChange={e =>
                     handleInputChange('description', e.target.value)
                   }
-                  className={errors.description ? 'border-red-500' : ''}
+                  aria-invalid={!!errors.description}
+                  className={cn(
+                    'mt-1.5 min-h-[110px] rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)'
+                  )}
                 />
-                {errors.description && (
-                  <p className="text-xs text-red-600">{errors.description}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {formData.description.length} characters
-                </p>
+                <FieldError message={errors.description} />
               </div>
-            </CardContent>
-          </Card>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Activity Classification
-              </CardTitle>
-              <CardDescription>Program category and type</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>
-                  Activity Type <span className="text-red-500">*</span>
-                </Label>
-                <Popover
-                  open={activityTypeOpen}
-                  onOpenChange={setActivityTypeOpen}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={activityTypeOpen}
-                      className={cn(
-                        'w-full justify-between',
-                        errors.activityTypeId && 'border-red-500'
-                      )}
-                    >
-                      {selectedActivityType
-                        ? selectedActivityType.name
-                        : 'Select activity type...'}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Search activity types..." />
-                      <CommandEmpty>No activity type found.</CommandEmpty>
-                      <CommandGroup>
-                        {options.activityTypes.map(type => (
-                          <CommandItem
-                            key={type.id}
-                            value={`${type.name} ${type.programGoalName}`}
-                            onSelect={() => {
-                              handleInputChange('activityTypeId', type.id);
-                              setActivityTypeOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                'mr-2 h-4 w-4',
-                                formData.activityTypeId === type.id
-                                  ? 'opacity-100'
-                                  : 'opacity-0'
-                              )}
-                            />
-                            {type.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.activityTypeId && (
-                  <p className="text-xs text-red-600">
-                    {errors.activityTypeId}
-                  </p>
-                )}
-              </div>
+            <Card className={cardClass}>
+              <SectionHeader
+                icon={Users}
+                title="Participation"
+                sub="Attendance counts for this event"
+              />
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="eventIsYouthFocused"
-                  checked={formData.eventIsYouthFocused}
-                  onChange={() => handleCheckboxChange('eventIsYouthFocused')}
-                  className="w-4 h-4 rounded border-gray-300"
-                />
-                <Label
-                  htmlFor="eventIsYouthFocused"
-                  className="font-normal cursor-pointer"
-                >
-                  This is a youth-focused event
-                </Label>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Participation Metrics
-              </CardTitle>
-              <CardDescription>Track attendance and engagement</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="newParticipants">New Participants</Label>
+              <div className="mt-5 grid grid-cols-1 items-end gap-4 md:grid-cols-[1fr_1fr_auto]">
+                <div>
+                  <Label htmlFor="newParticipants" className={labelClass}>
+                    New Participants
+                  </Label>
                   <Input
                     id="newParticipants"
                     type="number"
@@ -638,17 +672,14 @@ export default function EventForm({
                     onChange={e =>
                       handleInputChange('newParticipants', e.target.value)
                     }
-                    className={errors.newParticipants ? 'border-red-500' : ''}
+                    aria-invalid={!!errors.newParticipants}
+                    className={cn(inputClass, 'mt-1.5')}
                   />
-                  {errors.newParticipants && (
-                    <p className="text-xs text-red-600">
-                      {errors.newParticipants}
-                    </p>
-                  )}
+                  <FieldError message={errors.newParticipants} />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="returningParticipants">
+                <div>
+                  <Label htmlFor="returningParticipants" className={labelClass}>
                     Returning Participants
                   </Label>
                   <Input
@@ -660,152 +691,186 @@ export default function EventForm({
                     onChange={e =>
                       handleInputChange('returningParticipants', e.target.value)
                     }
-                    className={
-                      errors.returningParticipants ? 'border-red-500' : ''
-                    }
+                    aria-invalid={!!errors.returningParticipants}
+                    className={cn(inputClass, 'mt-1.5')}
                   />
-                  {errors.returningParticipants && (
-                    <p className="text-xs text-red-600">
-                      {errors.returningParticipants}
-                    </p>
-                  )}
+                  <FieldError message={errors.returningParticipants} />
+                </div>
+
+                <div className={cn(totalTileClass, 'min-w-28')}>
+                  <div className="text-xs tracking-[.4px] text-(--text-muted) uppercase">
+                    Total
+                  </div>
+                  <div className="text-[22px] leading-[1.2] font-bold">
+                    {totalParticipants}
+                  </div>
                 </div>
               </div>
 
-              {totalParticipants > 0 && (
-                <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-900">
-                      Total Participants
-                    </span>
-                    <Badge className="bg-blue-600">{totalParticipants}</Badge>
+              {totalParticipants > 0 &&
+                formData.newParticipants &&
+                formData.returningParticipants && (
+                  <p className={helperClass}>
+                    {(
+                      (parseInt(formData.newParticipants) / totalParticipants) *
+                      100
+                    ).toFixed(1)}
+                    % new,{' '}
+                    {(
+                      (parseInt(formData.returningParticipants) /
+                        totalParticipants) *
+                      100
+                    ).toFixed(1)}
+                    % returning
+                  </p>
+                )}
+            </Card>
+
+            <Card className={cardClass}>
+              <SectionHeader
+                icon={Clock}
+                title="Time and cost"
+                sub="Staff time and expenses to attribute to this event"
+              />
+
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="eventDuration" className={labelClass}>
+                    Event Duration
+                  </Label>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <Input
+                      id="eventDuration"
+                      type="number"
+                      min="0"
+                      placeholder="60"
+                      value={formData.eventDuration}
+                      onChange={e =>
+                        handleInputChange('eventDuration', e.target.value)
+                      }
+                      aria-invalid={!!errors.eventDuration}
+                      className={inputClass}
+                    />
+                    <span className="text-sm text-(--text-muted)">min</span>
                   </div>
-                  {formData.newParticipants &&
-                    formData.returningParticipants && (
-                      <div className="mt-2 text-xs text-blue-700">
-                        {(
-                          (parseInt(formData.newParticipants) /
-                            totalParticipants) *
-                          100
-                        ).toFixed(1)}
-                        % new,{' '}
-                        {(
-                          (parseInt(formData.returningParticipants) /
-                            totalParticipants) *
-                          100
-                        ).toFixed(1)}
-                        % returning
-                      </div>
-                    )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Time Allocation
-              </CardTitle>
-              <CardDescription>Duration in minutes</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="eventDuration">
-                    Event Duration (minutes)
-                  </Label>
-                  <Input
-                    id="eventDuration"
-                    type="number"
-                    min="0"
-                    placeholder="60"
-                    value={formData.eventDuration}
-                    onChange={e =>
-                      handleInputChange('eventDuration', e.target.value)
-                    }
-                    className={errors.eventDuration ? 'border-red-500' : ''}
-                  />
-                  {errors.eventDuration && (
-                    <p className="text-xs text-red-600">
-                      {errors.eventDuration}
-                    </p>
-                  )}
+                  <FieldError message={errors.eventDuration} />
+                  {/* TODO: /events/new — not wired: quick-duration presets. */}
+                  <div className="mt-2 flex gap-1.5">
+                    {[30, 60, 90, 120].map(minutes => (
+                      <button
+                        key={minutes}
+                        type="button"
+                        disabled
+                        className="rounded-full border border-(--border-default) bg-(--surface-card) px-2.5 py-[3px] text-[12.5px] text-(--text-muted) opacity-60"
+                      >
+                        {minutes} min
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="adminDuration">
-                    Admin Duration (minutes)
+                <div>
+                  <Label htmlFor="adminDuration" className={labelClass}>
+                    Admin Duration
                   </Label>
-                  <Input
-                    id="adminDuration"
-                    type="number"
-                    min="0"
-                    placeholder="30"
-                    value={formData.adminDuration}
-                    onChange={e =>
-                      handleInputChange('adminDuration', e.target.value)
-                    }
-                    className={errors.adminDuration ? 'border-red-500' : ''}
-                  />
-                  {errors.adminDuration && (
-                    <p className="text-xs text-red-600">
-                      {errors.adminDuration}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Setup, cleanup, and planning time
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <Input
+                      id="adminDuration"
+                      type="number"
+                      min="0"
+                      placeholder="30"
+                      value={formData.adminDuration}
+                      onChange={e =>
+                        handleInputChange('adminDuration', e.target.value)
+                      }
+                      aria-invalid={!!errors.adminDuration}
+                      className={inputClass}
+                    />
+                    <span className="text-sm text-(--text-muted)">min</span>
+                  </div>
+                  <FieldError message={errors.adminDuration} />
+                  <p className={helperClass}>Setup, cleanup, and planning time</p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="totalCost" className={labelClass}>
+                    Total Cost ($)
+                  </Label>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="text-[15px] text-(--text-muted)">$</span>
+                    <Input
+                      id="totalCost"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.totalCost}
+                      onChange={e =>
+                        handleInputChange('totalCost', e.target.value)
+                      }
+                      aria-invalid={!!errors.totalCost}
+                      className={inputClass}
+                    />
+                  </div>
+                  <FieldError message={errors.totalCost} />
+                  <p className={helperClass}>
+                    Include supplies, food, materials, and other expenses
                   </p>
                 </div>
-              </div>
 
-              {totalTime > 0 && (
-                <div className="p-3 rounded-lg bg-purple-50 border border-purple-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-purple-900">
-                      Total Time
-                    </span>
-                    <Badge className="bg-purple-600">
-                      {totalTime} minutes ({(totalTime / 60).toFixed(1)} hours)
-                    </Badge>
-                  </div>
+                <div className="flex flex-col gap-3 md:mt-[27px]">
+                  {totalTime > 0 && (
+                    <div className={cn(totalTileClass, 'flex items-center justify-between text-left')}>
+                      <span className="text-sm font-medium">Total Time</span>
+                      <Badge variant="secondary">
+                        {totalTime} minutes ({(totalTime / 60).toFixed(1)} hours)
+                      </Badge>
+                    </div>
+                  )}
+                  {formData.totalCost && totalParticipants > 0 && (
+                    <div className={cn(totalTileClass, 'flex items-center justify-between text-left')}>
+                      <span className="text-sm font-medium">Cost per Participant</span>
+                      <Badge variant="secondary">
+                        $
+                        {(
+                          parseFloat(formData.totalCost) / totalParticipants
+                        ).toFixed(2)}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                Community Partnership
-              </CardTitle>
-              <CardDescription>
-                Co-hosted events and partnerships
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+            <Card className={cardClass}>
+              <SectionHeader
+                icon={Contact}
+                title="Community partnership"
+                sub="Optional — add a co-host organization"
+              />
+
+              <div className="mt-[18px] flex items-center gap-2">
+                <Checkbox
                   id="hasCoHost"
                   checked={formData.hasCoHost}
-                  onChange={() => handleCheckboxChange('hasCoHost')}
-                  className="w-4 h-4 rounded border-gray-300"
+                  onCheckedChange={() => handleCheckboxChange('hasCoHost')}
+                  className="rounded-[2px] border-(--border-input) data-[state=checked]:border-(--action-primary) data-[state=checked]:bg-(--action-primary)"
                 />
                 <Label
                   htmlFor="hasCoHost"
-                  className="font-normal cursor-pointer"
+                  className={cn(labelClass, 'cursor-pointer')}
                 >
                   This event has a community partner co-host
                 </Label>
               </div>
 
               {formData.hasCoHost && (
-                <div className="space-y-2 pl-6 border-l-2 border-blue-500">
-                  <Label>
-                    Community Partner <span className="text-red-500">*</span>
+                <div className="mt-4 max-w-[520px] border-t border-(--bch-gray-200) pt-4">
+                  <Label className={labelClass}>
+                    Community Partner
+                    <Required />
                   </Label>
                   <Popover
                     open={communityPartnerOpen}
@@ -816,18 +881,16 @@ export default function EventForm({
                         variant="outline"
                         role="combobox"
                         aria-expanded={communityPartnerOpen}
-                        className={cn(
-                          'w-full justify-between',
-                          errors.communityPartnerId && 'border-red-500'
-                        )}
+                        aria-invalid={!!errors.communityPartnerId}
+                        className={cn(comboTriggerClass, 'mt-1.5')}
                       >
                         {selectedCommunityPartner
                           ? selectedCommunityPartner.name
                           : 'Select community partner...'}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-(--text-muted)" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
+                    <PopoverContent className={comboPanelClass}>
                       <Command>
                         <CommandInput placeholder="Search community partners..." />
                         <CommandEmpty>No community partner found.</CommandEmpty>
@@ -856,99 +919,84 @@ export default function EventForm({
                             </CommandItem>
                           ))}
                         </CommandGroup>
+                        {/* TODO: /events/new — not wired: inline partner
+                            creation needs a non-admin create route. */}
+                        <div className="border-t border-(--bch-gray-200) px-3.5 py-2">
+                          <button
+                            type="button"
+                            disabled
+                            className="text-[13.5px] text-(--action-primary) opacity-60"
+                          >
+                            Add a new community partner
+                          </button>
+                        </div>
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  {errors.communityPartnerId && (
-                    <p className="text-xs text-red-600">
-                      {errors.communityPartnerId}
-                    </p>
+                  <FieldError message={errors.communityPartnerId} />
+                </div>
+              )}
+            </Card>
+
+            {/* TODO: /events/new — not wired: the template disables Save until
+                the checklist is complete; Save stays enabled so validateForm()
+                and server-side rejections still surface as field errors. */}
+            <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-(--border-default) bg-(--surface-page) pt-3.5 pb-1">
+              <span className="text-[13px] text-(--text-muted)">{readyNote}</span>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={submitStatus === 'loading'}
+                  className={outlineButtonClass}
+                >
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitStatus === 'loading'}
+                  className={cn(primaryButtonClass, 'min-w-32')}
+                >
+                  {submitStatus === 'loading' ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Save Event
+                    </>
                   )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Financial Information
-              </CardTitle>
-              <CardDescription>Event costs and expenses</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="totalCost">Total Cost ($)</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="totalCost"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={formData.totalCost}
-                    onChange={e =>
-                      handleInputChange('totalCost', e.target.value)
-                    }
-                    className={`pl-10 ${errors.totalCost ? 'border-red-500' : ''}`}
-                  />
-                </div>
-                {errors.totalCost && (
-                  <p className="text-xs text-red-600">{errors.totalCost}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Include supplies, food, materials, and other expenses
-                </p>
+                </Button>
               </div>
-
-              {formData.totalCost && totalParticipants > 0 && (
-                <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-green-900">
-                      Cost per Participant
-                    </span>
-                    <Badge className="bg-green-600">
-                      $
-                      {(
-                        parseFloat(formData.totalCost) / totalParticipants
-                      ).toFixed(2)}
-                    </Badge>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="flex items-center justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={submitStatus === 'loading'}
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={submitStatus === 'loading'}
-              className="min-w-32"
-            >
-              {submitStatus === 'loading' ? (
-                <>
-                  <div className="h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Event
-                </>
-              )}
-            </Button>
+            </div>
           </div>
+
+          <aside className="w-full shrink-0 overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card) lg:sticky lg:top-5 lg:w-80">
+            <div className="border-b border-(--bch-gray-200) px-5 py-3.5">
+              <div className="text-[15px] font-bold">Required fields</div>
+              <div className="text-[12.5px] text-(--text-muted)">Complete these to save</div>
+            </div>
+            <ul className="flex flex-col gap-3 px-5 pt-4 pb-5">
+              {checklist.map(item => (
+                <li
+                  key={item.label}
+                  className={cn(
+                    'flex items-center gap-2 text-[13.5px]',
+                    item.ok ? 'text-(--success)' : 'text-(--text-muted)'
+                  )}
+                >
+                  <span className="grid size-4 shrink-0 place-items-center rounded-full border-[1.5px] border-current">
+                    {item.ok && <CheckIcon className="size-2.5" strokeWidth={3} />}
+                  </span>
+                  <span>{item.label}</span>
+                </li>
+              ))}
+            </ul>
+          </aside>
         </div>
       </div>
     </div>
