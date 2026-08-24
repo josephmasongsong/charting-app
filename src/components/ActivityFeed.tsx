@@ -1,21 +1,14 @@
-// src/components/ActivityFeed.tsx
 'use client';
-import React, { useState } from 'react';
-import Link from 'next/link';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useActivityFeed } from '@/hooks/useActivityFeed';
 
-// Types
+import React, { useState } from 'react';
+import { useActivityFeed } from '@/hooks/useActivityFeed';
+import { AvatarTile } from '@/components/ui/avatar-tile';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+
 type ActivityType =
   | 'user_invited'
   | 'event_created'
@@ -57,6 +50,40 @@ interface Activity {
   targetId?: string;
 }
 
+// Category colour follows the design system's status rule and is carried on a
+// chip, never on the sentence: green = something was created or added,
+// gray = something was updated, red = something was deleted or removed.
+type ActivityTone = 'success' | 'neutral' | 'danger';
+
+const toneChipClass: Record<ActivityTone, string> = {
+  success: 'bg-[var(--bch-green-50,#EDF6EF)] text-(--success)',
+  neutral: 'bg-(--bch-gray-100) text-(--text-muted)',
+  danger: 'bg-(--danger-surface) text-(--danger)',
+};
+
+const toneLabel: Record<ActivityTone, string> = {
+  success: 'Created',
+  neutral: 'Updated',
+  danger: 'Deleted',
+};
+
+const getActivityTone = (type: ActivityType): ActivityTone => {
+  if (type.endsWith('_deleted') || type === 'supplies_removed_from_site') {
+    return 'danger';
+  }
+  if (type.endsWith('_updated')) {
+    return 'neutral';
+  }
+  return 'success';
+};
+
+const emphasisClass = 'font-semibold text-(--text-body)';
+const linkClass = 'font-semibold text-(--action-primary) hover:underline';
+const pagerButtonClass =
+  'h-8 rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary) disabled:border-(--bch-gray-300) disabled:text-(--bch-gray-500) disabled:opacity-100';
+const pagerActiveClass =
+  'h-8 rounded-(--radius-control) bg-(--action-primary) text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover)';
+
 const ActivityFeed: React.FC = () => {
   const { activities } = useActivityFeed();
   const [currentPage, setCurrentPage] = useState(1);
@@ -74,37 +101,6 @@ const ActivityFeed: React.FC = () => {
 
   const handleNextPage = () => {
     setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  };
-
-  const getActivityColor = (type: ActivityType): string => {
-    const colors: Record<ActivityType, string> = {
-      user_invited: 'text-purple-600',
-      event_created: 'text-green-600',
-      event_updated: 'text-blue-600',
-      event_deleted: 'text-red-600',
-      activity_type_created: 'text-emerald-600',
-      activity_type_updated: 'text-blue-600',
-      activity_type_deleted: 'text-red-600',
-      site_created: 'text-orange-600',
-      site_updated: 'text-blue-600',
-      site_deleted: 'text-red-600',
-      community_partner_added: 'text-pink-600',
-      community_partner_updated: 'text-blue-600',
-      community_partner_deleted: 'text-red-600',
-      program_goal_created: 'text-indigo-600',
-      program_goal_updated: 'text-blue-600',
-      program_goal_deleted: 'text-red-600',
-      supply_created: 'text-amber-600',
-      supply_updated: 'text-blue-600',
-      supply_deleted: 'text-red-600',
-      supplies_added_to_site: 'text-teal-600',
-      supplies_removed_from_site: 'text-red-600',
-      site_supply_updated: 'text-cyan-600',
-      supply_distribution_logged: 'text-blue-600',
-      supply_distribution_deleted: 'text-red-600',
-      user_updated: 'text-blue-600',
-    };
-    return colors[type] || 'text-gray-600';
   };
 
   const getUserInitials = (user: User): string => {
@@ -171,14 +167,13 @@ const ActivityFeed: React.FC = () => {
   const getActivityTitle = (activity: Activity): React.ReactNode => {
     const { type, user, details, targetId } = activity;
     const userName = `${user.firstName} ${user.lastName}`;
-    const colorClass = getActivityColor(type);
 
     switch (type) {
       case 'user_invited':
         return (
           <>
             {userName} invited{' '}
-            <span className={colorClass}>{details.invitedEmail}</span> as{' '}
+            <span className={emphasisClass}>{details.invitedEmail}</span> as{' '}
             {details.title}
           </>
         );
@@ -187,10 +182,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} held an event{' '}
-            <Link
-              href={`/events/${targetId}`}
-              className={`${colorClass} hover:underline`}
-            >
+            <Link href={`/events/${targetId}`} className={linkClass}>
               {details.eventTitle}
             </Link>{' '}
             at {details.siteName}
@@ -201,7 +193,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} updated event details:{' '}
-            <span className={colorClass}>{formatChanges(details.changes)}</span>
+            <span className={emphasisClass}>{formatChanges(details.changes)}</span>
           </>
         );
 
@@ -209,7 +201,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} deleted event{' '}
-            <span className={colorClass}>{details.eventTitle}</span> at{' '}
+            <span className={emphasisClass}>{details.eventTitle}</span> at{' '}
             {details.siteName}
           </>
         );
@@ -218,7 +210,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} created activity type{' '}
-            <span className={colorClass}>{details.activityTypeName}</span>
+            <span className={emphasisClass}>{details.activityTypeName}</span>
           </>
         );
 
@@ -226,7 +218,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} updated activity type:{' '}
-            <span className={colorClass}>{formatChanges(details.changes)}</span>
+            <span className={emphasisClass}>{formatChanges(details.changes)}</span>
           </>
         );
 
@@ -234,7 +226,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} deleted activity type{' '}
-            <span className={colorClass}>{details.activityTypeName}</span>
+            <span className={emphasisClass}>{details.activityTypeName}</span>
           </>
         );
 
@@ -242,10 +234,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} created site{' '}
-            <Link
-              href={`/sites/${targetId}`}
-              className={`${colorClass} hover:underline`}
-            >
+            <Link href={`/sites/${targetId}`} className={linkClass}>
               {details.siteName}
             </Link>
           </>
@@ -255,7 +244,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} updated site details:{' '}
-            <span className={colorClass}>{formatChanges(details.changes)}</span>
+            <span className={emphasisClass}>{formatChanges(details.changes)}</span>
           </>
         );
 
@@ -263,7 +252,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} deleted site{' '}
-            <span className={colorClass}>{details.siteName}</span>
+            <span className={emphasisClass}>{details.siteName}</span>
           </>
         );
 
@@ -271,7 +260,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} added partner{' '}
-            <span className={colorClass}>{details.partnerName}</span>
+            <span className={emphasisClass}>{details.partnerName}</span>
           </>
         );
 
@@ -279,8 +268,8 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} updated community partner from{' '}
-            <span className={colorClass}>{details.oldName}</span> to{' '}
-            <span className={colorClass}>{details.newName}</span>
+            <span className={emphasisClass}>{details.oldName}</span> to{' '}
+            <span className={emphasisClass}>{details.newName}</span>
           </>
         );
 
@@ -288,7 +277,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} deleted community partner{' '}
-            <span className={colorClass}>{details.partnerName}</span>
+            <span className={emphasisClass}>{details.partnerName}</span>
           </>
         );
 
@@ -296,7 +285,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} created program goal{' '}
-            <span className={colorClass}>{details.programGoalName}</span>
+            <span className={emphasisClass}>{details.programGoalName}</span>
           </>
         );
 
@@ -304,8 +293,8 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} updated program goal from{' '}
-            <span className={colorClass}>{details.oldName}</span> to{' '}
-            <span className={colorClass}>{details.newName}</span>
+            <span className={emphasisClass}>{details.oldName}</span> to{' '}
+            <span className={emphasisClass}>{details.newName}</span>
           </>
         );
 
@@ -313,7 +302,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} deleted program goal{' '}
-            <span className={colorClass}>{details.programGoalName}</span>
+            <span className={emphasisClass}>{details.programGoalName}</span>
           </>
         );
 
@@ -321,7 +310,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} created supply{' '}
-            <span className={colorClass}>{details.supplyName}</span>
+            <span className={emphasisClass}>{details.supplyName}</span>
           </>
         );
 
@@ -329,7 +318,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} updated supply:{' '}
-            <span className={colorClass}>{formatChanges(details.changes)}</span>
+            <span className={emphasisClass}>{formatChanges(details.changes)}</span>
           </>
         );
 
@@ -337,7 +326,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} deleted supply{' '}
-            <span className={colorClass}>{details.supplyName}</span>
+            <span className={emphasisClass}>{details.supplyName}</span>
           </>
         );
 
@@ -345,7 +334,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} added{' '}
-            <span className={colorClass}>
+            <span className={emphasisClass}>
               {formatSupplyList(details.supplies)}
             </span>{' '}
             to {details.siteName}
@@ -356,7 +345,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} removed{' '}
-            <span className={colorClass}>
+            <span className={emphasisClass}>
               {formatSupplyList(details.supplies)}
             </span>{' '}
             from {details.siteName}
@@ -367,7 +356,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} updated{' '}
-            <span className={colorClass}>{details.supplyName}</span> at{' '}
+            <span className={emphasisClass}>{details.supplyName}</span> at{' '}
             {details.siteName}
           </>
         );
@@ -376,7 +365,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} distributed{' '}
-            <span className={colorClass}>
+            <span className={emphasisClass}>
               {formatSupplyList(details.supplies)}
             </span>{' '}
             at {details.siteName}
@@ -387,7 +376,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} deleted a {details.distributionType} distribution at{' '}
-            <span className={colorClass}>{details.siteName}</span>
+            <span className={emphasisClass}>{details.siteName}</span>
           </>
         );
 
@@ -395,7 +384,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {userName} updated user profile:{' '}
-            <span className={colorClass}>{formatChanges(details.changes)}</span>
+            <span className={emphasisClass}>{formatChanges(details.changes)}</span>
           </>
         );
 
@@ -435,56 +424,63 @@ const ActivityFeed: React.FC = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CalendarDays className="h-5 w-5" />
-          Recent Activity
-        </CardTitle>
-        <CardDescription>Latest events and system activities</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
+    <div
+      data-slot="activity-feed"
+      className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card)"
+    >
+      <div className="flex items-center justify-between border-b border-(--bch-gray-200) px-4 py-3.5">
+        <h4 className="text-[17px] font-bold">Recent Activity</h4>
+        <span className="text-[12.5px] text-(--text-muted)">Recent</span>
+      </div>
+
+      {activities.length === 0 ? (
+        <EmptyState title="You're all caught up" className="m-4" />
+      ) : (
+        <div>
           {currentActivities.map((activity: Activity) => {
             const subtitle = getActivitySubtitle(activity);
+            const tone = getActivityTone(activity.type);
             return (
               <div
                 key={activity.id}
-                className="flex items-start justify-between gap-4"
+                className="flex items-start gap-3 border-b border-(--bch-gray-200) px-4 py-3 last:border-b-0"
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarFallback className="bg-muted">
-                      {getUserInitials(activity.user)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm mb-1">
+                <AvatarTile initials={getUserInitials(activity.user)} size={38} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold tracking-[.04em] whitespace-nowrap uppercase',
+                        toneChipClass[tone]
+                      )}
+                    >
+                      {toneLabel[tone]}
+                    </span>
+                    <span className="text-[13.5px] text-(--text-body)">
                       {getActivityTitle(activity)}
-                    </div>
-                    {subtitle && (
-                      <div className="text-xs text-muted-foreground">
-                        {subtitle}
-                      </div>
-                    )}
+                    </span>
+                  </div>
+                  <div className="mt-[3px] text-xs text-(--text-muted)">
+                    {subtitle ? `${subtitle} · ` : ''}
+                    {activity.timestamp}
                   </div>
                 </div>
-                <Badge variant="outline" className="flex-shrink-0">
-                  {activity.timestamp}
-                </Badge>
               </div>
             );
           })}
         </div>
+      )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t">
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-col items-center gap-2 border-t border-(--bch-gray-200) px-4 py-3.5">
+          <div className="flex items-center justify-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handlePreviousPage}
               disabled={currentPage === 1}
+              className={pagerButtonClass}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -508,7 +504,10 @@ const ActivityFeed: React.FC = () => {
                     variant={currentPage === pageNum ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setCurrentPage(pageNum)}
-                    className="w-9"
+                    className={cn(
+                      'w-9',
+                      currentPage === pageNum ? pagerActiveClass : pagerButtonClass
+                    )}
                   >
                     {pageNum}
                   </Button>
@@ -521,13 +520,18 @@ const ActivityFeed: React.FC = () => {
               size="sm"
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
+              className={pagerButtonClass}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <span className="text-xs text-(--text-muted)">
+            Showing {startIndex + 1}–{Math.min(endIndex, activities.length)} of{' '}
+            {activities.length}
+          </span>
+        </div>
+      )}
+    </div>
   );
 };
 
