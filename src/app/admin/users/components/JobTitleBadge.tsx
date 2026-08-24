@@ -1,29 +1,30 @@
-import { Badge } from '@/components/ui/badge';
-
 interface JobTitleBadgeProps {
   jobTitle?: string;
 }
 
+const shortTitles = {
+  'Tenant Engagement Worker': 'TEW',
+  'People Plants & Homes': 'PPH',
+  'Tenant Support Worker': 'TSW',
+  'Health Services Manager': 'HSM',
+} as const;
+
 export default function JobTitleBadge({ jobTitle }: JobTitleBadgeProps) {
-  if (!jobTitle) return <Badge variant="outline">N/A</Badge>;
-
-  const variants = {
-    'Tenant Engagement Worker': 'default',
-    'People Plants & Homes': 'secondary',
-    'Tenant Support Worker': 'outline',
-    'Health Services Manager': 'destructive',
-  } as const;
-
-  const shortTitles = {
-    'Tenant Engagement Worker': 'TEW',
-    'People Plants & Homes': 'PPH',
-    'Tenant Support Worker': 'TSW',
-    'Health Services Manager': 'HSM',
-  } as const;
+  if (!jobTitle) {
+    return (
+      <span data-slot="job-title-badge" className="text-[14.5px] text-(--text-muted)">
+        N/A
+      </span>
+    );
+  }
 
   return (
-    <Badge variant={variants[jobTitle as keyof typeof variants] || 'default'}>
+    <span
+      data-slot="job-title-badge"
+      title={jobTitle}
+      className="text-[14.5px] whitespace-nowrap text-(--text-muted)"
+    >
       {shortTitles[jobTitle as keyof typeof shortTitles] || jobTitle}
-    </Badge>
+    </span>
   );
 }

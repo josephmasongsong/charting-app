@@ -1,20 +1,14 @@
-import { Badge } from '@/components/ui/badge';
-
 interface RegionBadgeProps {
   region?: string;
 }
 
 export default function RegionBadge({ region }: RegionBadgeProps) {
-  const variants = {
-    LMDM: 'default',
-    VIR: 'secondary',
-    Interior: 'outline',
-    Northern: 'destructive',
-  } as const;
-
   return (
-    <Badge variant={variants[region as keyof typeof variants] || 'default'}>
+    <span
+      data-slot="region-badge"
+      className="inline-flex rounded-full bg-(--surface-muted) px-2.5 py-[3px] text-[12.5px] font-semibold whitespace-nowrap text-(--text-body)"
+    >
       {region || 'LMDM'}
-    </Badge>
+    </span>
   );
 }

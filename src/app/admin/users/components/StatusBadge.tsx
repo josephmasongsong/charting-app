@@ -1,5 +1,4 @@
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, UserX } from 'lucide-react';
+import { Check, User } from 'lucide-react';
 
 interface StatusBadgeProps {
   isActive?: boolean;
@@ -8,16 +7,22 @@ interface StatusBadgeProps {
 export default function StatusBadge({ isActive }: StatusBadgeProps) {
   if (isActive === false) {
     return (
-      <Badge variant="secondary" className="flex items-center gap-1">
-        <UserX className="h-3 w-3" />
+      <span
+        data-slot="status-badge"
+        className="inline-flex items-center gap-1.5 rounded-full border border-(--border-default) bg-(--bch-gray-100) px-2.5 py-[3px] text-xs font-bold tracking-[.5px] whitespace-nowrap text-(--text-muted) uppercase"
+      >
+        <User className="size-3" />
         Inactive
-      </Badge>
+      </span>
     );
   }
   return (
-    <Badge variant="default" className="flex items-center gap-1">
-      <CheckCircle className="h-3 w-3" />
+    <span
+      data-slot="status-badge"
+      className="inline-flex items-center gap-1.5 rounded-full bg-[var(--bch-green-50,#EDF6EF)] px-2.5 py-[3px] text-xs font-bold tracking-[.5px] whitespace-nowrap text-(--success) uppercase"
+    >
+      <Check className="size-3" />
       Active
-    </Badge>
+    </span>
   );
 }
