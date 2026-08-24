@@ -2,13 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Modal } from '@/components/ui/modal';
 
 interface Site {
   id: string;
@@ -36,6 +30,11 @@ interface DeleteSiteDialogProps {
   onError: (error: string) => void;
   onRefresh: () => void;
 }
+
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
+const destructiveButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--danger) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-[#98060D] disabled:opacity-100';
 
 export default function DeleteSiteDialog({
   open,
@@ -74,54 +73,54 @@ export default function DeleteSiteDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Delete Site</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete this site? This action cannot be
-            undone.
-          </DialogDescription>
-        </DialogHeader>
-        {site && (
-          <div className="space-y-4">
-            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-              <div className="text-sm text-red-800">
-                <p>
-                  <strong>Site:</strong> {site.name}
-                </p>
-                <p>
-                  <strong>Address:</strong> {site.address}
-                </p>
-                <p>
-                  <strong>Manager:</strong> {site.userName}
-                </p>
-                <p>
-                  <strong>Tenants:</strong> {site.numberOfTenants}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={loading}
-              >
-                {loading ? 'Deleting...' : 'Delete Site'}
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Delete Site"
+      footer={
+        site ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className={outlineButtonClass}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading}
+              className={destructiveButtonClass}
+            >
+              {loading ? 'Deleting...' : 'Delete Site'}
+            </Button>
+          </>
+        ) : undefined
+      }
+    >
+      <p>
+        Are you sure you want to delete this site? This action cannot be
+        undone.
+      </p>
+      {site && (
+        <div className="mt-4 rounded-[2px] border-l-[5px] border-l-(--danger) bg-(--danger-surface) p-3.5 text-sm text-(--text-body)">
+          <p>
+            <strong>Site:</strong> {site.name}
+          </p>
+          <p>
+            <strong>Address:</strong> {site.address}
+          </p>
+          <p>
+            <strong>Manager:</strong> {site.userName}
+          </p>
+          <p>
+            <strong>Tenants:</strong> {site.numberOfTenants}
+          </p>
+        </div>
+      )}
+    </Modal>
   );
 }

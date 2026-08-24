@@ -2,13 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -22,21 +16,18 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
-  Plus,
-  Edit,
   Trash2,
   Search,
-  CheckCircle,
-  XCircle,
   ChevronLeft,
   ChevronRight,
-  MapPin,
   Users,
-  Eye,
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
+  Loader2,
+  PenLine,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 import DeleteSiteDialog from './DeleteSiteDialog';
 import BooleanBadge from './BooleanBadge';
@@ -72,6 +63,26 @@ interface SortConfig {
   field: string;
   order: SortOrder;
 }
+
+// Dense government-software table treatment — the reference for every admin
+// table: teal header band, full cell grid, zebra rows, selection-blue hover.
+const headCellClass =
+  'h-auto whitespace-nowrap border border-[#0a7276] bg-(--surface-chrome) px-3.5 py-2.5 text-left text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase';
+const bodyCellClass =
+  'whitespace-nowrap border border-(--bch-gray-200) px-3.5 py-[9px]';
+const bodyRowClass =
+  'border-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+const rowActionClass =
+  'size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)';
+const destructiveActionClass =
+  'size-8 rounded-(--radius-control) text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)';
+const pagerButtonClass =
+  'h-8 rounded-(--radius-control) border-(--border-default) bg-(--surface-card) text-[13.5px] text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary) disabled:border-(--bch-gray-300) disabled:text-(--bch-gray-500) disabled:opacity-100';
+const pagerActiveClass =
+  'h-8 rounded-(--radius-control) border border-(--action-primary) bg-(--action-primary) text-[13.5px] text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover)';
+const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
+const successAlertClass =
+  'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
 
 export default function SitesTable() {
   const router = useRouter();
@@ -180,365 +191,391 @@ export default function SitesTable() {
     setMessage('');
   };
 
+  const rangeStart =
+    pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+  const rangeEnd = Math.min(
+    pagination.page * pagination.limit,
+    pagination.total
+  );
+
   return (
     <>
       {/* Messages */}
       {message && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
+        <Alert className={cn(alertClass, successAlertClass, 'mb-4')}>
+          <AlertDescription className="text-[14px] text-foreground">
             {message}
           </AlertDescription>
         </Alert>
       )}
 
       {error && (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+        <Alert variant="destructive" className={cn(alertClass, 'mb-4')}>
+          <AlertDescription className="text-[14px]">{error}</AlertDescription>
         </Alert>
       )}
 
       {/* Sites Data Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Sites ({pagination.total})
-              </CardTitle>
-              <CardDescription>
-                Manage and organize your sites and their properties
-              </CardDescription>
-            </div>
+      <div className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card)">
+        <div className="flex flex-wrap items-center gap-4 border-b border-(--border-default) px-5 py-4">
+          <form
+            onSubmit={handleSearch}
+            className="relative flex w-[340px] max-w-full items-center"
+          >
+            <button
+              type="submit"
+              aria-label="Search"
+              className="absolute left-2.5 flex cursor-pointer text-(--bch-gray-500)"
+            >
+              <Search className="size-4" />
+            </button>
+            <Input
+              placeholder="Search by name, address, user, or community partner..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="h-9 rounded-(--radius-control) border-(--border-input) bg-(--surface-card) pl-8 text-sm shadow-none md:text-sm"
+            />
+          </form>
+        </div>
 
-            {/* Search Bar */}
-            <div className="w-full md:w-80">
-              <form onSubmit={handleSearch} className="flex gap-2">
-                <Input
-                  placeholder="Search by name, address, user, or community partner..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="flex-1"
-                />
-                <Button type="submit" variant="outline" size="icon">
-                  <Search className="h-4 w-4" />
-                </Button>
-              </form>
-            </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-8 text-(--text-muted)">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Loading...
           </div>
-        </CardHeader>
-
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Loading...</div>
-          ) : (
-            <>
-              <div className="rounded-md border">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>
+        ) : (
+          <>
+            <Table className="min-w-[1080px] border-collapse bg-(--surface-card) text-sm">
+              <TableHeader>
+                <TableRow className="border-0 hover:bg-transparent">
+                  <TableHead className={headCellClass}>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('name')}
+                      className="h-auto p-0 text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase hover:bg-transparent hover:text-(--text-on-chrome)"
+                    >
+                      <span
+                        className={
+                          sortConfig.field === 'name'
+                            ? 'font-extrabold'
+                            : 'opacity-85'
+                        }
+                      >
+                        Name
+                      </span>
+                      {sortConfig.field === 'name' ? (
+                        sortConfig.order === 'asc' ? (
+                          <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-55" />
+                      )}
+                    </Button>
+                  </TableHead>
+                  <TableHead className={headCellClass}>Address</TableHead>
+                  <TableHead className={headCellClass}>Tenants</TableHead>
+                  <TableHead className={headCellClass}>
+                    Assigned Worker
+                  </TableHead>
+                  <TableHead className={headCellClass}>
+                    Community Room
+                  </TableHead>
+                  <TableHead className={headCellClass}>
+                    Community Partner
+                  </TableHead>
+                  <TableHead className={headCellClass}>Senior Only</TableHead>
+                  <TableHead className={cn(headCellClass, 'text-right')}>
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sites.length === 0 ? (
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableCell
+                      colSpan={8}
+                      className={cn(
+                        bodyCellClass,
+                        'py-10 text-center whitespace-normal text-(--text-muted)'
+                      )}
+                    >
+                      {search ? (
+                        <>
+                          No sites found matching &quot;{search}&quot;.
+                          <Button
+                            variant="link"
+                            onClick={() => {
+                              setSearch('');
+                              fetchSites(1, '', sortConfig);
+                            }}
+                            className="ml-2 text-(--action-primary)"
+                          >
+                            Clear search
+                          </Button>
+                        </>
+                      ) : (
+                        'No sites found.'
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  sites.map(site => (
+                    <TableRow key={site.id} className={bodyRowClass}>
+                      <TableCell className={cn(bodyCellClass, 'font-bold')}>
+                        <Link
+                          href={`/sites/${site.id}`}
+                          className="text-(--text-body) hover:text-(--action-primary) hover:underline"
+                        >
+                          {site.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell
+                        className={cn(bodyCellClass, 'text-(--text-muted)')}
+                      >
+                        <div
+                          className="max-w-[220px] truncate"
+                          title={site.address}
+                        >
+                          {site.address}
+                        </div>
+                      </TableCell>
+                      <TableCell className={bodyCellClass}>
+                        <Badge
+                          variant="outline"
+                          className="flex w-fit items-center gap-1 rounded-(--radius-control) border-(--border-default) text-(--text-body)"
+                        >
+                          <Users className="h-3 w-3" />
+                          {site.numberOfTenants}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className={bodyCellClass}>
+                        <div className="text-sm">{site.userName}</div>
+                      </TableCell>
+                      <TableCell className={bodyCellClass}>
+                        <BooleanBadge
+                          value={site.hasCommunityRoom}
+                          trueText="Yes"
+                          falseText="No"
+                        />
+                      </TableCell>
+                      <TableCell className={bodyCellClass}>
+                        <BooleanBadge
+                          value={site.hasCommunityPartner}
+                          trueText="Yes"
+                          falseText="No"
+                        />
+                      </TableCell>
+                      <TableCell className={bodyCellClass}>
+                        <BooleanBadge
+                          value={site.isSingleSeniorOnly}
+                          trueText="Yes"
+                          falseText="No"
+                        />
+                      </TableCell>
+                      <TableCell className={cn(bodyCellClass, 'text-right')}>
+                        <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
-                            onClick={() => handleSort('name')}
-                            className="h-auto p-0 font-semibold hover:bg-transparent"
+                            size="icon"
+                            onClick={() =>
+                              router.push(`/admin/sites/${site.id}/edit`)
+                            }
+                            title="Edit site"
+                            aria-label="Edit site"
+                            className={rowActionClass}
                           >
-                            Name
-                            {sortConfig.field === 'name' ? (
-                              sortConfig.order === 'asc' ? (
-                                <ChevronUp className="ml-2 h-4 w-4" />
-                              ) : (
-                                <ChevronDown className="ml-2 h-4 w-4" />
-                              )
-                            ) : (
-                              <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-                            )}
+                            <PenLine className="size-[17px]" />
                           </Button>
-                        </TableHead>
-                        <TableHead>Address</TableHead>
-                        <TableHead>Tenants</TableHead>
-                        <TableHead>Manager</TableHead>
-                        <TableHead>Community Room</TableHead>
-                        <TableHead>Community Partner</TableHead>
-                        <TableHead>Senior Only</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sites.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8">
-                            {search ? (
-                              <>
-                                No sites found matching "{search}".
-                                <Button
-                                  variant="link"
-                                  onClick={() => {
-                                    setSearch('');
-                                    fetchSites(1, '', sortConfig);
-                                  }}
-                                  className="ml-2"
-                                >
-                                  Clear search
-                                </Button>
-                              </>
-                            ) : (
-                              'No sites found.'
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        sites.map(site => (
-                          <TableRow key={site.id}>
-                            <TableCell className="font-medium">
-                              {site.name}
-                            </TableCell>
-                            <TableCell>
-                              <div
-                                className="max-w-[200px] truncate"
-                                title={site.address}
-                              >
-                                {site.address}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant="outline"
-                                className="flex items-center gap-1 w-fit"
-                              >
-                                <Users className="h-3 w-3" />
-                                {site.numberOfTenants}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">{site.userName}</div>
-                            </TableCell>
-                            <TableCell>
-                              <BooleanBadge
-                                value={site.hasCommunityRoom}
-                                trueText="Yes"
-                                falseText="No"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <BooleanBadge
-                                value={site.hasCommunityPartner}
-                                trueText="Yes"
-                                falseText="No"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <BooleanBadge
-                                value={site.isSingleSeniorOnly}
-                                trueText="Yes"
-                                falseText="No"
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    router.push(`/sites/${site.id}`)
-                                  }
-                                  title="View site"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    router.push(`/admin/sites/${site.id}/edit`)
-                                  }
-                                  title="Edit site"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openDeleteSite(site)}
-                                  title="Delete site"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openDeleteSite(site)}
+                            title="Delete site"
+                            aria-label="Delete site"
+                            className={destructiveActionClass}
+                          >
+                            <Trash2 className="size-[17px]" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+
+            {/* Pagination */}
+            <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-3.5">
+              <div className="text-[13.5px] text-(--text-muted)">
+                {pagination.total === 0
+                  ? 'No results'
+                  : pagination.pages > 1
+                    ? `Showing ${rangeStart} to ${rangeEnd} of ${pagination.total} results`
+                    : `Showing all ${pagination.total} results`}
               </div>
 
-              {/* Enhanced Pagination */}
               {pagination.pages > 1 && (
-                <div className="flex flex-col space-y-4 mt-6 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-                  <div className="text-sm text-muted-foreground">
-                    Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                    {Math.min(
-                      pagination.page * pagination.limit,
-                      pagination.total
-                    )}{' '}
-                    of {pagination.total} results
+                <div className="flex items-center gap-1.5">
+                  {/* First page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchSites(1, search, sortConfig)}
+                    disabled={pagination.page <= 1}
+                    className={cn(pagerButtonClass, 'hidden sm:inline-flex')}
+                  >
+                    First
+                  </Button>
+
+                  {/* Previous page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      fetchSites(pagination.page - 1, search, sortConfig)
+                    }
+                    disabled={pagination.page <= 1}
+                    className={pagerButtonClass}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="ml-1 hidden sm:inline">Previous</span>
+                  </Button>
+
+                  {/* Page numbers */}
+                  <div className="flex items-center gap-1">
+                    {(() => {
+                      const pages = [];
+                      const currentPage = pagination.page;
+                      const totalPages = pagination.pages;
+
+                      // Always show first page
+                      if (currentPage > 3) {
+                        pages.push(
+                          <Button
+                            key={1}
+                            variant={1 === currentPage ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => fetchSites(1, search, sortConfig)}
+                            className={cn(
+                              'w-10',
+                              1 === currentPage
+                                ? pagerActiveClass
+                                : pagerButtonClass
+                            )}
+                          >
+                            1
+                          </Button>
+                        );
+
+                        if (currentPage > 4) {
+                          pages.push(
+                            <span
+                              key="ellipsis1"
+                              className="px-1 text-[13.5px] text-(--text-muted)"
+                            >
+                              ...
+                            </span>
+                          );
+                        }
+                      }
+
+                      // Show pages around current page
+                      for (
+                        let i = Math.max(1, currentPage - 2);
+                        i <= Math.min(totalPages, currentPage + 2);
+                        i++
+                      ) {
+                        pages.push(
+                          <Button
+                            key={i}
+                            variant={i === currentPage ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => fetchSites(i, search, sortConfig)}
+                            className={cn(
+                              'w-10',
+                              i === currentPage
+                                ? pagerActiveClass
+                                : pagerButtonClass
+                            )}
+                          >
+                            {i}
+                          </Button>
+                        );
+                      }
+
+                      // Always show last page
+                      if (currentPage < totalPages - 2) {
+                        if (currentPage < totalPages - 3) {
+                          pages.push(
+                            <span
+                              key="ellipsis2"
+                              className="px-1 text-[13.5px] text-(--text-muted)"
+                            >
+                              ...
+                            </span>
+                          );
+                        }
+
+                        pages.push(
+                          <Button
+                            key={totalPages}
+                            variant={
+                              totalPages === currentPage ? 'default' : 'outline'
+                            }
+                            size="sm"
+                            onClick={() =>
+                              fetchSites(totalPages, search, sortConfig)
+                            }
+                            className={cn(
+                              'w-10',
+                              totalPages === currentPage
+                                ? pagerActiveClass
+                                : pagerButtonClass
+                            )}
+                          >
+                            {totalPages}
+                          </Button>
+                        );
+                      }
+
+                      return pages;
+                    })()}
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    {/* First page */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fetchSites(1, search, sortConfig)}
-                      disabled={pagination.page <= 1}
-                      className="hidden sm:inline-flex"
-                    >
-                      First
-                    </Button>
+                  {/* Next page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      fetchSites(pagination.page + 1, search, sortConfig)
+                    }
+                    disabled={pagination.page >= pagination.pages}
+                    className={pagerButtonClass}
+                  >
+                    <span className="mr-1 hidden sm:inline">Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
 
-                    {/* Previous page */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        fetchSites(pagination.page - 1, search, sortConfig)
-                      }
-                      disabled={pagination.page <= 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      <span className="hidden sm:inline ml-1">Previous</span>
-                    </Button>
-
-                    {/* Page numbers */}
-                    <div className="flex items-center space-x-1">
-                      {(() => {
-                        const pages = [];
-                        const currentPage = pagination.page;
-                        const totalPages = pagination.pages;
-
-                        // Always show first page
-                        if (currentPage > 3) {
-                          pages.push(
-                            <Button
-                              key={1}
-                              variant={
-                                1 === currentPage ? 'default' : 'outline'
-                              }
-                              size="sm"
-                              onClick={() => fetchSites(1, search, sortConfig)}
-                              className="w-10"
-                            >
-                              1
-                            </Button>
-                          );
-
-                          if (currentPage > 4) {
-                            pages.push(
-                              <span key="ellipsis1" className="px-2">
-                                ...
-                              </span>
-                            );
-                          }
-                        }
-
-                        // Show pages around current page
-                        for (
-                          let i = Math.max(1, currentPage - 2);
-                          i <= Math.min(totalPages, currentPage + 2);
-                          i++
-                        ) {
-                          pages.push(
-                            <Button
-                              key={i}
-                              variant={
-                                i === currentPage ? 'default' : 'outline'
-                              }
-                              size="sm"
-                              onClick={() => fetchSites(i, search, sortConfig)}
-                              className="w-10"
-                            >
-                              {i}
-                            </Button>
-                          );
-                        }
-
-                        // Always show last page
-                        if (currentPage < totalPages - 2) {
-                          if (currentPage < totalPages - 3) {
-                            pages.push(
-                              <span key="ellipsis2" className="px-2">
-                                ...
-                              </span>
-                            );
-                          }
-
-                          pages.push(
-                            <Button
-                              key={totalPages}
-                              variant={
-                                totalPages === currentPage
-                                  ? 'default'
-                                  : 'outline'
-                              }
-                              size="sm"
-                              onClick={() =>
-                                fetchSites(totalPages, search, sortConfig)
-                              }
-                              className="w-10"
-                            >
-                              {totalPages}
-                            </Button>
-                          );
-                        }
-
-                        return pages;
-                      })()}
-                    </div>
-
-                    {/* Next page */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        fetchSites(pagination.page + 1, search, sortConfig)
-                      }
-                      disabled={pagination.page >= pagination.pages}
-                    >
-                      <span className="hidden sm:inline mr-1">Next</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-
-                    {/* Last page */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        fetchSites(pagination.pages, search, sortConfig)
-                      }
-                      disabled={pagination.page >= pagination.pages}
-                      className="hidden sm:inline-flex"
-                    >
-                      Last
-                    </Button>
-                  </div>
+                  {/* Last page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      fetchSites(pagination.pages, search, sortConfig)
+                    }
+                    disabled={pagination.page >= pagination.pages}
+                    className={cn(pagerButtonClass, 'hidden sm:inline-flex')}
+                  >
+                    Last
+                  </Button>
                 </div>
               )}
-
-              {/* Show pagination info even when only one page */}
-              {pagination.pages <= 1 && pagination.total > 0 && (
-                <div className="mt-4 text-sm text-muted-foreground text-center">
-                  Showing all {pagination.total} results
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Delete Site Dialog */}
       <DeleteSiteDialog
