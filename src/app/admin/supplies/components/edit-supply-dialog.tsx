@@ -4,13 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Modal } from '@/components/ui/modal';
 
 interface Supply {
   id: string;
@@ -29,6 +23,11 @@ interface EditSupplyDialogProps {
   onError: (error: string) => void;
   onRefresh: () => void;
 }
+
+const primaryButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
 
 export default function EditSupplyDialog({
   open,
@@ -86,64 +85,78 @@ export default function EditSupplyDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Supply</DialogTitle>
-          <DialogDescription>
-            Update the supply name and cost. Quantities are managed separately
-            through site assignments.
-          </DialogDescription>
-        </DialogHeader>
-        {supply && (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="editName">Name *</Label>
-              <Input
-                id="editName"
-                value={form.name}
-                onChange={e =>
-                  setForm(prev => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Enter supply name"
-                required
-                disabled={loading}
-                maxLength={255}
-              />
-            </div>
+    <Modal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Edit Supply"
+      className="sm:max-w-[480px]"
+    >
+      <p className="text-[13.5px] text-(--text-muted)">
+        Update the supply name and cost. Quantities are managed separately
+        through site assignments.
+      </p>
+      {supply && (
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="editName" className="text-[13.5px] font-bold">
+              Name <span className="text-(--danger)">*</span>
+            </Label>
+            <Input
+              id="editName"
+              value={form.name}
+              onChange={e =>
+                setForm(prev => ({ ...prev, name: e.target.value }))
+              }
+              placeholder="Enter supply name"
+              required
+              disabled={loading}
+              maxLength={255}
+              className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="editCostPerUnit">Cost Per Unit ($)</Label>
-              <Input
-                id="editCostPerUnit"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.costPerUnit}
-                onChange={e =>
-                  setForm(prev => ({ ...prev, costPerUnit: e.target.value }))
-                }
-                placeholder="0.00"
-                disabled={loading}
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="editCostPerUnit"
+              className="text-[13.5px] font-bold"
+            >
+              Cost Per Unit ($)
+            </Label>
+            <Input
+              id="editCostPerUnit"
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.costPerUnit}
+              onChange={e =>
+                setForm(prev => ({ ...prev, costPerUnit: e.target.value }))
+              }
+              placeholder="0.00"
+              disabled={loading}
+              className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+            />
+          </div>
 
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Updating...' : 'Update Supply'}
-              </Button>
-            </div>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
+          <div className="flex justify-end gap-3 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className={outlineButtonClass}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className={primaryButtonClass}
+            >
+              {loading ? 'Updating...' : 'Update Supply'}
+            </Button>
+          </div>
+        </form>
+      )}
+    </Modal>
   );
 }

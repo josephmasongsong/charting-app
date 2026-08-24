@@ -4,13 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Modal } from '@/components/ui/modal';
 
 interface CreateSupplyDialogProps {
   open: boolean;
@@ -19,6 +13,11 @@ interface CreateSupplyDialogProps {
   onError: (error: string) => void;
   onRefresh: () => void;
 }
+
+const primaryButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
 
 export default function CreateSupplyDialog({
   open,
@@ -68,65 +67,79 @@ export default function CreateSupplyDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Create New Supply</DialogTitle>
-          <DialogDescription>
-            Add a new supply to your catalog. Quantities will be managed through
-            site assignments.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="createName">Name *</Label>
-            <Input
-              id="createName"
-              value={form.name}
-              onChange={e =>
-                setForm(prev => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="Enter supply name"
-              required
-              disabled={loading}
-              maxLength={255}
-            />
-          </div>
+    <Modal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Create New Supply"
+      className="sm:max-w-[480px]"
+    >
+      <p className="text-[13.5px] text-(--text-muted)">
+        Add a new supply to your catalog. Quantities will be managed through
+        site assignments.
+      </p>
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="createName" className="text-[13.5px] font-bold">
+            Name <span className="text-(--danger)">*</span>
+          </Label>
+          <Input
+            id="createName"
+            value={form.name}
+            onChange={e =>
+              setForm(prev => ({ ...prev, name: e.target.value }))
+            }
+            placeholder="Enter supply name"
+            required
+            disabled={loading}
+            maxLength={255}
+            className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="createCostPerUnit">Cost Per Unit ($)</Label>
-            <Input
-              id="createCostPerUnit"
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.costPerUnit}
-              onChange={e =>
-                setForm(prev => ({ ...prev, costPerUnit: e.target.value }))
-              }
-              placeholder="0.00"
-              disabled={loading}
-            />
-            <p className="text-xs text-muted-foreground">
-              Optional - can be updated later
-            </p>
-          </div>
+        <div className="space-y-1.5">
+          <Label
+            htmlFor="createCostPerUnit"
+            className="text-[13.5px] font-bold"
+          >
+            Cost Per Unit ($)
+          </Label>
+          <Input
+            id="createCostPerUnit"
+            type="number"
+            step="0.01"
+            min="0"
+            value={form.costPerUnit}
+            onChange={e =>
+              setForm(prev => ({ ...prev, costPerUnit: e.target.value }))
+            }
+            placeholder="0.00"
+            disabled={loading}
+            className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+          />
+          <p className="text-[12.5px] text-(--text-muted)">
+            Optional - can be updated later
+          </p>
+        </div>
 
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !form.name.trim()}>
-              {loading ? 'Creating...' : 'Create Supply'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="flex justify-end gap-3 pt-1">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+            className={outlineButtonClass}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={loading || !form.name.trim()}
+            className={primaryButtonClass}
+          >
+            {loading ? 'Creating...' : 'Create Supply'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
