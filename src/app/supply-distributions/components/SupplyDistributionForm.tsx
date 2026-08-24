@@ -1,4 +1,3 @@
-// app/supply-distributions/components/SupplyDistributionForm.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import {
   Plus,
   Trash2,
-  Calculator,
-  AlertCircle,
-  CheckCircle,
+  X,
+  Calendar,
+  Package,
+  Users,
+  Info,
   Loader2,
-  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,16 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 interface Site {
   id: string;
@@ -61,6 +54,48 @@ interface FormData {
   distributionDate: string;
   recipientNotes: string;
   notes: string;
+}
+
+const surfaceCardClass =
+  'gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) px-6 pt-5 pb-6 shadow-(--shadow-card)';
+const primaryButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary) disabled:border-(--bch-gray-300) disabled:text-(--bch-gray-500) disabled:opacity-100';
+const inputClass =
+  'rounded-(--radius-control) border-(--border-input) bg-(--surface-card) shadow-none md:text-sm';
+const selectTriggerClass =
+  'w-full rounded-(--radius-control) border-(--border-input) bg-(--surface-card) shadow-none';
+const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
+const successAlertClass =
+  'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
+const itemsGridClass =
+  'grid grid-cols-[minmax(190px,1fr)_76px_96px_92px_96px_34px] items-center gap-2.5';
+
+function Required() {
+  return <span className="text-(--danger)">*</span>;
+}
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  sub,
+}: {
+  icon: React.ComponentType<{ size?: number | string }>;
+  title: string;
+  sub: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="grid size-[30px] shrink-0 place-items-center rounded-(--radius-control) bg-(--action-selected) text-(--action-primary)">
+        <Icon size={17} />
+      </span>
+      <div>
+        <div className="text-[17px] font-bold">{title}</div>
+        <div className="text-[13px] text-(--text-muted)">{sub}</div>
+      </div>
+    </div>
+  );
 }
 
 export default function SupplyDistributionForm() {
@@ -104,7 +139,6 @@ export default function SupplyDistributionForm() {
     { value: 'emergency_distribution', label: 'Emergency Distribution' },
   ];
 
-  // Fetch initial options on component mount
   useEffect(() => {
     const fetchOptions = async () => {
       try {
@@ -125,7 +159,6 @@ export default function SupplyDistributionForm() {
     fetchOptions();
   }, []);
 
-  // Fetch supplies for selected site
   useEffect(() => {
     const fetchSiteSupplies = async () => {
       if (!formData.siteId) {
@@ -203,7 +236,6 @@ export default function SupplyDistributionForm() {
         if (item.id === id) {
           const updatedItem = { ...item, [field]: value };
 
-          // If supply is selected, update name and unit cost
           if (field === 'supplyId') {
             const selectedSupply = options.supplies.find(s => s.id === value);
             if (selectedSupply) {
@@ -214,7 +246,6 @@ export default function SupplyDistributionForm() {
             }
           }
 
-          // If quantity changes, recalculate line total
           if (field === 'quantity') {
             updatedItem.lineTotal = (value as number) * updatedItem.unitCost;
           }
@@ -243,7 +274,6 @@ export default function SupplyDistributionForm() {
     setError('');
     setSuccess('');
 
-    // Validate required fields
     if (
       !formData.siteId ||
       !formData.recipientNotes ||
@@ -256,7 +286,6 @@ export default function SupplyDistributionForm() {
       return;
     }
 
-    // Validate distribution items
     const validItems = distributionItems.filter(
       item => item.supplyId && item.quantity > 0
     );
@@ -267,7 +296,6 @@ export default function SupplyDistributionForm() {
       return;
     }
 
-    // Check inventory constraints
     for (const item of validItems) {
       const availableQuantity = getAvailableQuantity(item.supplyId);
       if (item.quantity > availableQuantity) {
@@ -300,7 +328,6 @@ export default function SupplyDistributionForm() {
       if (data.success) {
         setSuccess('Distribution logged successfully!');
 
-        // Reset form
         setFormData({
           siteId: '',
           distributionType: 'door_to_door',
@@ -320,10 +347,8 @@ export default function SupplyDistributionForm() {
           },
         ]);
 
-        // Scroll to top to show success message
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // Optionally redirect after success
         setTimeout(() => {
           router.push('/dashboard');
         }, 2000);
@@ -340,326 +365,469 @@ export default function SupplyDistributionForm() {
 
   if (optionsLoading) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="flex items-center justify-center min-h-96">
-          <div className="text-center">
-            <div className="animate-pulse">
-              <Loader2 className="h-8 w-8 mx-auto text-muted-foreground mb-4 animate-spin" />
-              <p className="text-muted-foreground">Loading form options...</p>
-            </div>
+      <div className="min-h-screen bg-(--surface-page) px-6 pt-7 pb-10">
+        <div className="mx-auto flex min-h-96 max-w-[1220px] items-center justify-center">
+          <div className="text-center text-(--text-muted)">
+            <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin" />
+            <p>Loading form options...</p>
           </div>
         </div>
       </div>
     );
   }
 
+  const selectedSiteName = options.sites.find(
+    s => s.id === formData.siteId
+  )?.name;
+  const validItems = distributionItems.filter(
+    item => item.supplyId && item.quantity > 0
+  );
+  const totalUnits = validItems.reduce((sum, item) => sum + item.quantity, 0);
+  const overages = validItems.filter(
+    item => item.quantity > getAvailableQuantity(item.supplyId)
+  ).length;
+  const checklist = [
+    {
+      label: 'Site and date',
+      ok: !!formData.siteId && !!formData.distributionDate,
+    },
+    { label: 'Distribution type', ok: !!formData.distributionType },
+    { label: 'At least one supply item', ok: validItems.length > 0 },
+    { label: 'Quantities within stock', ok: overages === 0 },
+    { label: 'Recipient information', ok: !!formData.recipientNotes.trim() },
+  ];
+  const remaining = checklist.filter(c => !c.ok).length;
+  const readyNote =
+    overages > 0
+      ? 'Quantities exceed stock on hand'
+      : remaining > 0
+        ? `${remaining} required field${remaining === 1 ? '' : 's'} left`
+        : 'All required fields complete';
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Header with Back Button */}
-      <div className="flex items-center gap-4 mb-6">
-        {/* <Button
-          variant="outline"
-          onClick={() => router.back()}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button> */}
-        <div>
-          <h1 className="text-3xl font-bold">Log Supply Distribution</h1>
-          <p className="text-muted-foreground">
-            Record supplies distributed to tenants and community members
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-(--surface-page) px-6 pt-7 pb-10">
+      <div className="mx-auto max-w-[1220px]">
+        <h1 className="text-[30px] leading-tight font-bold tracking-[-.2px]">
+          Log Supply Distribution
+        </h1>
+        <p className="mt-1.5 text-[15px] text-(--text-muted)">
+          Record supplies distributed to tenants and community members
+        </p>
 
-      {/* Alert Messages */}
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert className="border-green-200 bg-green-50 mb-6">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            {success}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="space-y-6">
-        {/* Basic Distribution Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribution Details</CardTitle>
-            <CardDescription>
-              Basic information about this distribution
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="site">Site *</Label>
-                <Select
-                  value={formData.siteId}
-                  onValueChange={value =>
-                    setFormData({ ...formData, siteId: value })
-                  }
-                  disabled={submitting}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a site" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {options.sites.map(site => (
-                      <SelectItem key={site.id} value={site.id}>
-                        {site.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="distributionType">Distribution Type *</Label>
-                <Select
-                  value={formData.distributionType}
-                  onValueChange={value =>
-                    setFormData({ ...formData, distributionType: value })
-                  }
-                  disabled={submitting}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {distributionTypes.map(type => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="distributionDate">Distribution Date *</Label>
-                <Input
-                  id="distributionDate"
-                  type="date"
-                  value={formData.distributionDate}
-                  onChange={e =>
-                    setFormData({
-                      ...formData,
-                      distributionDate: e.target.value,
-                    })
-                  }
-                  disabled={submitting}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="recipientNotes">Recipient Information *</Label>
-              <Textarea
-                id="recipientNotes"
-                placeholder="e.g., Mrs. Johnson apt 3B, family of 4, or Event attendees (12 people)"
-                value={formData.recipientNotes}
-                onChange={e =>
-                  setFormData({ ...formData, recipientNotes: e.target.value })
-                }
-                disabled={submitting}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Additional Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Any additional context about this distribution..."
-                value={formData.notes}
-                onChange={e =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
-                disabled={submitting}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Supply Items */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
-                  Supply Items
-                </CardTitle>
-                <CardDescription>
-                  Add the supplies being distributed
-                </CardDescription>
-              </div>
-              <Button
-                type="button"
-                onClick={addSupplyItem}
-                size="sm"
-                disabled={submitting || !formData.siteId}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!formData.siteId && (
-              <Alert className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Please select a site first to view available supplies.
+        <div className="mt-5 flex flex-col items-start gap-6 lg:flex-row">
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            {error && (
+              <Alert variant="destructive" className={alertClass}>
+                <AlertDescription className="text-[14px]">
+                  {error}
                 </AlertDescription>
               </Alert>
             )}
 
-            <div className="space-y-4">
-              {distributionItems.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="flex items-end gap-4 p-4 border rounded-lg"
-                >
-                  <div className="flex-1 space-y-2">
-                    <Label>Supply *</Label>
-                    <Select
-                      value={item.supplyId}
-                      onValueChange={value =>
-                        updateSupplyItem(item.id, 'supplyId', value)
-                      }
-                      disabled={submitting || !formData.siteId}
+            {success && (
+              <Alert className={cn(alertClass, successAlertClass)}>
+                <AlertDescription className="text-[14px] text-foreground">
+                  {success}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Card className={surfaceCardClass}>
+              <SectionHeader
+                icon={Calendar}
+                title="Distribution details"
+                sub="Where and when the supplies were handed out"
+              />
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="site" className="text-[15px] font-normal">
+                    Site <Required />
+                  </Label>
+                  <Select
+                    value={formData.siteId}
+                    onValueChange={value =>
+                      setFormData({ ...formData, siteId: value })
+                    }
+                    disabled={submitting}
+                  >
+                    <SelectTrigger
+                      id="site"
+                      aria-invalid={!!error && !formData.siteId}
+                      className={selectTriggerClass}
                     >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            formData.siteId
-                              ? 'Select supply'
-                              : 'Select site first'
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.supplies.map(supply => (
-                          <SelectItem key={supply.id} value={supply.id}>
-                            <div className="flex justify-between items-center w-full">
-                              <span>{supply.name}</span>
-                              <Badge variant="outline" className="ml-2">
-                                ${parseFloat(supply.costPerUnit).toFixed(2)} ea
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <SelectValue placeholder="Select a site" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {options.sites.map(site => (
+                        <SelectItem key={site.id} value={site.id}>
+                          {site.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[12.5px] text-(--text-muted)">
+                    {selectedSiteName
+                      ? `Drawing from ${selectedSiteName} inventory`
+                      : 'Pick a site to load its inventory'}
+                  </p>
+                </div>
 
-                  <div className="w-24 space-y-2">
-                    <Label>Quantity *</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max={
-                        item.supplyId
-                          ? getAvailableQuantity(item.supplyId)
-                          : undefined
-                      }
-                      value={item.quantity}
-                      onChange={e =>
-                        updateSupplyItem(
-                          item.id,
-                          'quantity',
-                          parseInt(e.target.value) || 0
-                        )
-                      }
-                      disabled={submitting}
-                    />
-                    {item.supplyId && (
-                      <div className="text-xs text-muted-foreground">
-                        Available: {getAvailableQuantity(item.supplyId)}
-                      </div>
-                    )}
-                  </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="distributionDate"
+                    className="text-[15px] font-normal"
+                  >
+                    Distribution date <Required />
+                  </Label>
+                  <Input
+                    id="distributionDate"
+                    type="date"
+                    value={formData.distributionDate}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        distributionDate: e.target.value,
+                      })
+                    }
+                    disabled={submitting}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
 
-                  <div className="w-28 space-y-2">
-                    <Label>Unit Cost</Label>
-                    <Input
-                      value={`${item.unitCost.toFixed(2)}`}
-                      disabled
-                      className="bg-muted"
-                    />
-                  </div>
+              <div className="mt-4">
+                <div className="mb-2 text-[15px]">
+                  Distribution type <Required />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {distributionTypes.map(type => {
+                    const selected = formData.distributionType === type.value;
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        aria-pressed={selected}
+                        disabled={submitting}
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            distributionType: type.value,
+                          })
+                        }
+                        className={cn(
+                          'cursor-pointer rounded-(--radius-control) border px-3.5 py-[7px] text-[14.5px]',
+                          selected
+                            ? 'border-(--action-primary) bg-(--action-selected) text-(--action-primary)'
+                            : 'border-(--border-default) bg-(--surface-card) text-(--text-body) hover:border-(--action-primary) hover:text-(--action-primary)'
+                        )}
+                      >
+                        {type.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
 
-                  <div className="w-32 space-y-2">
-                    <Label>Line Total</Label>
-                    <Input
-                      value={`${item.lineTotal.toFixed(2)}`}
-                      disabled
-                      className="bg-muted font-medium"
-                    />
-                  </div>
-
+            <Card className={surfaceCardClass}>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <SectionHeader
+                  icon={Package}
+                  title="Supply items"
+                  sub="Unit costs come from the site inventory record"
+                />
+                <div className="flex gap-2.5">
+                  {/* TODO: /supply-distributions/new — not wired: no
+                      last-log endpoint exists. */}
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    onClick={() => removeSupplyItem(item.id)}
-                    disabled={distributionItems.length === 1 || submitting}
+                    disabled
+                    className={outlineButtonClass}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    Repeat last log
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={addSupplyItem}
+                    disabled={submitting || !formData.siteId}
+                    className={primaryButtonClass}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Item
                   </Button>
                 </div>
-              ))}
+              </div>
 
-              <Separator />
-
-              <div className="flex justify-end">
-                <div className="text-right space-y-1">
-                  <div className="text-sm text-muted-foreground">
-                    Total Distribution Cost
+              <div className="mt-[18px] overflow-x-auto rounded-(--radius-control) border border-(--border-default)">
+                <div className="min-w-[620px]">
+                  <div
+                    className={cn(
+                      itemsGridClass,
+                      'bg-(--surface-chrome) px-3.5 py-[9px] text-[12.5px] font-bold tracking-[.4px] text-(--text-on-chrome) uppercase'
+                    )}
+                  >
+                    <span>Supply</span>
+                    <span className="text-right">On hand</span>
+                    <span className="text-center">Quantity</span>
+                    <span className="text-right">Unit cost</span>
+                    <span className="text-right">Line total</span>
+                    <span />
                   </div>
-                  <div className="text-2xl font-bold">
+                  {distributionItems.map(item => {
+                    const available = item.supplyId
+                      ? getAvailableQuantity(item.supplyId)
+                      : null;
+                    const over =
+                      available !== null && item.quantity > available;
+                    return (
+                      <div
+                        key={item.id}
+                        className="border-t border-(--bch-gray-200) bg-(--surface-card) px-3.5 py-3"
+                      >
+                        <div className={itemsGridClass}>
+                          <Select
+                            value={item.supplyId}
+                            onValueChange={value =>
+                              updateSupplyItem(item.id, 'supplyId', value)
+                            }
+                            disabled={submitting || !formData.siteId}
+                          >
+                            <SelectTrigger
+                              aria-label="Supply"
+                              className={cn(selectTriggerClass, 'h-9')}
+                            >
+                              <SelectValue
+                                placeholder={
+                                  formData.siteId
+                                    ? 'Select a supply...'
+                                    : 'Select site first'
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {options.supplies.map(supply => (
+                                <SelectItem key={supply.id} value={supply.id}>
+                                  <span className="flex w-full items-center justify-between gap-2">
+                                    <span>{supply.name}</span>
+                                    <span className="rounded-full bg-(--surface-muted) px-2 py-[2px] text-[11.5px] font-semibold text-(--text-muted)">
+                                      $
+                                      {parseFloat(supply.costPerUnit).toFixed(
+                                        2
+                                      )}{' '}
+                                      ea
+                                    </span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          <span
+                            className={cn(
+                              'text-right text-[14.5px] tabular-nums',
+                              over
+                                ? 'font-semibold text-(--danger)'
+                                : 'text-(--text-muted)'
+                            )}
+                          >
+                            {available !== null ? available : '—'}
+                          </span>
+
+                          <Input
+                            type="number"
+                            min="1"
+                            max={
+                              item.supplyId
+                                ? getAvailableQuantity(item.supplyId)
+                                : undefined
+                            }
+                            aria-label="Quantity"
+                            value={item.quantity}
+                            onChange={e =>
+                              updateSupplyItem(
+                                item.id,
+                                'quantity',
+                                parseInt(e.target.value) || 0
+                              )
+                            }
+                            disabled={submitting}
+                            className={cn(
+                              inputClass,
+                              'h-9 text-center tabular-nums'
+                            )}
+                          />
+
+                          <span className="text-right text-[14.5px] text-(--text-muted) tabular-nums">
+                            ${item.unitCost.toFixed(2)}
+                          </span>
+
+                          <span className="text-right text-[15px] font-semibold tabular-nums">
+                            ${item.lineTotal.toFixed(2)}
+                          </span>
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Remove item"
+                            onClick={() => removeSupplyItem(item.id)}
+                            disabled={
+                              distributionItems.length === 1 || submitting
+                            }
+                            className="size-8 rounded-(--radius-control) text-(--text-muted) hover:bg-(--danger-surface) hover:text-(--danger)"
+                          >
+                            <X className="size-4" />
+                          </Button>
+                        </div>
+                        {over && (
+                          <div className="mt-2 flex items-center gap-2 text-[13.5px] text-(--danger)">
+                            <span>
+                              Only {available} on hand at this site — reduce
+                              the quantity.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-end justify-between gap-4 border-t border-(--bch-gray-200) pt-3.5">
+                <span className="text-[13.5px] text-(--text-muted)">
+                  {validItems.length
+                    ? `${validItems.length} item${validItems.length === 1 ? '' : 's'} · ${totalUnits} unit${totalUnits === 1 ? '' : 's'}`
+                    : 'No items counted yet'}
+                </span>
+                <div className="text-right">
+                  <div className="text-[13px] text-(--text-muted)">
+                    Total distribution cost
+                  </div>
+                  <div className="text-[28px] leading-[1.15] font-bold tabular-nums">
                     ${calculateTotalCost().toFixed(2)}
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </Card>
 
-        {/* Submit */}
-        <div className="flex justify-end space-x-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            disabled={submitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting || !formData.siteId}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Logging Distribution...
-              </>
-            ) : (
-              'Log Distribution'
-            )}
-          </Button>
+            <Card className={surfaceCardClass}>
+              <SectionHeader
+                icon={Users}
+                title="Who received the supplies"
+                sub="The written detail drives reach reporting"
+              />
+              <div className="mt-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="recipientNotes"
+                    className="text-[15px] font-normal"
+                  >
+                    Recipient Information <Required />
+                  </Label>
+                  <Textarea
+                    id="recipientNotes"
+                    placeholder="e.g., Mrs. Johnson apt 3B, family of 4, or Event attendees (12 people)"
+                    value={formData.recipientNotes}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        recipientNotes: e.target.value,
+                      })
+                    }
+                    disabled={submitting}
+                    aria-invalid={!!error && !formData.recipientNotes}
+                    className={inputClass}
+                  />
+                  <p className="flex items-start gap-2 text-[12.5px] text-(--text-muted)">
+                    <Info className="mt-0.5 size-3.5 shrink-0" />
+                    <span>
+                      Do not record health information, immigration status, or
+                      anything a tenant shared in confidence. Use unit numbers
+                      rather than names where you can.
+                    </span>
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="notes" className="text-[15px] font-normal">
+                    Additional Notes
+                  </Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Any additional context about this distribution..."
+                    value={formData.notes}
+                    onChange={e =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
+                    disabled={submitting}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            </Card>
+
+            <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-(--border-default) bg-(--surface-page) pt-3.5 pb-1">
+              <span
+                className={cn(
+                  'text-[13px]',
+                  overages > 0 ? 'text-(--danger)' : 'text-(--text-muted)'
+                )}
+              >
+                {readyNote}
+              </span>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={submitting}
+                  className={outlineButtonClass}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting || !formData.siteId}
+                  className={primaryButtonClass}
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Logging Distribution...
+                    </>
+                  ) : (
+                    'Log Distribution'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full shrink-0 overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card) lg:sticky lg:top-5 lg:w-[320px]">
+            <div className="border-b border-(--bch-gray-200) px-5 py-3.5">
+              <div className="text-[15px] font-bold">Required fields</div>
+              <div className="text-[12.5px] text-(--text-muted)">
+                Complete these to save
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 px-5 pt-4 pb-5">
+              {checklist.map(item => (
+                <div
+                  key={item.label}
+                  className={cn(
+                    'flex items-center gap-2 text-[13.5px]',
+                    item.ok ? 'text-(--success)' : 'text-(--text-muted)'
+                  )}
+                >
+                  <span className="grid size-4 shrink-0 place-items-center rounded-full border-[1.5px] border-current text-[10px] leading-none">
+                    {item.ok ? '✓' : ''}
+                  </span>
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
