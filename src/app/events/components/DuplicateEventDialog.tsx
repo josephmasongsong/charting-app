@@ -1,15 +1,7 @@
-// app/events/components/DuplicateEventDialog.tsx
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Copy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,6 +11,11 @@ interface DuplicateEventDialogProps {
   eventTitle: string;
   trigger?: React.ReactNode;
 }
+
+const primaryButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
 
 export const DuplicateEventDialog: React.FC<DuplicateEventDialogProps> = ({
   eventId,
@@ -61,48 +58,59 @@ export const DuplicateEventDialog: React.FC<DuplicateEventDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
       {trigger ? (
         <div onClick={() => setOpen(true)}>{trigger}</div>
       ) : (
-        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setOpen(true)}
+          aria-label="Duplicate"
+          className="size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)"
+        >
           <Copy className="h-4 w-4" />
         </Button>
       )}
 
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Duplicate Event</DialogTitle>
-          <DialogDescription>
-            This will create a copy of "{eventTitle}" that you can edit. The
-            duplicated event will not be logged in the activity feed until you
-            save your changes.
-          </DialogDescription>
-        </DialogHeader>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleDuplicate} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Duplicating...
-              </>
-            ) : (
-              <>
-                <Copy className="mr-2 h-4 w-4" />
-                Duplicate Event
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Duplicate Event"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isLoading}
+              className={outlineButtonClass}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDuplicate}
+              disabled={isLoading}
+              className={primaryButtonClass}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Duplicating...
+                </>
+              ) : (
+                <>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Duplicate Event
+                </>
+              )}
+            </Button>
+          </>
+        }
+      >
+        This will create a copy of &quot;{eventTitle}&quot; that you can edit. The
+        duplicated event will not be logged in the activity feed until you save
+        your changes.
+      </Modal>
+    </>
   );
 };
