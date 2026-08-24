@@ -4,13 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Modal } from '@/components/ui/modal';
 
 interface CommunityPartner {
   id: string;
@@ -27,6 +21,11 @@ interface EditPartnerDialogProps {
   onError: (error: string) => void;
   onRefresh: () => void;
 }
+
+const primaryButtonClass =
+  'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+const outlineButtonClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
 
 export default function EditPartnerDialog({
   open,
@@ -78,45 +77,53 @@ export default function EditPartnerDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Community Partner</DialogTitle>
-          <DialogDescription>
-            Update the community partner information.
-          </DialogDescription>
-        </DialogHeader>
-        {partner && (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="editName">Name</Label>
-              <Input
-                id="editName"
-                value={form.name}
-                onChange={e => setForm({ name: e.target.value })}
-                placeholder="Enter community partner name"
-                required
-                disabled={loading}
-                maxLength={255}
-              />
-            </div>
+    <Modal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Edit Community Partner"
+      className="sm:max-w-[480px]"
+    >
+      <p className="text-[13.5px] text-(--text-muted)">
+        Update the community partner information.
+      </p>
+      {partner && (
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="editName" className="text-[13.5px] font-bold">
+              Name
+            </Label>
+            <Input
+              id="editName"
+              value={form.name}
+              onChange={e => setForm({ name: e.target.value })}
+              placeholder="Enter community partner name"
+              required
+              disabled={loading}
+              maxLength={255}
+              className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+            />
+          </div>
 
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Updating...' : 'Update Partner'}
-              </Button>
-            </div>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
+          <div className="flex justify-end gap-3 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className={outlineButtonClass}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className={primaryButtonClass}
+            >
+              {loading ? 'Updating...' : 'Update Partner'}
+            </Button>
+          </div>
+        </form>
+      )}
+    </Modal>
   );
 }
