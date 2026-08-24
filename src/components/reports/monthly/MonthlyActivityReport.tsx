@@ -1,16 +1,9 @@
-// @/components/reports/monthly/MonthlyActivityReport.tsx
-
 'use client';
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import {
-  CalendarDays,
-  Users,
-  DollarSign,
-  Package,
-  BarChart3,
-} from 'lucide-react';
+import { CalendarDays, Users, DollarSign, Package, BarChart3 } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { cn } from '@/lib/utils';
 import { MonthlyActivityReportProps } from './types';
 import { MetricCard } from './MetricCard';
 import { DateRangeDialog } from './DateRangeDialog';
@@ -82,13 +75,16 @@ export function MonthlyActivityReport({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold">Monthly Activity Report</h2>
-          <p className="text-muted-foreground mt-1">{data.reportMonth}</p>
+          <h1 className="text-[30px] leading-tight font-bold tracking-[-.2px]">
+            Monthly Activity Report
+          </h1>
+          <p className="mt-1.5 text-[15px] text-(--text-muted)">
+            {data.reportMonth}
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2.5">
           <DateRangeDialog
             currentParams={currentParams}
             availableDateRange={data.availableDateRange}
@@ -98,7 +94,7 @@ export function MonthlyActivityReport({
       </div>
 
       {/* Metric Cards - Top Row */}
-      <div className="grid gap-4 grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           title="Total Events"
           value={data.totalEvents}
@@ -110,7 +106,10 @@ export function MonthlyActivityReport({
                 data.monthlyEventGrowth &&
                 data.monthlyEventGrowth.length > 0 ? (
                   <div
-                    className={`flex items-center gap-1 ${getGrowthColor(overallEventGrowthType)}`}
+                    className={cn(
+                      'flex items-center gap-1',
+                      getGrowthColor(overallEventGrowthType),
+                    )}
                   >
                     {getGrowthIcon(overallEventGrowthType)}
                     <span>
@@ -133,7 +132,10 @@ export function MonthlyActivityReport({
               label: 'vs Previous Period',
               value: (
                 <div
-                  className={`flex items-center gap-1 ${getGrowthColor(overallParticipantGrowthType)}`}
+                  className={cn(
+                    'flex items-center gap-1',
+                    getGrowthColor(overallParticipantGrowthType),
+                  )}
                 >
                   {getGrowthIcon(overallParticipantGrowthType)}
                   <span>
@@ -155,7 +157,10 @@ export function MonthlyActivityReport({
               label: 'vs Previous Period',
               value: (
                 <div
-                  className={`flex items-center gap-1 ${getCostGrowthColor(data.monthlyCostGrowth.growthType)}`}
+                  className={cn(
+                    'flex items-center gap-1',
+                    getCostGrowthColor(data.monthlyCostGrowth.growthType),
+                  )}
                 >
                   {getCostGrowthIcon(data.monthlyCostGrowth.growthType)}
                   <span>
@@ -179,7 +184,12 @@ export function MonthlyActivityReport({
               label: 'vs Previous Period',
               value: (
                 <div
-                  className={`flex items-center gap-1 ${getGrowthColor(data.monthlySupplyDistributionGrowth.growthType)}`}
+                  className={cn(
+                    'flex items-center gap-1',
+                    getGrowthColor(
+                      data.monthlySupplyDistributionGrowth.growthType,
+                    ),
+                  )}
                 >
                   {getGrowthIcon(
                     data.monthlySupplyDistributionGrowth.growthType,
@@ -198,9 +208,8 @@ export function MonthlyActivityReport({
       </div>
 
       {/* Main Content Area - Content with Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content - 2/3 width */}
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+        <div>
           <ActivityTypeByRegionTable
             data={data.activityTypesByRegion}
             participantGrowthData={data.monthlyParticipantGrowth}
@@ -209,33 +218,20 @@ export function MonthlyActivityReport({
           />
 
           {data.activityTypesByRegion.length === 0 && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
-                  No Activities Found
-                </h3>
-                <p className="text-muted-foreground text-center">
-                  No events were recorded for {data.reportMonth}.<br />
-                  Try selecting a different period or check your data.
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={BarChart3}
+              title="No Activities Found"
+              description={`No events were recorded for ${data.reportMonth}. Try selecting a different period or check your data.`}
+              className="bg-(--surface-card)"
+            />
           )}
         </div>
 
-        {/* Sidebar - 1/3 width */}
-        <div className="lg:col-span-1">
-          <div className="space-y-6">
-            {' '}
-            {/* ADD THIS WRAPPER DIV */}
-            <SupplyDistributionsSidebar
-              supplyDistributions={data.supplyDistributions}
-            />
-            <SitePerformanceCard sites={data.sitePerformance} />{' '}
-            {/* ADD THIS LINE */}
-          </div>{' '}
-          {/* CLOSE WRAPPER DIV */}
+        <div className="space-y-6">
+          <SupplyDistributionsSidebar
+            supplyDistributions={data.supplyDistributions}
+          />
+          <SitePerformanceCard sites={data.sitePerformance} />
         </div>
       </div>
     </div>
