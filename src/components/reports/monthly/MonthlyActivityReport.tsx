@@ -5,7 +5,7 @@ import { CalendarDays, Users, DollarSign, Package, BarChart3 } from 'lucide-reac
 import { EmptyState } from '@/components/ui/empty-state';
 import { cn } from '@/lib/utils';
 import { MonthlyActivityReportProps } from './types';
-import { MetricCard } from './MetricCard';
+import { KpiCard } from '@/components/ui/kpi-card';
 import { DateRangeDialog } from './DateRangeDialog';
 import { MonthlyReportExportButton } from './MonthlyReportExportButton';
 import { SupplyDistributionsSidebar } from './SupplyDistributionsSidebar';
@@ -95,115 +95,109 @@ export function MonthlyActivityReport({
 
       {/* Metric Cards - Top Row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          title="Total Events"
-          value={data.totalEvents}
+        <KpiCard
+          variant="panel"
+          label="Total Events"
+          value={data.totalEvents.toLocaleString()}
           icon={CalendarDays}
-          subMetrics={[
-            {
-              label: 'vs Previous Period',
-              value:
-                data.monthlyEventGrowth &&
-                data.monthlyEventGrowth.length > 0 ? (
-                  <div
-                    className={cn(
-                      'flex items-center gap-1',
-                      getGrowthColor(overallEventGrowthType),
-                    )}
-                  >
-                    {getGrowthIcon(overallEventGrowthType)}
-                    <span>
-                      {overallEventGrowthRate > 0 ? '+' : ''}
-                      {overallEventGrowthRate}%
-                    </span>
-                  </div>
-                ) : (
-                  'N/A'
-                ),
-            },
-          ]}
+          sub={
+            <div className="flex items-center gap-1 text-xs text-(--text-muted)">
+              {data.monthlyEventGrowth && data.monthlyEventGrowth.length > 0 ? (
+                <div
+                  className={cn(
+                    'flex items-center gap-1',
+                    getGrowthColor(overallEventGrowthType),
+                  )}
+                >
+                  {getGrowthIcon(overallEventGrowthType)}
+                  <span>
+                    {overallEventGrowthRate > 0 ? '+' : ''}
+                    {overallEventGrowthRate}%
+                  </span>
+                </div>
+              ) : (
+                'N/A'
+              )}{' '}
+              vs Previous Period
+            </div>
+          }
         />
-        <MetricCard
-          title="Total Participants"
-          value={data.totalParticipants}
+        <KpiCard
+          variant="panel"
+          label="Total Participants"
+          value={data.totalParticipants.toLocaleString()}
           icon={Users}
-          subMetrics={[
-            {
-              label: 'vs Previous Period',
-              value: (
-                <div
-                  className={cn(
-                    'flex items-center gap-1',
-                    getGrowthColor(overallParticipantGrowthType),
-                  )}
-                >
-                  {getGrowthIcon(overallParticipantGrowthType)}
-                  <span>
-                    {overallParticipantGrowthRate > 0 ? '+' : ''}
-                    {overallParticipantGrowthRate}%
-                  </span>
-                </div>
-              ),
-            },
-          ]}
+          sub={
+            <div className="flex items-center gap-1 text-xs text-(--text-muted)">
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  getGrowthColor(overallParticipantGrowthType),
+                )}
+              >
+                {getGrowthIcon(overallParticipantGrowthType)}
+                <span>
+                  {overallParticipantGrowthRate > 0 ? '+' : ''}
+                  {overallParticipantGrowthRate}%
+                </span>
+              </div>{' '}
+              vs Previous Period
+            </div>
+          }
         />
-        <MetricCard
-          title="Total Cost"
-          value={data.totalCost}
+        <KpiCard
+          variant="panel"
+          label="Total Cost"
+          value={data.totalCost.toFixed(2)}
           icon={DollarSign}
-          formatter={val => `${val.toFixed(2)}`}
-          subMetrics={[
-            {
-              label: 'vs Previous Period',
-              value: (
-                <div
-                  className={cn(
-                    'flex items-center gap-1',
-                    getCostGrowthColor(data.monthlyCostGrowth.growthType),
-                  )}
-                >
-                  {getCostGrowthIcon(data.monthlyCostGrowth.growthType)}
-                  <span>
-                    {data.monthlyCostGrowth.growthRate > 0 ? '+' : ''}
-                    {data.monthlyCostGrowth.growthRate}%
-                  </span>
-                </div>
-              ),
-            },
-          ]}
+          sub={
+            <div className="flex items-center gap-1 text-xs text-(--text-muted)">
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  getCostGrowthColor(data.monthlyCostGrowth.growthType),
+                )}
+              >
+                {getCostGrowthIcon(data.monthlyCostGrowth.growthType)}
+                <span>
+                  {data.monthlyCostGrowth.growthRate > 0 ? '+' : ''}
+                  {data.monthlyCostGrowth.growthRate}%
+                </span>
+              </div>{' '}
+              vs Previous Period
+            </div>
+          }
         />
-        <MetricCard
-          title="Items Distributed"
-          value={data.supplyDistributions.reduce(
-            (sum, item) => sum + item.totalQuantityDistributed,
-            0,
-          )}
+        <KpiCard
+          variant="panel"
+          label="Items Distributed"
+          value={data.supplyDistributions
+            .reduce((sum, item) => sum + item.totalQuantityDistributed, 0)
+            .toLocaleString()}
           icon={Package}
-          subMetrics={[
-            {
-              label: 'vs Previous Period',
-              value: (
-                <div
-                  className={cn(
-                    'flex items-center gap-1',
-                    getGrowthColor(
-                      data.monthlySupplyDistributionGrowth.growthType,
-                    ),
-                  )}
-                >
-                  {getGrowthIcon(
+          sub={
+            <div className="flex items-center gap-1 text-xs text-(--text-muted)">
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  getGrowthColor(
                     data.monthlySupplyDistributionGrowth.growthType,
-                  )}
-                  <span>
-                    {data.monthlySupplyDistributionGrowth.growthRate > 0
-                      ? '+'
-                      : ''}
-                    {data.monthlySupplyDistributionGrowth.growthRate}%
-                  </span>
-                </div>
-              ),
-            },
-          ]}
+                  ),
+                )}
+              >
+                {getGrowthIcon(
+                  data.monthlySupplyDistributionGrowth.growthType,
+                )}
+                <span>
+                  {data.monthlySupplyDistributionGrowth.growthRate > 0
+                    ? '+'
+                    : ''}
+                  {data.monthlySupplyDistributionGrowth.growthRate}%
+                </span>
+              </div>{' '}
+              vs Previous Period
+            </div>
+          }
         />
       </div>
 

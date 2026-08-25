@@ -2,7 +2,6 @@
 
 export * from './types';
 export * from './GrowthIndicators';
-export * from './MetricCard';
 export * from './DateRangeDialog';
 export * from './SupplyDistributionsSidebar';
 export * from './ActivityTypeByRegionTable';
