@@ -39,10 +39,6 @@ export default function RootLayout({
             <main className="min-h-screen bg-(--surface-page)">{children}</main>
           </AuthGuard>
         </AuthProvider>
-        <footer className="bg-(--surface-chrome) p-6 text-center text-[14.5px] text-(--text-on-chrome)">
-          Copyright © {new Date().getFullYear()} BC Housing. All rights
-          reserved.
-        </footer>
       </body>
     </html>
   );
