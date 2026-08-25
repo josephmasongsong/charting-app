@@ -50,6 +50,7 @@ export async function GET(
         siteName: sites.name,
         userId: supplyDistributions.userId,
         userName: users.firstName,
+        userJobTitle: users.jobTitle,
         distributionDate: supplyDistributions.distributionDate,
         distributionType: supplyDistributions.distributionType,
         recipientNotes: supplyDistributions.recipientNotes,

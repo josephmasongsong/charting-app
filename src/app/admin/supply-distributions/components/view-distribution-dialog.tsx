@@ -16,6 +16,7 @@ interface Distribution {
   siteName: string;
   userId: string;
   userName: string;
+  userJobTitle?: string | null;
   distributionDate: string;
   distributionType: string;
   recipientNotes: string;
@@ -155,7 +156,16 @@ export default function ViewDistributionDialog({
               />
               <DetailField
                 label="Distributed By"
-                value={distributionData.distribution.userName}
+                value={
+                  <>
+                    {distributionData.distribution.userName}
+                    {distributionData.distribution.userJobTitle && (
+                      <span className="mt-[3px] block text-[12.5px] font-normal text-(--text-muted)">
+                        {distributionData.distribution.userJobTitle}
+                      </span>
+                    )}
+                  </>
+                }
               />
               <DetailField
                 label="Distribution Type"
