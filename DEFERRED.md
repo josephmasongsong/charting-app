@@ -56,3 +56,10 @@ prev/next feature; the migration waits on everything.
 - **What:** Decide whether site inventory grows toward (a) per-site par levels (a `site_supplies` column + admin UI) driving low-stock states everywhere, and/or (b) a worker-facing request-stock flow. Until then the `/sites/[id]` "Request stock" button and par-level TODOs stay stubbed.
 - **Why it matters:** Touches schema, two forms, and reporting; guessing wrong bakes in a workflow the TEW team doesn't actually run.
 - **What to do:** Product conversation with the TEW team first, then a schema plan, then wire the stubbed UI. Note the distribution form's low-stock warning (≤3 on hand, ratified 2026-08-25) is a stopgap — fold it into par levels when they land.
+
+### 7. Feature backlog surfaced by the redesign (shelved 2026-08-25)
+
+- **Why now / why punted:** The redesign conversion surfaced six features the design system implies but the app never had. Reviewing the open decisions, the call was to shelve the whole set rather than spec any mid-redesign.
+- **What:** User invitations (an `user_invited` activity verb already exists with no sender), a distribution **Edit** flow (create/delete exist, no update), per-event and per-distribution CSV exports (only the monthly-report export exists), admin reset-password, an email-verification flow (the `email_verified` column and admin toggle shipped 2026-08; nothing sets it from a user action), and the dashboard tenant-referrals card (rendered as a disabled stub).
+- **Why it matters:** Each is user-visible surface the templates gesture at; leaving them undecided invites ad-hoc half-builds.
+- **What to do:** Pick any item and spec it as its own task. Each needs product input first (who can invite? what does "verified" gate?); none blocks the redesign.
