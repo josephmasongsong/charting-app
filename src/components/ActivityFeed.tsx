@@ -49,6 +49,7 @@ interface Activity {
   timestamp: string;
   details: any;
   targetId?: string;
+  targetExists?: boolean;
 }
 
 const emphasisClass = 'font-semibold text-(--text-body)';
@@ -146,6 +147,16 @@ const ActivityFeed: React.FC = () => {
         {userName}
       </Link>
     );
+    // Link only targets that still exist; deleted ones render as plain
+    // emphasis instead of a dead link.
+    const target = (href: string, children: React.ReactNode) =>
+      activity.targetExists === false ? (
+        <span className={emphasisClass}>{children}</span>
+      ) : (
+        <Link href={href} className={linkClass}>
+          {children}
+        </Link>
+      );
 
     switch (type) {
       case 'user_invited':
@@ -161,10 +172,8 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {actor}{' '}held an event{' '}
-            <Link href={`/events/${targetId}`} className={linkClass}>
-              {details.eventTitle}
-            </Link>{' '}
-            at {details.siteName}
+            {target(`/events/${targetId}`, details.eventTitle)} at{' '}
+            {details.siteName}
           </>
         );
 
@@ -213,9 +222,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {actor}{' '}created site{' '}
-            <Link href={`/sites/${targetId}`} className={linkClass}>
-              {details.siteName}
-            </Link>
+            {target(`/sites/${targetId}`, details.siteName)}
           </>
         );
 
@@ -316,10 +323,7 @@ const ActivityFeed: React.FC = () => {
             <span className={emphasisClass}>
               {formatSupplyList(details.supplies)}
             </span>{' '}
-            to{' '}
-            <Link href={`/sites/${targetId}`} className={linkClass}>
-              {details.siteName}
-            </Link>
+            to {target(`/sites/${targetId}`, details.siteName)}
           </>
         );
 
@@ -330,10 +334,7 @@ const ActivityFeed: React.FC = () => {
             <span className={emphasisClass}>
               {formatSupplyList(details.supplies)}
             </span>{' '}
-            from{' '}
-            <Link href={`/sites/${targetId}`} className={linkClass}>
-              {details.siteName}
-            </Link>
+            from {target(`/sites/${targetId}`, details.siteName)}
           </>
         );
 
@@ -342,9 +343,7 @@ const ActivityFeed: React.FC = () => {
           <>
             {actor}{' '}updated{' '}
             <span className={emphasisClass}>{details.supplyName}</span> at{' '}
-            <Link href={`/sites/${targetId}`} className={linkClass}>
-              {details.siteName}
-            </Link>
+            {target(`/sites/${targetId}`, details.siteName)}
           </>
         );
 
@@ -352,12 +351,10 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {actor}{' '}distributed{' '}
-            <Link
-              href={`/supply-distributions/${targetId}`}
-              className={linkClass}
-            >
-              {formatSupplyList(details.supplies)}
-            </Link>{' '}
+            {target(
+              `/supply-distributions/${targetId}`,
+              formatSupplyList(details.supplies)
+            )}{' '}
             at {details.siteName}
           </>
         );
