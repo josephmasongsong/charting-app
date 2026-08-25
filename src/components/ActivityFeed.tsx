@@ -45,6 +45,7 @@ interface Activity {
   id: number;
   type: ActivityType;
   user: User;
+  userId: string;
   timestamp: string;
   details: any;
   targetId?: string;
@@ -138,14 +139,19 @@ const ActivityFeed: React.FC = () => {
   };
 
   const getActivityTitle = (activity: Activity): React.ReactNode => {
-    const { type, user, details, targetId } = activity;
+    const { type, user, userId, details, targetId } = activity;
     const userName = `${user.firstName} ${user.lastName}`;
+    const actor = (
+      <Link href={`/users/${userId}`} className={linkClass}>
+        {userName}
+      </Link>
+    );
 
     switch (type) {
       case 'user_invited':
         return (
           <>
-            {userName} invited{' '}
+            {actor}{' '}invited{' '}
             <span className={emphasisClass}>{details.invitedEmail}</span> as{' '}
             {details.title}
           </>
@@ -154,7 +160,7 @@ const ActivityFeed: React.FC = () => {
       case 'event_created':
         return (
           <>
-            {userName} held an event{' '}
+            {actor}{' '}held an event{' '}
             <Link href={`/events/${targetId}`} className={linkClass}>
               {details.eventTitle}
             </Link>{' '}
@@ -165,7 +171,7 @@ const ActivityFeed: React.FC = () => {
       case 'event_updated':
         return (
           <>
-            {userName} updated event details:{' '}
+            {actor}{' '}updated event details:{' '}
             <span className={emphasisClass}>{formatChanges(details.changes)}</span>
           </>
         );
@@ -173,7 +179,7 @@ const ActivityFeed: React.FC = () => {
       case 'event_deleted':
         return (
           <>
-            {userName} deleted event{' '}
+            {actor}{' '}deleted event{' '}
             <span className={emphasisClass}>{details.eventTitle}</span> at{' '}
             {details.siteName}
           </>
@@ -182,7 +188,7 @@ const ActivityFeed: React.FC = () => {
       case 'activity_type_created':
         return (
           <>
-            {userName} created activity type{' '}
+            {actor}{' '}created activity type{' '}
             <span className={emphasisClass}>{details.activityTypeName}</span>
           </>
         );
@@ -190,7 +196,7 @@ const ActivityFeed: React.FC = () => {
       case 'activity_type_updated':
         return (
           <>
-            {userName} updated activity type:{' '}
+            {actor}{' '}updated activity type:{' '}
             <span className={emphasisClass}>{formatChanges(details.changes)}</span>
           </>
         );
@@ -198,7 +204,7 @@ const ActivityFeed: React.FC = () => {
       case 'activity_type_deleted':
         return (
           <>
-            {userName} deleted activity type{' '}
+            {actor}{' '}deleted activity type{' '}
             <span className={emphasisClass}>{details.activityTypeName}</span>
           </>
         );
@@ -206,7 +212,7 @@ const ActivityFeed: React.FC = () => {
       case 'site_created':
         return (
           <>
-            {userName} created site{' '}
+            {actor}{' '}created site{' '}
             <Link href={`/sites/${targetId}`} className={linkClass}>
               {details.siteName}
             </Link>
@@ -216,7 +222,7 @@ const ActivityFeed: React.FC = () => {
       case 'site_updated':
         return (
           <>
-            {userName} updated site details:{' '}
+            {actor}{' '}updated site details:{' '}
             <span className={emphasisClass}>{formatChanges(details.changes)}</span>
           </>
         );
@@ -224,7 +230,7 @@ const ActivityFeed: React.FC = () => {
       case 'site_deleted':
         return (
           <>
-            {userName} deleted site{' '}
+            {actor}{' '}deleted site{' '}
             <span className={emphasisClass}>{details.siteName}</span>
           </>
         );
@@ -232,7 +238,7 @@ const ActivityFeed: React.FC = () => {
       case 'community_partner_added':
         return (
           <>
-            {userName} added partner{' '}
+            {actor}{' '}added partner{' '}
             <span className={emphasisClass}>{details.partnerName}</span>
           </>
         );
@@ -240,7 +246,7 @@ const ActivityFeed: React.FC = () => {
       case 'community_partner_updated':
         return (
           <>
-            {userName} updated community partner from{' '}
+            {actor}{' '}updated community partner from{' '}
             <span className={emphasisClass}>{details.oldName}</span> to{' '}
             <span className={emphasisClass}>{details.newName}</span>
           </>
@@ -249,7 +255,7 @@ const ActivityFeed: React.FC = () => {
       case 'community_partner_deleted':
         return (
           <>
-            {userName} deleted community partner{' '}
+            {actor}{' '}deleted community partner{' '}
             <span className={emphasisClass}>{details.partnerName}</span>
           </>
         );
@@ -257,7 +263,7 @@ const ActivityFeed: React.FC = () => {
       case 'program_goal_created':
         return (
           <>
-            {userName} created program goal{' '}
+            {actor}{' '}created program goal{' '}
             <span className={emphasisClass}>{details.programGoalName}</span>
           </>
         );
@@ -265,7 +271,7 @@ const ActivityFeed: React.FC = () => {
       case 'program_goal_updated':
         return (
           <>
-            {userName} updated program goal from{' '}
+            {actor}{' '}updated program goal from{' '}
             <span className={emphasisClass}>{details.oldName}</span> to{' '}
             <span className={emphasisClass}>{details.newName}</span>
           </>
@@ -274,7 +280,7 @@ const ActivityFeed: React.FC = () => {
       case 'program_goal_deleted':
         return (
           <>
-            {userName} deleted program goal{' '}
+            {actor}{' '}deleted program goal{' '}
             <span className={emphasisClass}>{details.programGoalName}</span>
           </>
         );
@@ -282,7 +288,7 @@ const ActivityFeed: React.FC = () => {
       case 'supply_created':
         return (
           <>
-            {userName} created supply{' '}
+            {actor}{' '}created supply{' '}
             <span className={emphasisClass}>{details.supplyName}</span>
           </>
         );
@@ -290,7 +296,7 @@ const ActivityFeed: React.FC = () => {
       case 'supply_updated':
         return (
           <>
-            {userName} updated supply:{' '}
+            {actor}{' '}updated supply:{' '}
             <span className={emphasisClass}>{formatChanges(details.changes)}</span>
           </>
         );
@@ -298,7 +304,7 @@ const ActivityFeed: React.FC = () => {
       case 'supply_deleted':
         return (
           <>
-            {userName} deleted supply{' '}
+            {actor}{' '}deleted supply{' '}
             <span className={emphasisClass}>{details.supplyName}</span>
           </>
         );
@@ -306,41 +312,52 @@ const ActivityFeed: React.FC = () => {
       case 'supplies_added_to_site':
         return (
           <>
-            {userName} added{' '}
+            {actor}{' '}added{' '}
             <span className={emphasisClass}>
               {formatSupplyList(details.supplies)}
             </span>{' '}
-            to {details.siteName}
+            to{' '}
+            <Link href={`/sites/${targetId}`} className={linkClass}>
+              {details.siteName}
+            </Link>
           </>
         );
 
       case 'supplies_removed_from_site':
         return (
           <>
-            {userName} removed{' '}
+            {actor}{' '}removed{' '}
             <span className={emphasisClass}>
               {formatSupplyList(details.supplies)}
             </span>{' '}
-            from {details.siteName}
+            from{' '}
+            <Link href={`/sites/${targetId}`} className={linkClass}>
+              {details.siteName}
+            </Link>
           </>
         );
 
       case 'site_supply_updated':
         return (
           <>
-            {userName} updated{' '}
+            {actor}{' '}updated{' '}
             <span className={emphasisClass}>{details.supplyName}</span> at{' '}
-            {details.siteName}
+            <Link href={`/sites/${targetId}`} className={linkClass}>
+              {details.siteName}
+            </Link>
           </>
         );
 
       case 'supply_distribution_logged':
         return (
           <>
-            {userName} distributed{' '}
-            <span className={emphasisClass}>
+            {actor}{' '}distributed{' '}
+            <Link
+              href={`/supply-distributions/${targetId}`}
+              className={linkClass}
+            >
               {formatSupplyList(details.supplies)}
-            </span>{' '}
+            </Link>{' '}
             at {details.siteName}
           </>
         );
@@ -348,7 +365,7 @@ const ActivityFeed: React.FC = () => {
       case 'supply_distribution_deleted':
         return (
           <>
-            {userName} deleted a {details.distributionType} distribution at{' '}
+            {actor}{' '}deleted a {details.distributionType} distribution at{' '}
             <span className={emphasisClass}>{details.siteName}</span>
           </>
         );
@@ -356,7 +373,7 @@ const ActivityFeed: React.FC = () => {
       case 'user_updated':
         return (
           <>
-            {userName} updated user profile:{' '}
+            {actor}{' '}updated user profile:{' '}
             <span className={emphasisClass}>{formatChanges(details.changes)}</span>
           </>
         );

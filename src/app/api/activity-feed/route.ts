@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       id: activity.id,
       type: activity.activityType,
       user: activity.actor,
+      userId: activity.actorId,
       timestamp: formatTimeAgo(activity.createdAt),
       details: activity.metadata,
       targetId: activity.targetId, // ← Add this line!
