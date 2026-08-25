@@ -5,7 +5,14 @@ import { useActivityFeed } from '@/hooks/useActivityFeed';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  PenLine,
+  Plus,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
@@ -65,6 +72,12 @@ const toneLabel: Record<ActivityTone, string> = {
   success: 'Created',
   neutral: 'Updated',
   danger: 'Deleted',
+};
+
+const toneIcon: Record<ActivityTone, LucideIcon> = {
+  success: Plus,
+  neutral: PenLine,
+  danger: Trash2,
 };
 
 const getActivityTone = (type: ActivityType): ActivityTone => {
@@ -440,6 +453,7 @@ const ActivityFeed: React.FC = () => {
           {currentActivities.map((activity: Activity) => {
             const subtitle = getActivitySubtitle(activity);
             const tone = getActivityTone(activity.type);
+            const ToneIcon = toneIcon[tone];
             return (
               <div
                 key={activity.id}
@@ -450,10 +464,11 @@ const ActivityFeed: React.FC = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={cn(
-                        'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold tracking-[.04em] whitespace-nowrap uppercase',
+                        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold tracking-[.04em] whitespace-nowrap uppercase',
                         toneChipClass[tone]
                       )}
                     >
+                      <ToneIcon className="size-[11px]" />
                       {toneLabel[tone]}
                     </span>
                     <span className="text-[13.5px] text-(--text-body)">
