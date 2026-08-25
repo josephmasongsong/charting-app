@@ -55,7 +55,7 @@ prev/next feature; the migration waits on everything.
 - **Why now / why punted:** Surfaced repeatedly during the August 2026 redesign conversion: the design-system templates show par-level sublines, low-stock pills, a warning banner, and a "Request stock" action on `/sites/[id]` — but the schema has no par column and no restock/request flow exists. Reviewing the redesign's open decisions on 2026-08-23, the call was to keep this deferred rather than pick a direction mid-redesign.
 - **What:** Decide whether site inventory grows toward (a) per-site par levels (a `site_supplies` column + admin UI) driving low-stock states everywhere, and/or (b) a worker-facing request-stock flow. Until then the `/sites/[id]` "Request stock" button and par-level TODOs stay stubbed.
 - **Why it matters:** Touches schema, two forms, and reporting; guessing wrong bakes in a workflow the TEW team doesn't actually run.
-- **What to do:** Product conversation with the TEW team first, then a schema plan, then wire the stubbed UI. Note the distribution form's low-stock warning (≤3 on hand, ratified 2026-08-25) is a stopgap — fold it into par levels when they land.
+- **What to do:** Product conversation with the TEW team first, then a schema plan, then wire the stubbed UI. Two constant thresholds now exist as stopgaps, both to fold into par levels when they land: the distribution form warns when a hand-out would leave ≤3 on hand (ratified 2026-08-25), and the dashboard's Needs Attention rail flags any tracked site supply under 10 units (`LOW_STOCK_THRESHOLD` in `/api/dashboard`, chosen 2026-08-25).
 
 ### 7. Feature backlog surfaced by the redesign (shelved 2026-08-25)
 

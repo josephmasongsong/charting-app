@@ -2,8 +2,16 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db, users, sites, events, supplyDistributions } from '@/db';
-import { eq, sql, gte, and } from 'drizzle-orm';
+import {
+  db,
+  users,
+  sites,
+  events,
+  supplyDistributions,
+  siteSupplies,
+  supplies,
+} from '@/db';
+import { eq, sql, gte, and, lt, asc } from 'drizzle-orm';
 
 export async function GET() {
   try {
@@ -74,6 +82,28 @@ export async function GET() {
         (a, b) => (b.daysSince ?? Number.MAX_SAFE_INTEGER) -
           (a.daysSince ?? Number.MAX_SAFE_INTEGER)
       );
+
+    // Low-stock supplies at the user's sites: any tracked site supply under
+    // the threshold, most-depleted first. (A supply a site doesn't stock has
+    // no site_supplies row and is deliberately not flagged.)
+    const LOW_STOCK_THRESHOLD = 10;
+    const lowStock = await db
+      .select({
+        siteId: siteSupplies.siteId,
+        siteName: sites.name,
+        supplyName: supplies.name,
+        quantity: siteSupplies.quantity,
+      })
+      .from(siteSupplies)
+      .innerJoin(sites, eq(siteSupplies.siteId, sites.id))
+      .innerJoin(supplies, eq(siteSupplies.supplyId, supplies.id))
+      .where(
+        and(
+          eq(sites.userId, session.user.id),
+          lt(siteSupplies.quantity, LOW_STOCK_THRESHOLD)
+        )
+      )
+      .orderBy(asc(siteSupplies.quantity), asc(sites.name), asc(supplies.name));
 
     // Calculate date for "this month"
     const startOfMonth = new Date();
@@ -164,6 +194,7 @@ export async function GET() {
     const dashboardData = {
       userSites,
       needsAttention,
+      lowStock,
       monthlyMetrics: {
         events: monthlyEvents?.count || 0,
         participants: monthlyParticipants?.totalParticipants || 0,

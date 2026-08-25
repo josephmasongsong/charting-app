@@ -30,6 +30,12 @@ interface DashboardData {
     lastEventDate: string | null;
     daysSince: number | null;
   }>;
+  lowStock: Array<{
+    siteId: string;
+    siteName: string;
+    supplyName: string;
+    quantity: number;
+  }>;
 }
 
 const pageClass = 'min-h-screen bg-(--surface-page) px-6 pt-8 pb-12';
@@ -143,6 +149,9 @@ export default function Dashboard() {
     return null;
   }
 
+  const attentionCount =
+    (data.needsAttention?.length || 0) + (data.lowStock?.length || 0);
+
   return (
     <div className={pageClass}>
       <div className={containerClass}>
@@ -157,12 +166,11 @@ export default function Dashboard() {
           <div className="mb-3 flex items-baseline justify-between gap-3">
             <h2 className={sectionTitleClass}>Needs Attention</h2>
             <span className="text-[13px] text-(--text-muted)">
-              {data.needsAttention?.length || 0} item
-              {(data.needsAttention?.length || 0) === 1 ? '' : 's'} need
-              {(data.needsAttention?.length || 0) === 1 ? 's' : ''} action
+              {attentionCount} item{attentionCount === 1 ? '' : 's'} need
+              {attentionCount === 1 ? 's' : ''} action
             </span>
           </div>
-          {data.needsAttention?.length ? (
+          {attentionCount > 0 ? (
             <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
               {data.needsAttention.map(site => (
                 <div
@@ -192,6 +200,34 @@ export default function Dashboard() {
                     className="self-start text-[13px] font-bold text-(--action-primary) hover:underline"
                   >
                     Log Event →
+                  </Link>
+                </div>
+              ))}
+              {data.lowStock?.map(item => (
+                <div
+                  key={`${item.siteId}-${item.supplyName}`}
+                  className="flex flex-col gap-2.5 rounded-(--radius-card) border border-(--border-default) border-l-4 border-l-(--bch-gold-600) bg-(--surface-card) p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-[38px] shrink-0 place-items-center rounded-full bg-[#FDF1D3] text-[#B07C0A]">
+                      <Package size={18} />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[14.5px] font-bold">
+                        {item.supplyName} — {item.siteName}
+                      </div>
+                      <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
+                        {item.quantity === 0
+                          ? 'Out of stock, reorder now'
+                          : `Only ${item.quantity} left, reorder soon`}
+                      </div>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/sites/${item.siteId}`}
+                    className="self-start text-[13px] font-bold text-(--action-primary) hover:underline"
+                  >
+                    View Supplies →
                   </Link>
                 </div>
               ))}
