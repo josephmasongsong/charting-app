@@ -754,14 +754,23 @@ export default function EventForm({
                     <span className="text-sm text-(--text-muted)">min</span>
                   </div>
                   <FieldError message={errors.eventDuration} />
-                  {/* TODO: /events/new — not wired: quick-duration presets. */}
                   <div className="mt-2 flex gap-1.5">
                     {[30, 60, 90, 120].map(minutes => (
                       <button
                         key={minutes}
                         type="button"
-                        disabled
-                        className="rounded-full border border-(--border-default) bg-(--surface-card) px-2.5 py-[3px] text-[12.5px] text-(--text-muted) opacity-60"
+                        aria-pressed={
+                          formData.eventDuration === String(minutes)
+                        }
+                        onClick={() =>
+                          handleInputChange('eventDuration', String(minutes))
+                        }
+                        className={cn(
+                          'cursor-pointer rounded-full border px-2.5 py-[3px] text-[12.5px]',
+                          formData.eventDuration === String(minutes)
+                            ? 'border-(--action-primary) bg-(--action-selected) text-(--action-primary)'
+                            : 'border-(--border-default) bg-(--surface-card) text-(--text-muted) hover:border-(--action-primary) hover:text-(--action-primary)'
+                        )}
                       >
                         {minutes} min
                       </button>
