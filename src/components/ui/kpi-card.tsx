@@ -54,7 +54,7 @@ function KpiCard({
             {label}
           </h3>
           {Icon && (
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-(--action-selected) text-(--surface-chrome)">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[rgba(0,98,101,.08)] text-(--surface-chrome)">
               <Icon className="size-4" />
             </span>
           )}

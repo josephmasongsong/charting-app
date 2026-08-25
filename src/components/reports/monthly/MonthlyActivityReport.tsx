@@ -1,7 +1,14 @@
 'use client';
 
 import React from 'react';
-import { CalendarDays, Users, DollarSign, Package, BarChart3 } from 'lucide-react';
+import {
+  BarChart3,
+  Calendar,
+  Contact,
+  DollarSign,
+  Target,
+  Users,
+} from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { cn } from '@/lib/utils';
 import { MonthlyActivityReportProps } from './types';
@@ -73,6 +80,30 @@ export function MonthlyActivityReport({
         ? 'decline'
         : 'stable';
 
+  // Efficiency KPIs — derived from totals already in props.
+  const growthOf = (cur: number, prev: number) => {
+    const rate = prev > 0 ? Math.round(((cur - prev) / prev) * 100) : 0;
+    const type: 'growth' | 'decline' | 'stable' =
+      rate > 2 ? 'growth' : rate < -2 ? 'decline' : 'stable';
+    return { rate, type };
+  };
+  const prevCost = data.monthlyCostGrowth.previousMonthCost;
+  const costPerParticipant =
+    data.totalParticipants > 0 ? data.totalCost / data.totalParticipants : 0;
+  const prevCostPerParticipant =
+    totalPreviousParticipants > 0 ? prevCost / totalPreviousParticipants : 0;
+  const costPerParticipantGrowth = growthOf(
+    costPerParticipant,
+    prevCostPerParticipant,
+  );
+  const avgParticipants =
+    data.totalEvents > 0 ? data.totalParticipants / data.totalEvents : 0;
+  const prevAvgParticipants =
+    totalPreviousEvents > 0
+      ? totalPreviousParticipants / totalPreviousEvents
+      : 0;
+  const avgParticipantsGrowth = growthOf(avgParticipants, prevAvgParticipants);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -94,12 +125,12 @@ export function MonthlyActivityReport({
       </div>
 
       {/* Metric Cards - Top Row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
         <KpiCard
           variant="panel"
           label="Total Events"
           value={data.totalEvents.toLocaleString()}
-          icon={CalendarDays}
+          icon={Calendar}
           sub={
             <div className="flex items-center gap-1 text-xs text-(--text-muted)">
               {data.monthlyEventGrowth && data.monthlyEventGrowth.length > 0 ? (
@@ -148,7 +179,7 @@ export function MonthlyActivityReport({
         <KpiCard
           variant="panel"
           label="Total Cost"
-          value={data.totalCost.toFixed(2)}
+          value={`$${data.totalCost.toFixed(2)}`}
           icon={DollarSign}
           sub={
             <div className="flex items-center gap-1 text-xs text-(--text-muted)">
@@ -170,29 +201,44 @@ export function MonthlyActivityReport({
         />
         <KpiCard
           variant="panel"
-          label="Items Distributed"
-          value={data.supplyDistributions
-            .reduce((sum, item) => sum + item.totalQuantityDistributed, 0)
-            .toLocaleString()}
-          icon={Package}
+          label="Cost per Participant"
+          value={`$${costPerParticipant.toFixed(2)}`}
+          icon={Target}
           sub={
             <div className="flex items-center gap-1 text-xs text-(--text-muted)">
               <div
                 className={cn(
                   'flex items-center gap-1',
-                  getGrowthColor(
-                    data.monthlySupplyDistributionGrowth.growthType,
-                  ),
+                  getCostGrowthColor(costPerParticipantGrowth.type),
                 )}
               >
-                {getGrowthIcon(
-                  data.monthlySupplyDistributionGrowth.growthType,
-                )}
+                {getCostGrowthIcon(costPerParticipantGrowth.type)}
                 <span>
-                  {data.monthlySupplyDistributionGrowth.growthRate > 0
-                    ? '+'
-                    : ''}
-                  {data.monthlySupplyDistributionGrowth.growthRate}%
+                  {costPerParticipantGrowth.rate > 0 ? '+' : ''}
+                  {costPerParticipantGrowth.rate}%
+                </span>
+              </div>{' '}
+              vs Previous Period
+            </div>
+          }
+        />
+        <KpiCard
+          variant="panel"
+          label="Avg Participants / Event"
+          value={avgParticipants.toFixed(1)}
+          icon={Contact}
+          sub={
+            <div className="flex items-center gap-1 text-xs text-(--text-muted)">
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  getGrowthColor(avgParticipantsGrowth.type),
+                )}
+              >
+                {getGrowthIcon(avgParticipantsGrowth.type)}
+                <span>
+                  {avgParticipantsGrowth.rate > 0 ? '+' : ''}
+                  {avgParticipantsGrowth.rate}%
                 </span>
               </div>{' '}
               vs Previous Period
