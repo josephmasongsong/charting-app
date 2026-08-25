@@ -42,6 +42,7 @@ async function getSite(siteId: string) {
       communityPartnerId: sites.communityPartnerId,
       communityPartnerName: communityPartners.name,
       isSingleSeniorOnly: sites.isSingleSeniorOnly,
+      region: sites.region,
       userId: sites.userId,
       userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
       userEmail: users.email,
@@ -99,6 +100,13 @@ const outlineButtonClass =
 function money(value: number) {
   return `$${value.toFixed(2)}`;
 }
+
+const REGION_LABELS: Record<string, string> = {
+  LMDM: 'Lower Mainland',
+  VIR: 'Vancouver Island',
+  Interior: 'Interior',
+  Northern: 'Northern',
+};
 
 function formatDate(date: Date | string | null) {
   if (!date) return '';
@@ -236,8 +244,9 @@ export default async function SitePage({ params }: SitePageProps) {
 
           <div>
             <ProfileField label="Address">{site.address}</ProfileField>
-            {/* TODO: /sites/[id] — not wired: sites has no region column. */}
-            <ProfileField label="Region">—</ProfileField>
+            <ProfileField label="Region">
+              {REGION_LABELS[site.region] ?? site.region}
+            </ProfileField>
             <ProfileField label="Tenancy Type">
               {site.isSingleSeniorOnly ? 'Single seniors only' : 'Mixed tenancy'}
             </ProfileField>
