@@ -17,7 +17,6 @@ export interface ProgramGoalSummary {
   id: string;
   name: string;
   activityCount: number;
-  color: string;
 }
 
 export interface ActivityTypeParticipation {
@@ -25,7 +24,6 @@ export interface ActivityTypeParticipation {
   name: string;
   participantCount: number;
   eventCount: number;
-  color: string;
 }
 
 export interface MonthlyParticipantGrowth {

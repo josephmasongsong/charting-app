@@ -32,7 +32,6 @@ interface ProgramGoalSummary {
   id: string;
   name: string;
   activityCount: number;
-  color: string;
 }
 
 interface ActivityTypeParticipation {
@@ -40,7 +39,6 @@ interface ActivityTypeParticipation {
   name: string;
   participantCount: number;
   eventCount: number;
-  color: string;
 }
 
 interface MonthlyParticipantGrowth {
@@ -122,20 +120,6 @@ interface MonthlyActivityReportData {
     maxDate: string;
   };
 }
-
-// Color palette for program goals
-const PROGRAM_GOAL_COLORS = [
-  '#3b82f6', // blue
-  '#10b981', // green
-  '#f59e0b', // yellow
-  '#8b5cf6', // purple
-  '#ef4444', // red
-  '#06b6d4', // cyan
-  '#f97316', // orange
-  '#84cc16', // lime
-  '#ec4899', // pink
-  '#6366f1', // indigo
-];
 
 // Updated generateMonthlyActivityReport function to include supply distributions
 export async function generateMonthlyActivityReport(
@@ -704,26 +688,24 @@ export async function generateMonthlyActivityReport(
     reportMonth = `${monthNames[startMonth - 1]} ${startYear}`;
   }
 
-  // Map program goals with colors, filtering out nulls
+  // Map program goals, filtering out nulls
   const programGoalsWithColors: ProgramGoalSummary[] = programGoalsData
     .filter(goal => goal.programGoalId && goal.programGoalName)
-    .map((goal, index) => ({
+    .map(goal => ({
       id: goal.programGoalId!,
       name: goal.programGoalName!,
       activityCount: Number(goal.activityCount),
-      color: PROGRAM_GOAL_COLORS[index % PROGRAM_GOAL_COLORS.length],
     }));
 
-  // Map activity types participation with colors (different palette to avoid conflicts), filtering out nulls
+  // Map activity types participation, filtering out nulls
   const activityTypesParticipationWithColors: ActivityTypeParticipation[] =
     activityTypesParticipationData
       .filter(activity => activity.activityTypeId && activity.activityTypeName)
-      .map((activity, index) => ({
+      .map(activity => ({
         id: activity.activityTypeId!,
         name: activity.activityTypeName!,
         participantCount: Number(activity.participantCount),
         eventCount: Number(activity.eventCount),
-        color: PROGRAM_GOAL_COLORS[(index + 3) % PROGRAM_GOAL_COLORS.length], // Offset by 3 to avoid exact same colors as program goals
       }));
 
   // Map supply distribution data
