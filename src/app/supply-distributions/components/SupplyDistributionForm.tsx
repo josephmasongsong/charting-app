@@ -128,6 +128,9 @@ export default function SupplyDistributionForm() {
   });
 
   const [optionsLoading, setOptionsLoading] = useState(true);
+  const [lastLog, setLastLog] = useState<
+    Array<{ supplyId: string; quantity: number }> | null
+  >(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -177,6 +180,7 @@ export default function SupplyDistributionForm() {
           ...prev,
           supplies: data.supplies,
         }));
+        setLastLog(data.lastLog ?? null);
 
         // Clear any selected supplies that are no longer available
         setDistributionItems(prev =>
@@ -204,6 +208,27 @@ export default function SupplyDistributionForm() {
 
     fetchSiteSupplies();
   }, [formData.siteId]);
+
+  const repeatLastLog = () => {
+    if (!lastLog?.length) return;
+    const rows = lastLog
+      .map((item, index) => {
+        const supply = options.supplies.find(s => s.id === item.supplyId);
+        if (!supply) return null;
+        return {
+          id: index + 1,
+          supplyId: supply.id,
+          supplyName: supply.name,
+          quantity: item.quantity,
+          unitCost: parseFloat(supply.costPerUnit),
+          lineTotal: item.quantity * parseFloat(supply.costPerUnit),
+        };
+      })
+      .filter((row): row is DistributionItem => row !== null);
+    if (rows.length) {
+      setDistributionItems(rows);
+    }
+  };
 
   const addSupplyItem = () => {
     const newId = Math.max(...distributionItems.map(item => item.id)) + 1;
@@ -537,12 +562,16 @@ export default function SupplyDistributionForm() {
                   sub="Unit costs come from the site inventory record"
                 />
                 <div className="flex gap-2.5">
-                  {/* TODO: /supply-distributions/new — not wired: no
-                      last-log endpoint exists. */}
                   <Button
                     type="button"
                     variant="outline"
-                    disabled
+                    onClick={repeatLastLog}
+                    disabled={submitting || !lastLog?.length}
+                    title={
+                      lastLog?.length
+                        ? 'Prefill items from your last log at this site'
+                        : 'No previous log for this site'
+                    }
                     className={outlineButtonClass}
                   >
                     Repeat last log

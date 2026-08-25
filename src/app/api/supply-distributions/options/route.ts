@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db, users, sites, events, supplies, siteSupplies } from '@/db';
+import {
+  db,
+  users,
+  sites,
+  events,
+  supplies,
+  siteSupplies,
+  supplyDistributions,
+  supplyDistributionItems,
+} from '@/db';
 import { eq, sql, desc, and } from 'drizzle-orm';
 
 export async function GET(req: Request) {
@@ -72,9 +81,41 @@ export async function GET(req: Request) {
         .orderBy(supplies.name);
     }
 
+    // The caller's most recent distribution at the selected site, for the
+    // form's "Repeat last log" prefill. Scoped to the session user's own
+    // records; same session-only guard as the rest of this handler.
+    let lastLog: Array<{ supplyId: string; quantity: number }> | null = null;
+    if (siteId) {
+      const [lastDistribution] = await db
+        .select({ id: supplyDistributions.id })
+        .from(supplyDistributions)
+        .where(
+          and(
+            eq(supplyDistributions.userId, session.user.id),
+            eq(supplyDistributions.siteId, siteId)
+          )
+        )
+        .orderBy(
+          desc(supplyDistributions.distributionDate),
+          desc(supplyDistributions.createdAt)
+        )
+        .limit(1);
+
+      if (lastDistribution) {
+        lastLog = await db
+          .select({
+            supplyId: supplyDistributionItems.supplyId,
+            quantity: supplyDistributionItems.quantityDistributed,
+          })
+          .from(supplyDistributionItems)
+          .where(eq(supplyDistributionItems.distributionId, lastDistribution.id));
+      }
+    }
+
     return NextResponse.json({
       sites: sitesWithSupplies,
       supplies: availableSupplies,
+      lastLog,
     });
   } catch (error) {
     console.error('Supply distribution options fetch error:', error);
