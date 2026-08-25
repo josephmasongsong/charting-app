@@ -5,16 +5,9 @@ import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { KpiCard } from '@/components/ui/kpi-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
+  Calendar,
   MapPin,
   Users,
   CalendarDays,
@@ -46,18 +39,6 @@ interface DashboardData {
     lastEventDate: string | null;
     daysSince: number | null;
   }>;
-  monthlyMetrics: {
-    events: number;
-    participants: number;
-    distributions: number;
-    adminHours: number;
-  };
-  allTimeMetrics: {
-    events: number;
-    participants: number;
-    distributions: number;
-    adminHours: number;
-  };
 }
 
 const pageClass = 'min-h-screen bg-(--surface-page) px-6 pt-8 pb-12';
@@ -109,7 +90,6 @@ const adminNavItems: Array<{ href: string; icon: LucideIcon; label: string }> = 
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -186,8 +166,6 @@ export default function Dashboard() {
     return null;
   }
 
-  const currentMetrics =
-    selectedPeriod === 'month' ? data.monthlyMetrics : data.allTimeMetrics;
   const isAdmin = session?.user?.role === 'admin';
 
   return (
@@ -202,27 +180,6 @@ export default function Dashboard() {
 
         <section className="mt-6">
           <div className="mb-3 flex items-baseline justify-between gap-3">
-            <h2 className={sectionTitleClass}>Key Metrics</h2>
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-              <SelectTrigger className="h-9 w-32 rounded-(--radius-input) border-(--border-input) bg-(--surface-card) text-[14.5px] shadow-none">
-                <SelectValue placeholder="Period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="alltime">All Time</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-            <KpiCard value={currentMetrics.events} label="Events Held" />
-            <KpiCard value={currentMetrics.participants} label="Participants Served" />
-            <KpiCard value={currentMetrics.distributions} label="Supply Distributions" />
-            <KpiCard value={currentMetrics.adminHours} label="Admin Hours" />
-          </div>
-        </section>
-
-        <section className="mt-6">
-          <div className="mb-3 flex items-baseline justify-between gap-3">
             <h2 className={sectionTitleClass}>Needs Attention</h2>
             <span className="text-[13px] text-(--text-muted)">
               {data.needsAttention?.length || 0} item
@@ -231,23 +188,36 @@ export default function Dashboard() {
             </span>
           </div>
           {data.needsAttention?.length ? (
-            <div className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card)">
+            <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
               {data.needsAttention.map(site => (
                 <div
                   key={site.siteId}
-                  className="flex items-center justify-between gap-4 border-b border-(--bch-gray-200) px-5 py-3 last:border-b-0"
+                  className="flex flex-col gap-2.5 rounded-(--radius-card) border border-(--border-default) border-l-4 border-l-(--bch-red-600) bg-(--surface-card) p-4"
                 >
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-[38px] shrink-0 place-items-center rounded-full bg-(--danger-surface) text-(--bch-red-600)">
+                      <Calendar size={18} />
+                    </span>
+                    <div className="min-w-0">
+                      <Link
+                        href={`/sites/${site.siteId}`}
+                        className="block text-[14.5px] font-bold text-(--text-body) hover:text-(--action-primary) hover:underline"
+                      >
+                        {site.siteName}
+                      </Link>
+                      <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
+                        {site.daysSince === null
+                          ? 'No event logged yet'
+                          : `No event logged in ${site.daysSince} days`}
+                      </div>
+                    </div>
+                  </div>
                   <Link
-                    href={`/sites/${site.siteId}`}
-                    className="text-[14.5px] font-semibold text-(--text-body) hover:text-(--action-primary) hover:underline"
+                    href="/events/new"
+                    className="self-start text-[13px] font-bold text-(--action-primary) hover:underline"
                   >
-                    {site.siteName}
+                    Log Event →
                   </Link>
-                  <span className="text-[12.5px] whitespace-nowrap text-(--warning-text)">
-                    {site.daysSince === null
-                      ? 'No events logged yet'
-                      : `No events in ${site.daysSince} days`}
-                  </span>
                 </div>
               ))}
             </div>
