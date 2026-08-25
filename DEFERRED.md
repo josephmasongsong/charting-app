@@ -49,3 +49,10 @@ prev/next feature; the migration waits on everything.
 - **What:** The app currently uses Neon Postgres. Supabase offers Canadian regions, which was the original stated motivation in the intake doc.
 - **Why it matters:** The intake doc emphasizes Canadian data hosting. The current Neon setup may not satisfy that, depending on region. Long-term, aligning with stated design intent matters for stakeholder trust and future audits.
 - **What to do:** Design as a multi-session agentic exercise with explicit verification at each step — schema migration, client library swap, env var changes, deploy config.
+
+### 6. Decide the site-inventory direction (par levels, request-stock flow)
+
+- **Why now / why punted:** Surfaced repeatedly during the August 2026 redesign conversion: the design-system templates show par-level sublines, low-stock pills, a warning banner, and a "Request stock" action on `/sites/[id]` — but the schema has no par column and no restock/request flow exists. Reviewing the redesign's open decisions on 2026-08-23, the call was to keep this deferred rather than pick a direction mid-redesign.
+- **What:** Decide whether site inventory grows toward (a) per-site par levels (a `site_supplies` column + admin UI) driving low-stock states everywhere, and/or (b) a worker-facing request-stock flow. Until then the `/sites/[id]` "Request stock" button and par-level TODOs stay stubbed.
+- **Why it matters:** Touches schema, two forms, and reporting; guessing wrong bakes in a workflow the TEW team doesn't actually run.
+- **What to do:** Product conversation with the TEW team first, then a schema plan, then wire the stubbed UI. Note the distribution form's low-stock warning (≤3 on hand, ratified 2026-08-25) is a stopgap — fold it into par levels when they land.
