@@ -19,7 +19,7 @@ export const eventBasicInfoSchema = z.object({
   description: z
     .string()
     .min(1, 'Description is required')
-    .max(5000, 'Description too long'),
+    .max(600, 'Description must be 600 characters or fewer'),
 });
 
 // Details schema (Step 2) - matches form state exactly
@@ -78,7 +78,7 @@ export const createEventSchema = z.object({
   description: z
     .string()
     .min(1, 'Description is required')
-    .max(5000, 'Description too long'),
+    .max(600, 'Description must be 600 characters or fewer'),
   eventDuration: z.number().min(1, 'Event duration must be at least 1 minute'),
   adminDuration: z.number().min(0, 'Admin duration cannot be negative'),
   newParticipants: z.number().min(0, 'New participants cannot be negative'),
@@ -107,7 +107,7 @@ export const updateEventSchema = z.object({
   description: z
     .string()
     .min(1, 'Description is required')
-    .max(5000, 'Description too long'),
+    .max(600, 'Description must be 600 characters or fewer'),
   eventDuration: z.number().min(1, 'Event duration must be at least 1 minute'),
   adminDuration: z.number().min(0, 'Admin duration cannot be negative'),
   newParticipants: z.number().min(0, 'New participants cannot be negative'),

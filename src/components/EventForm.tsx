@@ -643,10 +643,14 @@ export default function EventForm({
                     handleInputChange('description', e.target.value)
                   }
                   aria-invalid={!!errors.description}
+                  maxLength={600}
                   className={cn(
                     'mt-1.5 min-h-[110px] rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)'
                   )}
                 />
+                <div className="mt-1 text-right text-[12.5px] text-(--text-muted)">
+                  {formData.description.length} / 600
+                </div>
                 <FieldError message={errors.description} />
               </div>
             </Card>
