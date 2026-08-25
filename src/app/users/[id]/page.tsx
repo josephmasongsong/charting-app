@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import { Home } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { ProfileField } from '@/components/ui/profile-field';
 import StatusBadge from '@/app/admin/users/components/StatusBadge';
@@ -131,31 +132,39 @@ export default async function UserPage({ params }: UserPageProps) {
 
           <div>
             <div className="mb-3 text-[17px] font-bold">
-              Assigned Sites ({assignedSites.length})
+              Developments ({assignedSites.length})
             </div>
             {assignedSites.length > 0 ? (
-              <div className="flex flex-col gap-3">
+              <div>
                 {assignedSites.map(site => (
                   <div
                     key={site.id}
-                    className="rounded-(--radius-control) border border-(--border-default) px-4 py-3"
+                    className="flex items-center gap-3 border-b border-(--bch-gray-200) py-2.5"
                   >
-                    <Link
-                      href={`/sites/${site.id}`}
-                      className="text-[14.5px] font-bold text-(--text-body) hover:text-(--action-primary) hover:underline"
-                    >
-                      {site.name}
-                    </Link>
-                    <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
-                      {site.address} · {site.numberOfTenants} tenant
-                      {site.numberOfTenants === 1 ? '' : 's'}
+                    <div className="grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-(--bch-teal-600) text-white">
+                      <Home size={19} />
                     </div>
+                    <div className="min-w-0">
+                      <Link
+                        href={`/sites/${site.id}`}
+                        className="text-[14.5px] font-bold text-(--action-primary) hover:underline"
+                      >
+                        {site.name}
+                      </Link>
+                      <div className="text-[12.5px] text-(--text-muted)">
+                        {site.address} · {site.numberOfTenants} tenant
+                        {site.numberOfTenants === 1 ? '' : 's'}
+                      </div>
+                    </div>
+                    {/* TODO: /users/[id] — not wired: template status pill
+                        (Operational / In development) needs a sites.status
+                        column. */}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-[14.5px] text-(--text-muted)">
-                Not assigned to any sites.
+              <p className="pt-1 text-sm text-(--text-muted)">
+                Not assigned as primary on any developments.
               </p>
             )}
           </div>
