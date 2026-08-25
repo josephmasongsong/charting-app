@@ -42,6 +42,7 @@ interface Site {
   userName: string;
   isSingleSeniorOnly?: boolean;
   hasCommunityRoom?: boolean;
+  region?: string;
   userId?: string;
 }
 
@@ -56,6 +57,7 @@ interface InitialFilters {
   isSingleSeniorOnly: 'true' | 'false' | 'all';
   hasCommunityRoom: 'true' | 'false' | 'all';
   userId: string; // 'all' or id
+  region: string; // region code or 'all'
 }
 
 interface SitesListClientProps {
@@ -85,6 +87,13 @@ const rowActionClass =
 const destructiveActionClass =
   'size-8 rounded-(--radius-control) text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)';
 
+const REGIONS = [
+  { value: 'LMDM', label: 'Lower Mainland' },
+  { value: 'VIR', label: 'Vancouver Island' },
+  { value: 'Interior', label: 'Interior' },
+  { value: 'Northern', label: 'Northern' },
+];
+
 export default function SitesListClient({
   initialSites,
   initialFilters,
@@ -105,6 +114,9 @@ export default function SitesListClient({
   >(initialFilters.hasCommunityRoom);
   const [filterUserId, setFilterUserId] = useState<string>(
     initialFilters.userId || 'all'
+  );
+  const [filterRegion, setFilterRegion] = useState<string>(
+    initialFilters.region || 'all'
   );
 
   const itemsPerPage = 10;
@@ -134,6 +146,12 @@ export default function SitesListClient({
       if (updates.userId && updates.userId !== 'all')
         params.set('userId', updates.userId);
       else params.delete('userId');
+    }
+
+    if (updates.region !== undefined) {
+      if (updates.region && updates.region !== 'all')
+        params.set('region', updates.region);
+      else params.delete('region');
     }
 
     if (updates.page !== undefined) {
@@ -173,11 +191,18 @@ export default function SitesListClient({
     updateURL({ userId: value, page: 1 });
   };
 
+  const handleRegionChange = (value: string) => {
+    setFilterRegion(value);
+    setCurrentPage(1);
+    updateURL({ region: value, page: 1 });
+  };
+
   const clearFilters = () => {
     setSearchText('');
     setFilterSeniorOnly('all');
     setFilterCommunityRoom('all');
     setFilterUserId('all');
+    setFilterRegion('all');
     setCurrentPage(1);
     router.push('/sites');
   };
@@ -187,6 +212,7 @@ export default function SitesListClient({
     filterSeniorOnly !== 'all',
     filterCommunityRoom !== 'all',
     filterUserId !== 'all',
+    filterRegion !== 'all',
   ].filter(Boolean).length;
 
   const rangeStart = totalCount === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
@@ -276,6 +302,23 @@ export default function SitesListClient({
             </SelectContent>
           </Select>
 
+          <Select value={filterRegion} onValueChange={handleRegionChange}>
+            <SelectTrigger
+              aria-label="Region"
+              className={cn(selectTriggerClass, 'w-full lg:w-48')}
+            >
+              <SelectValue placeholder="Region" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Regions</SelectItem>
+              {REGIONS.map(r => (
+                <SelectItem key={r.value} value={r.value}>
+                  {r.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {activeFiltersCount > 0 && (
             <Button
               variant="outline"
@@ -302,7 +345,7 @@ export default function SitesListClient({
               className="border-0"
             />
           ) : (
-            <Table className="min-w-[900px] border-collapse bg-(--surface-card) text-sm">
+            <Table className="min-w-[980px] border-collapse bg-(--surface-card) text-sm">
               <TableHeader>
                 <TableRow className="border-0 hover:bg-transparent">
                   <TableHead className={headCellClass}>Name</TableHead>
@@ -311,6 +354,7 @@ export default function SitesListClient({
                   <TableHead className={headCellClass}>
                     Assigned Worker
                   </TableHead>
+                  <TableHead className={headCellClass}>Region</TableHead>
                   <TableHead className={headCellClass}>
                     Community Partner
                   </TableHead>
@@ -348,6 +392,11 @@ export default function SitesListClient({
                     </TableCell>
                     <TableCell className={bodyCellClass}>
                       {site.userName}
+                    </TableCell>
+                    <TableCell className={bodyCellClass}>
+                      <span className="inline-flex rounded-full bg-(--surface-muted) px-2.5 py-[3px] text-[12.5px] font-semibold whitespace-nowrap text-(--text-body)">
+                        {site.region || 'LMDM'}
+                      </span>
                     </TableCell>
                     <TableCell className={bodyCellClass}>
                       {site.hasCommunityPartner && site.communityPartnerName ? (

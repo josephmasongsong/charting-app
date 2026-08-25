@@ -13,6 +13,7 @@ interface SitesPageProps {
     isSingleSeniorOnly?: 'true' | 'false' | 'all';
     hasCommunityRoom?: 'true' | 'false' | 'all';
     userId?: string; // user id or 'all'
+    region?: string; // region code or 'all'
   }>;
 }
 
@@ -37,6 +38,7 @@ async function getSites(params: {
   isSingleSeniorOnly?: 'true' | 'false' | 'all';
   hasCommunityRoom?: 'true' | 'false' | 'all';
   userId?: string; // concrete id or 'all'
+  region?: string; // region code or 'all'
 }) {
   const {
     search = '',
@@ -45,6 +47,7 @@ async function getSites(params: {
     isSingleSeniorOnly = 'all',
     hasCommunityRoom = 'all',
     userId = 'all',
+    region = 'all',
   } = params;
 
   const offset = (page - 1) * limit;
@@ -75,6 +78,10 @@ async function getSites(params: {
     conditions.push(eq(sites.userId, userId));
   }
 
+  if (region && region !== 'all') {
+    conditions.push(eq(sites.region, region));
+  }
+
   const whereCond = conditions.length ? and(...conditions) : undefined;
 
   const data = await db
@@ -88,6 +95,7 @@ async function getSites(params: {
       userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
       isSingleSeniorOnly: sites.isSingleSeniorOnly,
       hasCommunityRoom: sites.hasCommunityRoom,
+      region: sites.region,
       userId: sites.userId,
     })
     .from(sites)
@@ -128,6 +136,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
   const hasCommunityRoom =
     (params.hasCommunityRoom as 'true' | 'false' | 'all') || 'all';
   const userId = params.userId || 'all';
+  const region = params.region || 'all';
 
   const { data, totalCount } = await getSites({
     search,
@@ -135,6 +144,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     isSingleSeniorOnly,
     hasCommunityRoom,
     userId,
+    region,
   });
 
   const { organizers } = await getFilterOptions();
@@ -149,6 +159,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
         isSingleSeniorOnly,
         hasCommunityRoom,
         userId,
+        region,
       }}
       filterOptions={{ organizers }}
       totalCount={totalCount}
