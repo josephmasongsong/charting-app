@@ -112,10 +112,28 @@ export async function GET(req: Request) {
       }
     }
 
+    // Events at the selected site, for linking an event_distribution to the
+    // event it happened at. Most recent first.
+    let siteEvents: Array<{ id: string; title: string; eventDate: string }> =
+      [];
+    if (siteId) {
+      siteEvents = await db
+        .select({
+          id: events.id,
+          title: events.title,
+          eventDate: events.eventDate,
+        })
+        .from(events)
+        .where(eq(events.siteId, siteId))
+        .orderBy(desc(events.eventDate), desc(events.createdAt))
+        .limit(50);
+    }
+
     return NextResponse.json({
       sites: sitesWithSupplies,
       supplies: availableSupplies,
       lastLog,
+      events: siteEvents,
     });
   } catch (error) {
     console.error('Supply distribution options fetch error:', error);

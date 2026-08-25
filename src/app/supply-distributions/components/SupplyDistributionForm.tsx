@@ -32,6 +32,12 @@ interface Site {
   name: string;
 }
 
+interface SiteEvent {
+  id: string;
+  title: string;
+  eventDate: string;
+}
+
 interface Supply {
   id: string;
   name: string;
@@ -50,6 +56,7 @@ interface DistributionItem {
 
 interface FormData {
   siteId: string;
+  eventId: string;
   distributionType: string;
   distributionDate: string;
   recipientNotes: string;
@@ -116,6 +123,7 @@ export default function SupplyDistributionForm() {
 
   const [formData, setFormData] = useState<FormData>({
     siteId: '',
+    eventId: '',
     distributionType: 'door_to_door',
     distributionDate: new Date().toISOString().split('T')[0],
     recipientNotes: '',
@@ -125,6 +133,7 @@ export default function SupplyDistributionForm() {
   const [options, setOptions] = useState({
     sites: [] as Site[],
     supplies: [] as Supply[],
+    events: [] as SiteEvent[],
   });
 
   const [optionsLoading, setOptionsLoading] = useState(true);
@@ -179,6 +188,7 @@ export default function SupplyDistributionForm() {
         setOptions(prev => ({
           ...prev,
           supplies: data.supplies,
+          events: data.events ?? [],
         }));
         setLastLog(data.lastLog ?? null);
 
@@ -355,6 +365,7 @@ export default function SupplyDistributionForm() {
 
         setFormData({
           siteId: '',
+          eventId: '',
           distributionType: 'door_to_door',
           distributionDate: new Date().toISOString().split('T')[0],
           recipientNotes: '',
@@ -471,7 +482,7 @@ export default function SupplyDistributionForm() {
                   <Select
                     value={formData.siteId}
                     onValueChange={value =>
-                      setFormData({ ...formData, siteId: value })
+                      setFormData({ ...formData, siteId: value, eventId: '' })
                     }
                     disabled={submitting}
                   >
@@ -537,6 +548,9 @@ export default function SupplyDistributionForm() {
                           setFormData({
                             ...formData,
                             distributionType: type.value,
+                            ...(type.value !== 'event_distribution'
+                              ? { eventId: '' }
+                              : {}),
                           })
                         }
                         className={cn(
@@ -552,6 +566,53 @@ export default function SupplyDistributionForm() {
                   })}
                 </div>
               </div>
+
+              {formData.distributionType === 'event_distribution' && (
+                <div className="mt-4 space-y-1.5 md:max-w-[calc(50%-8px)]">
+                  <Label
+                    htmlFor="linkedEvent"
+                    className="text-[15px] font-normal"
+                  >
+                    Linked event
+                  </Label>
+                  <Select
+                    value={formData.eventId || 'none'}
+                    onValueChange={value =>
+                      setFormData({
+                        ...formData,
+                        eventId: value === 'none' ? '' : value,
+                      })
+                    }
+                    disabled={submitting || !formData.siteId}
+                  >
+                    <SelectTrigger
+                      id="linkedEvent"
+                      className={selectTriggerClass}
+                    >
+                      <SelectValue
+                        placeholder={
+                          formData.siteId
+                            ? 'Select an event (optional)'
+                            : 'Select site first'
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No linked event</SelectItem>
+                      {options.events.map(event => (
+                        <SelectItem key={event.id} value={event.id}>
+                          {event.title} — {event.eventDate}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[12.5px] text-(--text-muted)">
+                    {formData.siteId
+                      ? 'Ties this distribution to the event it was handed out at.'
+                      : 'Pick a site to load its events.'}
+                  </p>
+                </div>
+              )}
             </Card>
 
             <Card className={surfaceCardClass}>
