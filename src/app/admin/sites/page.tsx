@@ -1,11 +1,11 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import SitesTable from './components/SitesTable';
+import SitesTable, { type SiteStats } from './components/SitesTable';
 
 const primaryButtonClass =
   'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover)';
@@ -15,13 +15,15 @@ const statLabelClass =
   'text-[11.5px] font-bold tracking-[.7px] text-(--text-muted) uppercase';
 const statValueClass = 'mt-1 text-[28px] leading-[1.2] font-bold';
 
-// Total sites / total tenants / with community room / senior only. The list
-// endpoint returns only the current page, so the values have no source yet.
-const stats = [
-  { label: 'Total sites', accent: 'border-t-(--surface-chrome)' },
-  { label: 'Total tenants', accent: 'border-t-(--action-primary)' },
-  { label: 'With community room', accent: 'border-t-(--bch-seafoam)' },
-  { label: 'Senior only', accent: 'border-t-(--bch-gold-500)' },
+const statCards: Array<{
+  key: keyof SiteStats;
+  label: string;
+  accent: string;
+}> = [
+  { key: 'totalSites', label: 'Total sites', accent: 'border-t-(--surface-chrome)' },
+  { key: 'totalTenants', label: 'Total tenants', accent: 'border-t-(--action-primary)' },
+  { key: 'withCommunityRoom', label: 'With community room', accent: 'border-t-(--bch-seafoam)' },
+  { key: 'seniorOnly', label: 'Senior only', accent: 'border-t-(--bch-gold-500)' },
 ];
 
 function SitesTableSkeleton() {
@@ -35,6 +37,7 @@ function SitesTableSkeleton() {
 
 export default function AdminSitesPage() {
   const router = useRouter();
+  const [stats, setStats] = useState<SiteStats | null>(null);
 
   return (
     <div className="space-y-5">
@@ -57,20 +60,22 @@ export default function AdminSitesPage() {
         </Button>
       </div>
 
-      {/* TODO: /admin/sites — not wired: the stat values need aggregates
-          (unfiltered count, sum of tenants, filtered counts) that
-          GET /api/admin/sites does not return. */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map(stat => (
-          <div key={stat.label} className={cn(statCardClass, stat.accent, 'opacity-60')}>
-            <div className={statLabelClass}>{stat.label}</div>
-            <div className={statValueClass}>—</div>
+        {statCards.map(card => (
+          <div
+            key={card.label}
+            className={cn(statCardClass, card.accent, !stats && 'opacity-60')}
+          >
+            <div className={statLabelClass}>{card.label}</div>
+            <div className={statValueClass}>
+              {stats ? stats[card.key].toLocaleString() : '—'}
+            </div>
           </div>
         ))}
       </div>
 
       <Suspense fallback={<SitesTableSkeleton />}>
-        <SitesTable />
+        <SitesTable onStats={setStats} />
       </Suspense>
     </div>
   );

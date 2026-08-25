@@ -84,7 +84,19 @@ const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
 const successAlertClass =
   'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
 
-export default function SitesTable() {
+export interface SiteStats {
+  totalSites: number;
+  totalTenants: number;
+  withCommunityRoom: number;
+  seniorOnly: number;
+}
+
+interface SitesTableProps {
+  /** Called after each successful fetch with the unfiltered stat aggregates. */
+  onStats?: (stats: SiteStats) => void;
+}
+
+export default function SitesTable({ onStats }: SitesTableProps = {}) {
   const router = useRouter();
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,6 +138,9 @@ export default function SitesTable() {
         if (response.ok) {
           setSites(data.sites);
           setPagination(data.pagination);
+          if (data.stats) {
+            onStats?.(data.stats);
+          }
           setError('');
         } else {
           setError(data.error || 'Failed to fetch sites');
@@ -136,7 +151,7 @@ export default function SitesTable() {
         setLoading(false);
       }
     },
-    [sortConfig]
+    [sortConfig, onStats]
   );
 
   useEffect(() => {

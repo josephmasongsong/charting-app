@@ -137,8 +137,25 @@ export async function GET(req: Request) {
       ? await sitesQuery.where(searchCondition)
       : await sitesQuery;
 
+    // Unfiltered stat aggregates — distinct from the search-filtered
+    // pagination.total; all four source columns live on sites.
+    const [statsRow] = await db
+      .select({
+        totalSites: count(),
+        totalTenants: sql<number>`coalesce(sum(${sites.numberOfTenants}), 0)`,
+        withCommunityRoom: sql<number>`count(*) filter (where ${sites.hasCommunityRoom})`,
+        seniorOnly: sql<number>`count(*) filter (where ${sites.isSingleSeniorOnly})`,
+      })
+      .from(sites);
+
     return NextResponse.json({
       sites: allSites,
+      stats: {
+        totalSites: Number(statsRow?.totalSites || 0),
+        totalTenants: Number(statsRow?.totalTenants || 0),
+        withCommunityRoom: Number(statsRow?.withCommunityRoom || 0),
+        seniorOnly: Number(statsRow?.seniorOnly || 0),
+      },
       pagination: {
         page,
         limit,
