@@ -1,5 +1,5 @@
 import React from "react";
-import { X } from "../../assets/icons.jsx";
+import { X } from "lucide-react";
 
 export function Modal({ open, onClose, title, footer, children, center }) {
   if (!open) return null;

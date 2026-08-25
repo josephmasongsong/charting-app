@@ -1,5 +1,5 @@
 import React from "react";
-import { Info } from "../../assets/icons.jsx";
+import { Info } from "lucide-react";
 
 const ALERT_STYLES = {
   validation: { background: "var(--danger-surface, #FAF0F1)" },

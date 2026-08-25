@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronRight, Newspaper, Headset, TriangleAlert, Mail, Contact, UserCog } from "../../assets/icons.jsx";
+import { ChevronDown, ChevronRight, Newspaper, Headset, TriangleAlert, Mail, Contact, UserCog } from "lucide-react";
 
 export function SideItem({ icon, label, active, indent, chevron, onClick }) {
   const [hover, setHover] = useState(false);

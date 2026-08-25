@@ -1,5 +1,5 @@
 import React from "react";
-import { Home } from "../../assets/icons.jsx";
+import { Home } from "lucide-react";
 export function DevelopmentItem({ dev }) {
   const badge = dev.status === "Operational"
     ? { background: "#DCF2EC", color: "var(--bch-teal-600)" }

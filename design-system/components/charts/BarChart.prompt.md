@@ -1,4 +1,4 @@
-Hand-rolled SVG bar chart matching the Power BI house style: seafoam-first / sky-second series colors, horizontal gridlines only, value labels at bar ends, no axis lines.
+Recharts bar chart matching the Power BI house style (shadcn guide §4.11): seafoam-first / sky-second series colors, horizontal gridlines only, value labels at bar ends, no axis lines.
 
 ```jsx
 <BarChart title="Total Approved FTE by Branch" xKey="branch" layout="vertical"

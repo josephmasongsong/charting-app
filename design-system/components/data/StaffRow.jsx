@@ -1,6 +1,6 @@
 import React from "react";
 import { AvatarTile } from "./AvatarTile.jsx";
-import { Phone, MessageSquare } from "../../assets/icons.jsx";
+import { Phone, MessageSquare } from "lucide-react";
 
 export function StaffRow({ person, selected, striped }) {
   return (

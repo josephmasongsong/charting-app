@@ -1,5 +1,5 @@
 import React from "react";
-import { Check } from "../../assets/icons.jsx";
+import { Check } from "lucide-react";
 export function WizardTabs({ parts, onSelect }) {
   return (
     <div role="tablist" style={{ display: "flex", background: "var(--surface-muted)", border: "1px solid var(--border-default)", borderRadius: "4px 4px 0 0", overflowX: "auto", fontFamily: "var(--font-sans)" }}>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { inputBaseStyle } from "./Input.jsx";
-import { ChevronDown } from "../../assets/icons.jsx";
+import { ChevronDown } from "lucide-react";
 export function Select({ children, style, onFocus, onBlur, ...props }) {
   const [open, setOpen] = useState(false);
   return (

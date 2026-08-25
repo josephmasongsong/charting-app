@@ -43,7 +43,7 @@ One primary product surface is represented, **PartnerHub** — the internal extr
 ## Iconography
 
 - **Icon system:** [Lucide](https://lucide.dev) outline icons (2px stroke, round caps, 24×24 grid) — the only icon set referenced in the source `.jsx`/`.md`. No icon font, no PNG icon sprites, no emoji, no Unicode glyphs used as icons anywhere in the source.
-- **Substitution note:** the source imports `lucide-react` as an npm package, which this system's in-browser component bundler cannot resolve. `assets/icons.jsx` inlines plain-SVG equivalents (same glyphs, same stroke style) for every icon actually used, so components stay dependency-free. If you have access to a package-based build, swap these for the real `lucide-react` import — the glyph choices are unchanged.
+- **Package note:** components import icons from the real `lucide-react` package (same glyph names as the original inlined set; every usage passes an explicit `size`, so nothing changed visually). `assets/icons.jsx` — the dependency-free SVG shim that stood in for `lucide-react` when the in-browser bundler could not resolve npm packages — is kept only for `_ds_bundle.js` / the preview cards, which have not been regenerated and still reference it.
 - **Logo:** the supplied BC Housing mark (roof inside a segmented blue/teal colour wheel) lives at `assets/logo.png` and is rendered by `components/chrome/BrandMark.jsx`, which embeds it as a data URI so it resolves from any page. `AppHeader` uses it in all navigation chrome; sign-in and reset-password templates reference the file directly.
 
 ## Fonts
@@ -52,8 +52,8 @@ No webfont ships with this system. `--font-sans` is the platform UI stack (`ui-s
 
 ## Intentional additions
 
-- `assets/icons.jsx` — inlined SVG icon set (see Iconography) standing in for the unresolvable `lucide-react` import; not a new visual pattern.
-- `BarChart` / `DonutChart` / `LineChart` — the source uses Recharts (`recharts` npm package), also unresolvable by this system's bundler. These are hand-rolled SVG equivalents reproducing the exact same visual spec (series colors, gridlines, label placement, dash styles) documented in section 4.11 of the shadcn guide.
+- `assets/icons.jsx` — legacy inlined SVG icon set (see Iconography); components no longer import it.
+- `BarChart` / `DonutChart` / `LineChart` — Recharts (`recharts` npm package) wrappers implementing the visual spec in section 4.11 of the shadcn guide (series colors from `--chart-*`, `#E6E6E6` horizontal-only gridlines, no axis lines, value labels at bar ends, dashed action-blue reference lines, 46/80 donut ring with value + percent legend). They keep the same props as the earlier hand-rolled SVG versions (see the `.d.ts` files) and disable Recharts' enter animations to match the system's no-motion rule.
 
 ## Index
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, Package, Newspaper, Users, PenLine, FolderPlus, Upload, Bell, Home, Search, Mail, Plus, ChevronRight } from "../../assets/icons.jsx";
+import { Calendar, Package, Newspaper, Users, PenLine, FolderPlus, Upload, Bell, Home, Search, Mail, Plus, ChevronRight } from "lucide-react";
 
 const ICONS = { Calendar, Package, Newspaper, Users, PenLine, FolderPlus, Upload, Bell, Home, Search, Mail, Plus };
 

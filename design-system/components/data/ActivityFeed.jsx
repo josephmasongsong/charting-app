@@ -1,6 +1,6 @@
 import React from "react";
 import { AvatarTile } from "./AvatarTile.jsx";
-import { Upload, UserCog, Bell, TriangleAlert, Newspaper, Mail, Users, PenLine, FolderPlus, Check, Info, Lock, MessageSquare, Phone, User, Calendar, Package, Clock } from "../../assets/icons.jsx";
+import { Upload, UserCog, Bell, TriangleAlert, Newspaper, Mail, Users, PenLine, FolderPlus, Check, Info, Lock, MessageSquare, Phone, User, Calendar, Package, Clock } from "lucide-react";
 
 const ICONS = { Upload, UserCog, Bell, TriangleAlert, Newspaper, Mail, Users, PenLine, FolderPlus, Check, Info, Lock, MessageSquare, Phone, User, Calendar, Package, Clock };
 
