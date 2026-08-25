@@ -4,7 +4,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,18 +46,22 @@ export default function Navigation() {
   const isDashboardActive = pathname === '/dashboard';
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-(--border-default) bg-(--surface-card)">
-      <div className="max-w-7xl mx-auto xl:px-0 px-6">
-        <div className="flex items-center justify-between h-16">
+    <nav className="sticky top-0 z-50 bg-(--surface-chrome)">
+      <div className="px-4">
+        <div className="flex h-14 items-center justify-between">
           {/* Logo/Brand */}
-          <Link href="/dashboard" className="flex items-center">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2.5 text-[17px] font-bold tracking-[.3px] text-(--text-on-chrome)"
+          >
             <Image
               src="/logo.jpg"
-              width={40}
-              height={40}
-              alt="BCH Tenant Engagement"
-              className="h-10 w-10 rounded-md"
+              width={32}
+              height={32}
+              alt="BC Housing"
+              className="h-8 w-8 rounded-[3px]"
             />
+            BC HOUSING
           </Link>
 
           {/* Right Side: Dashboard Icon + User Menu */}
@@ -67,12 +71,10 @@ export default function Navigation() {
               href="/dashboard"
               aria-label="Dashboard"
               aria-current={isDashboardActive ? 'page' : undefined}
-              className={[
-                'rounded-(--radius-control) p-2 transition-colors',
-                isDashboardActive
-                  ? 'text-(--action-primary)'
-                  : 'text-(--text-muted) hover:text-(--text-body)',
-              ].join(' ')}
+              className={cn(
+                'rounded-(--radius-control) p-2 text-(--text-on-chrome) transition-colors',
+                !isDashboardActive && 'opacity-80 hover:opacity-100'
+              )}
             >
               <Home className="h-5 w-5" />
             </Link>
@@ -81,15 +83,13 @@ export default function Navigation() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex cursor-pointer items-center gap-2 rounded-(--radius-control) px-2 py-1 transition-colors hover:bg-(--action-selected)"
+                  className="flex cursor-pointer items-center gap-2.5 rounded-(--radius-control) px-2 py-1.5 transition-colors hover:bg-(--surface-chrome-dark)"
                   aria-label="User menu"
                 >
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-[linear-gradient(160deg,#8FA6B5,#6B8496)] text-xs font-bold text-white">
-                      {userInitials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden text-sm font-medium sm:inline">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-(--radius-avatar) bg-white text-[12.5px] font-bold text-(--surface-chrome)">
+                    {userInitials}
+                  </span>
+                  <span className="hidden text-sm font-medium text-(--text-on-chrome) sm:inline">
                     {session.user?.name || session.user?.email}
                   </span>
                 </button>
