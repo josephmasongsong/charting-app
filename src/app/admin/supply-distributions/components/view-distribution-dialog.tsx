@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -152,7 +153,14 @@ export default function ViewDistributionDialog({
               />
               <DetailField
                 label="Site"
-                value={distributionData.distribution.siteName}
+                value={
+                  <Link
+                    href={`/sites/${distributionData.distribution.siteId}`}
+                    className="hover:text-(--action-primary) hover:underline"
+                  >
+                    {distributionData.distribution.siteName}
+                  </Link>
+                }
               />
               <DetailField
                 label="Distributed By"
