@@ -3,21 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
   Calendar,
-  MapPin,
-  Users,
   CalendarDays,
   Package,
   Loader2,
-  Target,
-  Activity,
-  Building,
-  Box,
-  Truck,
   FileText,
   Newspaper,
   type LucideIcon,
@@ -48,9 +39,6 @@ const quickStartTileClass =
   'flex w-full items-start gap-3.5 rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) p-5 text-left shadow-(--shadow-card) hover:bg-(--action-selected)';
 const quickStartIconClass =
   'grid size-11 shrink-0 place-items-center rounded-(--radius-control) bg-(--action-selected) text-(--action-primary)';
-const adminTileClass =
-  'h-auto w-full flex-col gap-2 rounded-(--radius-control) border-(--border-default) bg-(--surface-card) py-4 text-(--text-body) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
-
 const quickStartItems: Array<{
   href: string;
   icon: LucideIcon;
@@ -75,17 +63,6 @@ const quickStartItems: Array<{
     label: 'Monthly Reports',
     sub: 'View analytics and insights',
   },
-];
-
-const adminNavItems: Array<{ href: string; icon: LucideIcon; label: string }> = [
-  { href: '/admin/events', icon: CalendarDays, label: 'Events' },
-  { href: '/admin/sites', icon: MapPin, label: 'Sites' },
-  { href: '/admin/users', icon: Users, label: 'Users' },
-  { href: '/admin/program-goals', icon: Target, label: 'Program Goals' },
-  { href: '/admin/activity-types', icon: Activity, label: 'Activity Types' },
-  { href: '/admin/community-partners', icon: Building, label: 'Community Partners' },
-  { href: '/admin/supplies', icon: Box, label: 'Supplies' },
-  { href: '/admin/supply-distributions', icon: Truck, label: 'Distributions' },
 ];
 
 export default function Dashboard() {
@@ -165,8 +142,6 @@ export default function Dashboard() {
   if (!data) {
     return null;
   }
-
-  const isAdmin = session?.user?.role === 'admin';
 
   return (
     <div className={pageClass}>
@@ -268,25 +243,6 @@ export default function Dashboard() {
               </div>
             </section>
 
-            {/* Admin Menu - Only visible to admins */}
-            {isAdmin && (
-              <Card className="gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) p-5 shadow-none">
-                <h2 className={sectionTitleClass}>Admin Navigation</h2>
-                <p className="mt-0.5 text-[13px] text-(--text-muted)">
-                  Records and resource management
-                </p>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {adminNavItems.map(item => (
-                    <Button key={item.href} asChild variant="outline" className={adminTileClass}>
-                      <Link href={item.href}>
-                        <item.icon className="size-6" />
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </Link>
-                    </Button>
-                  ))}
-                </div>
-              </Card>
-            )}
           </div>
 
           <ActivityFeed />
