@@ -160,8 +160,33 @@ export async function GET(req: Request) {
       ? await distributionsQuery.where(whereCondition)
       : await distributionsQuery;
 
+    // Unfiltered stat aggregates for the tiles — same session-only guard as
+    // the rest of this handler (RBAC tightening tracked in DEFERRED.md).
+    const [distStats] = await db
+      .select({
+        totalDistributions: count(),
+        totalValue: sql<number>`coalesce(sum(${supplyDistributions.totalCost}), 0)`,
+      })
+      .from(supplyDistributions);
+    const [itemStats] = await db
+      .select({
+        totalItems: sql<number>`coalesce(sum(${supplyDistributionItems.quantityDistributed}), 0)`,
+      })
+      .from(supplyDistributionItems);
+    const statTotalDistributions = Number(distStats?.totalDistributions || 0);
+    const statTotalValue = Number(distStats?.totalValue || 0);
+
     return NextResponse.json({
       distributions: allDistributions,
+      stats: {
+        totalDistributions: statTotalDistributions,
+        totalValue: statTotalValue,
+        totalItems: Number(itemStats?.totalItems || 0),
+        avgCost:
+          statTotalDistributions > 0
+            ? statTotalValue / statTotalDistributions
+            : 0,
+      },
       pagination: {
         page,
         limit,
