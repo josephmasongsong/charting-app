@@ -5,6 +5,7 @@ import {
   decimal,
   integer,
   boolean,
+  text,
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
@@ -32,6 +33,7 @@ export const sites = pgTable(
     isSingleSeniorOnly: boolean('is_single_senior_only')
       .default(true)
       .notNull(),
+    region: text('region').default('LMDM').notNull(),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id),

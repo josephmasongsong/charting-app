@@ -179,6 +179,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
     hasCommunityPartner: initialData?.hasCommunityPartner ?? false,
     communityPartnerId: initialData?.communityPartnerId || '',
     isSingleSeniorOnly: initialData?.isSingleSeniorOnly ?? true,
+    region: initialData?.region || 'LMDM',
     userId: initialData?.userId || '',
   });
 
@@ -233,6 +234,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
               hasCommunityPartner: site.hasCommunityPartner,
               communityPartnerId: site.communityPartnerId || '',
               isSingleSeniorOnly: site.isSingleSeniorOnly,
+              region: site.region || 'LMDM',
               userId: site.userId,
             });
 
@@ -567,17 +569,33 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
               </div>
 
               <div>
-                {/* TODO: /admin/sites/new — not wired: sites has no region
-                    column; the labels are the long forms of users.region. */}
-                <Label className={labelClass}>Region</Label>
-                <Select disabled>
-                  <SelectTrigger className={cn(selectTriggerClass, 'mt-1.5')}>
-                    <SelectValue placeholder="Lower Mainland" />
+                <Label htmlFor="region" className={labelClass}>
+                  Region
+                </Label>
+                <Select
+                  value={formData.region}
+                  onValueChange={value =>
+                    setFormData({
+                      ...formData,
+                      region: value as CreateSiteInput['region'],
+                    })
+                  }
+                >
+                  <SelectTrigger
+                    id="region"
+                    aria-invalid={!!errors.region}
+                    className={cn(selectTriggerClass, 'mt-1.5')}
+                  >
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="LMDM">Lower Mainland</SelectItem>
+                    <SelectItem value="VIR">Vancouver Island</SelectItem>
+                    <SelectItem value="Interior">Interior</SelectItem>
+                    <SelectItem value="Northern">Northern</SelectItem>
                   </SelectContent>
                 </Select>
+                <FieldError message={errors.region} />
               </div>
             </div>
           </Card>

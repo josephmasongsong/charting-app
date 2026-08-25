@@ -302,6 +302,7 @@ export async function POST(req: Request) {
             ? data.communityPartnerId
             : null,
           isSingleSeniorOnly: data.isSingleSeniorOnly,
+          region: data.region,
           userId: data.userId,
           createdAt: new Date(),
           updatedAt: new Date(),

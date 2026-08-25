@@ -40,6 +40,9 @@ export const createSiteSchema = z
     hasCommunityPartner: z.boolean(),
     communityPartnerId: z.string().optional(),
     isSingleSeniorOnly: z.boolean(),
+    region: z.enum(['LMDM', 'VIR', 'Interior', 'Northern'], {
+      message: 'Please select a region',
+    }),
     userId: z.string().uuid('Please select a valid user'),
   })
   .refine(

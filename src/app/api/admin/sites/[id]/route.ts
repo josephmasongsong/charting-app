@@ -62,6 +62,7 @@ export async function GET(
           ),
         createdAt: sites.createdAt,
         updatedAt: sites.updatedAt,
+        region: sites.region,
       })
       .from(sites)
       .leftJoin(users, eq(sites.userId, users.id))
@@ -428,6 +429,7 @@ export async function PATCH(
             ? data.communityPartnerId
             : null,
           isSingleSeniorOnly: data.isSingleSeniorOnly,
+          region: data.region,
           userId: data.userId,
           updatedAt: new Date(),
         })
