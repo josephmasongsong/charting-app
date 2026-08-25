@@ -24,6 +24,7 @@ interface User {
   region?: string;
   jobTitle?: string;
   isActive?: boolean;
+  emailVerified?: boolean;
   createdAt: string;
   updatedAt: string;
   firstName?: string;
@@ -71,6 +72,7 @@ export default function EditUserDialog({
       | 'Tenant Support Worker'
       | 'Health Services Manager',
     isActive: true,
+    emailVerified: false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -91,6 +93,7 @@ export default function EditUserDialog({
             | 'Tenant Support Worker'
             | 'Health Services Manager') || 'Tenant Engagement Worker',
         isActive: user.isActive ?? true,
+        emailVerified: user.emailVerified ?? false,
       });
     }
   }, [user]);
@@ -306,6 +309,27 @@ export default function EditUserDialog({
                 Inactive users cannot login and will be logged out
                 automatically
               </p>
+            </div>
+          )}
+
+          {isAdmin && (
+            <div className="space-y-1.5">
+              <Label htmlFor="editEmailVerified" className={labelClass}>
+                Email Verified
+              </Label>
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="editEmailVerified"
+                  checked={form.emailVerified}
+                  onCheckedChange={checked =>
+                    setForm({ ...form, emailVerified: checked })
+                  }
+                  disabled={loading}
+                />
+                <span className="text-sm text-(--text-muted)">
+                  {form.emailVerified ? 'Verified' : 'Unverified'}
+                </span>
+              </div>
             </div>
           )}
 

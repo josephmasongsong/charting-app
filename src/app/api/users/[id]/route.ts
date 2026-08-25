@@ -27,6 +27,7 @@ export async function PATCH(
       isActive,
       region,
       jobTitle,
+      emailVerified,
     } = body;
 
     // Check current user permissions
@@ -71,6 +72,14 @@ export async function PATCH(
     if (jobTitle !== undefined && !isAdmin) {
       return NextResponse.json(
         { error: 'Only admins can change job titles' },
+        { status: 403 }
+      );
+    }
+
+    // Only allow emailVerified changes if user is admin
+    if (emailVerified !== undefined && !isAdmin) {
+      return NextResponse.json(
+        { error: 'Only admins can change email verification' },
         { status: 403 }
       );
     }
@@ -174,6 +183,10 @@ export async function PATCH(
       updateData.region = region;
     }
 
+    if (emailVerified !== undefined && isAdmin) {
+      updateData.emailVerified = emailVerified;
+    }
+
     if (jobTitle !== undefined && isAdmin) {
       // Set jobTitle to null if role is partner, otherwise use the provided value
       if (role === 'partner') {
@@ -249,6 +262,15 @@ export async function PATCH(
         new: updateData.isActive,
       };
     }
+    if (
+      updateData.emailVerified !== undefined &&
+      updateData.emailVerified !== currentUserData.emailVerified
+    ) {
+      changes.emailVerified = {
+        old: currentUserData.emailVerified,
+        new: updateData.emailVerified,
+      };
+    }
 
     // Update user in database
     const [updatedUser] = await db
@@ -308,6 +330,7 @@ export async function GET(
         region: users.region,
         jobTitle: users.jobTitle,
         isActive: users.isActive,
+        emailVerified: users.emailVerified,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
       })

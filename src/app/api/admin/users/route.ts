@@ -100,6 +100,7 @@ export async function GET(req: Request) {
         email: users.email,
         role: users.role,
         region: users.region,
+        emailVerified: users.emailVerified,
         jobTitle: users.jobTitle,
         isActive: users.isActive,
         createdAt: users.createdAt,

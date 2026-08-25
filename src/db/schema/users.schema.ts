@@ -25,6 +25,7 @@ export const users = pgTable(
     region: text('region').default('LMDM').notNull(),
     jobTitle: text('job_title').default('Tenant Engagement Worker'),
     isActive: boolean('is_active').default(true).notNull(),
+    emailVerified: boolean('email_verified').default(false).notNull(),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },

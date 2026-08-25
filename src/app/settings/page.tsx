@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Shield, UserCheck, Loader2 } from 'lucide-react';
+import { User, Shield, UserCheck, Loader2, Check, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface UserData {
@@ -24,6 +24,7 @@ interface UserData {
   lastName: string;
   email: string;
   role: 'admin' | 'user' | 'partner';
+  emailVerified?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -258,17 +259,37 @@ function SettingsContent() {
               <Label htmlFor="email" className={labelClass}>
                 Email
               </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={e =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="Enter your email"
-                disabled={isSaving}
-                className={inputClass}
-              />
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={e =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="Enter your email"
+                  disabled={isSaving}
+                  className={cn(inputClass, 'pr-28')}
+                />
+                {userData &&
+                  (userData.emailVerified ? (
+                    <span
+                      title="Verified"
+                      className="absolute top-1/2 right-2 inline-flex -translate-y-1/2 items-center gap-1 rounded-full bg-[var(--bch-green-50,#EDF6EF)] px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--success) uppercase"
+                    >
+                      <Check className="size-[11px]" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span
+                      title="Unverified"
+                      className="absolute top-1/2 right-2 inline-flex -translate-y-1/2 items-center gap-1 rounded-full bg-(--warning-surface) px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--warning-text) uppercase"
+                    >
+                      <Info className="size-[11px]" />
+                      Unverified
+                    </span>
+                  ))}
+              </div>
             </div>
 
             <div className="max-w-[340px] space-y-1.5">
