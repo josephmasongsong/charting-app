@@ -230,10 +230,8 @@ export default function SitesListClient({
               Browse all locations
             </p>
           </div>
-          {/* TODO: /sites — not wired: /sites/new does not exist (creation
-              lives at /admin/sites/new, admin-only); target kept as-is. */}
           <Button asChild className={primaryButtonClass}>
-            <Link href="/sites/new">
+            <Link href="/admin/sites/new">
               <Plus className="h-4 w-4" />
               Create New Site
             </Link>

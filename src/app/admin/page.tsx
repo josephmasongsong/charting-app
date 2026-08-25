@@ -29,7 +29,7 @@ const navItems: Array<{
 }> = [
   { href: '/events/new', icon: Calendar, label: 'New Event', primary: true },
   {
-    href: '/admin/supply-distributions/new',
+    href: '/supply-distributions/new',
     icon: Truck,
     label: 'Log Distribution',
   },
