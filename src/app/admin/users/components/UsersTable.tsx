@@ -24,8 +24,10 @@ import {
   PenLine,
   Search,
   ArrowUpDown,
+  Check,
   ChevronUp,
   ChevronDown,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -43,6 +45,7 @@ interface User {
   region?: string;
   jobTitle?: string;
   isActive?: boolean;
+  emailVerified?: boolean;
   createdAt: string;
   updatedAt: string;
   firstName?: string;
@@ -330,6 +333,7 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                       <TableHead className={headCellClass}>Job Title</TableHead>
                       <TableHead className={headCellClass}>Region</TableHead>
                       <TableHead className={headCellClass}>Status</TableHead>
+                      <TableHead className={headCellClass}>Verified</TableHead>
                       <TableHead className={headCellClass}>Created</TableHead>
                       <TableHead className={cn(headCellClass, 'text-right')}>
                         Actions
@@ -340,7 +344,7 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                     {users.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={8}
+                          colSpan={9}
                           className={cn(
                             bodyCellClass,
                             'py-10 text-center whitespace-normal text-(--text-muted)'
@@ -390,6 +394,19 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                           </TableCell>
                           <TableCell className={bodyCellClass}>
                             <StatusBadge isActive={user.isActive} />
+                          </TableCell>
+                          <TableCell className={bodyCellClass}>
+                            {user.emailVerified ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--bch-green-50,#EDF6EF)] px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--success) uppercase">
+                                <Check className="size-[11px]" />
+                                Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-(--warning-surface) px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--warning-text) uppercase">
+                                <Info className="size-[11px]" />
+                                Unverified
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell
                             className={cn(bodyCellClass, 'text-(--text-muted)')}
