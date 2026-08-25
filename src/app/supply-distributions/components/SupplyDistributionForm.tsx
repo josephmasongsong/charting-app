@@ -778,6 +778,15 @@ export default function SupplyDistributionForm() {
                             </span>
                           </div>
                         )}
+                        {available !== null &&
+                          !over &&
+                          item.quantity > 0 &&
+                          available - item.quantity <= 3 && (
+                            <div className="mt-2 text-[13.5px] text-(--warning-text)">
+                              This leaves {available - item.quantity} on hand.
+                              Reorder soon.
+                            </div>
+                          )}
                       </div>
                     );
                   })}
