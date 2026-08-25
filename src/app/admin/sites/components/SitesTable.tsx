@@ -18,8 +18,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   Trash2,
   Search,
-  ChevronLeft,
-  ChevronRight,
   Users,
   ArrowUpDown,
   ChevronUp,
@@ -27,6 +25,7 @@ import {
   Loader2,
   PenLine,
 } from 'lucide-react';
+import { PaginationFooter } from '@/components/ui/pagination-footer';
 import { cn } from '@/lib/utils';
 
 import DeleteSiteDialog from './DeleteSiteDialog';
@@ -77,10 +76,6 @@ const rowActionClass =
   'size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)';
 const destructiveActionClass =
   'size-8 rounded-(--radius-control) text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)';
-const pagerButtonClass =
-  'h-8 rounded-(--radius-control) border-(--border-default) bg-(--surface-card) text-[13.5px] text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary) disabled:border-(--bch-gray-300) disabled:text-(--bch-gray-500) disabled:opacity-100';
-const pagerActiveClass =
-  'h-8 rounded-(--radius-control) border border-(--action-primary) bg-(--action-primary) text-[13.5px] text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover)';
 const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
 const successAlertClass =
   'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
@@ -206,13 +201,6 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
     setError(err);
     setMessage('');
   };
-
-  const rangeStart =
-    pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
-  const rangeEnd = Math.min(
-    pagination.page * pagination.limit,
-    pagination.total
-  );
 
   return (
     <>
@@ -428,173 +416,13 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
               </TableBody>
             </Table>
 
-            {/* Pagination */}
-            <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-3.5">
-              <div className="text-[13.5px] text-(--text-muted)">
-                {pagination.total === 0
-                  ? 'No results'
-                  : pagination.pages > 1
-                    ? `Showing ${rangeStart} to ${rangeEnd} of ${pagination.total} results`
-                    : `Showing all ${pagination.total} results`}
-              </div>
-
-              {pagination.pages > 1 && (
-                <div className="flex items-center gap-1.5">
-                  {/* First page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fetchSites(1, search, sortConfig)}
-                    disabled={pagination.page <= 1}
-                    className={cn(pagerButtonClass, 'hidden sm:inline-flex')}
-                  >
-                    First
-                  </Button>
-
-                  {/* Previous page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      fetchSites(pagination.page - 1, search, sortConfig)
-                    }
-                    disabled={pagination.page <= 1}
-                    className={pagerButtonClass}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="ml-1 hidden sm:inline">Previous</span>
-                  </Button>
-
-                  {/* Page numbers */}
-                  <div className="flex items-center gap-1">
-                    {(() => {
-                      const pages = [];
-                      const currentPage = pagination.page;
-                      const totalPages = pagination.pages;
-
-                      // Always show first page
-                      if (currentPage > 3) {
-                        pages.push(
-                          <Button
-                            key={1}
-                            variant={1 === currentPage ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => fetchSites(1, search, sortConfig)}
-                            className={cn(
-                              'w-10',
-                              1 === currentPage
-                                ? pagerActiveClass
-                                : pagerButtonClass
-                            )}
-                          >
-                            1
-                          </Button>
-                        );
-
-                        if (currentPage > 4) {
-                          pages.push(
-                            <span
-                              key="ellipsis1"
-                              className="px-1 text-[13.5px] text-(--text-muted)"
-                            >
-                              ...
-                            </span>
-                          );
-                        }
-                      }
-
-                      // Show pages around current page
-                      for (
-                        let i = Math.max(1, currentPage - 2);
-                        i <= Math.min(totalPages, currentPage + 2);
-                        i++
-                      ) {
-                        pages.push(
-                          <Button
-                            key={i}
-                            variant={i === currentPage ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => fetchSites(i, search, sortConfig)}
-                            className={cn(
-                              'w-10',
-                              i === currentPage
-                                ? pagerActiveClass
-                                : pagerButtonClass
-                            )}
-                          >
-                            {i}
-                          </Button>
-                        );
-                      }
-
-                      // Always show last page
-                      if (currentPage < totalPages - 2) {
-                        if (currentPage < totalPages - 3) {
-                          pages.push(
-                            <span
-                              key="ellipsis2"
-                              className="px-1 text-[13.5px] text-(--text-muted)"
-                            >
-                              ...
-                            </span>
-                          );
-                        }
-
-                        pages.push(
-                          <Button
-                            key={totalPages}
-                            variant={
-                              totalPages === currentPage ? 'default' : 'outline'
-                            }
-                            size="sm"
-                            onClick={() =>
-                              fetchSites(totalPages, search, sortConfig)
-                            }
-                            className={cn(
-                              'w-10',
-                              totalPages === currentPage
-                                ? pagerActiveClass
-                                : pagerButtonClass
-                            )}
-                          >
-                            {totalPages}
-                          </Button>
-                        );
-                      }
-
-                      return pages;
-                    })()}
-                  </div>
-
-                  {/* Next page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      fetchSites(pagination.page + 1, search, sortConfig)
-                    }
-                    disabled={pagination.page >= pagination.pages}
-                    className={pagerButtonClass}
-                  >
-                    <span className="mr-1 hidden sm:inline">Next</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-
-                  {/* Last page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      fetchSites(pagination.pages, search, sortConfig)
-                    }
-                    disabled={pagination.page >= pagination.pages}
-                    className={cn(pagerButtonClass, 'hidden sm:inline-flex')}
-                  >
-                    Last
-                  </Button>
-                </div>
-              )}
-            </div>
+            <PaginationFooter
+              page={pagination.page}
+              pages={pagination.pages}
+              total={pagination.total}
+              limit={pagination.limit}
+              onPageChange={page => fetchSites(page, search, sortConfig)}
+            />
           </>
         )}
       </div>
