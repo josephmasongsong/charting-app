@@ -15,111 +15,20 @@ import { sql, eq, and, gte, lt } from 'drizzle-orm';
 import { authOptions } from '@/lib/auth';
 import { getServerSession } from 'next-auth';
 
-interface ActivityTypeByRegion {
-  activityTypeId: string;
-  activityTypeName: string;
-  programGoalName: string;
-  region: string;
-  eventCount: number;
-  participantsServed: number;
-  newParticipants: number;
-  returningParticipants: number;
-  totalAdminDuration: number;
-  totalCost: number;
-}
-
-interface ProgramGoalSummary {
-  id: string;
-  name: string;
-  activityCount: number;
-}
-
-interface ActivityTypeParticipation {
-  id: string;
-  name: string;
-  participantCount: number;
-  eventCount: number;
-}
-
-interface MonthlyParticipantGrowth {
-  region: string;
-  currentMonthParticipants: number;
-  previousMonthParticipants: number;
-  growthRate: number;
-  growthType: 'growth' | 'decline' | 'stable';
-}
-
-interface MonthlyEventGrowth {
-  region: string;
-  currentMonthEvents: number;
-  previousMonthEvents: number;
-  growthRate: number;
-  growthType: 'growth' | 'decline' | 'stable';
-}
-
-interface MonthlyCostGrowth {
-  currentMonthCost: number;
-  previousMonthCost: number;
-  growthRate: number;
-  growthType: 'growth' | 'decline' | 'stable';
-}
-
-interface RegionalCostGrowth {
-  region: string;
-  currentMonthCost: number;
-  previousMonthCost: number;
-  growthRate: number;
-  growthType: 'growth' | 'decline' | 'stable';
-}
-
-interface MonthlySupplyDistributionGrowth {
-  currentMonthQuantity: number;
-  previousMonthQuantity: number;
-  growthRate: number;
-  growthType: 'growth' | 'decline' | 'stable';
-}
-
-interface SitePerformance {
-  siteName: string;
-  eventCount: number;
-  participantCount: number;
-  utilizationRate: number;
-}
-
-interface SupplyDistributionSummary {
-  supplyId: string;
-  supplyName: string;
-  totalQuantityDistributed: number;
-  totalCost: number;
-  distributionCount: number;
-}
-
-interface MonthlyActivityReportData {
-  reportMonth: string;
-  totalEvents: number;
-  totalParticipants: number;
-  totalNewParticipants: number;
-  totalReturningParticipants: number;
-  totalCost: number;
-  totalEventDuration: number;
-  totalAdminDuration: number;
-  activityTypesByRegion: ActivityTypeByRegion[];
-  programGoals: ProgramGoalSummary[];
-  activityTypesParticipation: ActivityTypeParticipation[];
-  monthlyParticipantGrowth: MonthlyParticipantGrowth[];
-  monthlyEventGrowth: MonthlyEventGrowth[];
-  monthlyCostGrowth: MonthlyCostGrowth;
-  regionalCostGrowth: RegionalCostGrowth[];
-  monthlySupplyDistributionGrowth: MonthlySupplyDistributionGrowth;
-  supplyDistributions: SupplyDistributionSummary[];
-  sitePerformance: SitePerformance[];
-  totalSiteCount: number;
-  regions: string[];
-  availableDateRange: {
-    minDate: string;
-    maxDate: string;
-  };
-}
+// The report contract lives in one place — the consuming module's types.ts.
+import type {
+  ActivityTypeByRegion,
+  ProgramGoalSummary,
+  ActivityTypeParticipation,
+  MonthlyParticipantGrowth,
+  MonthlyEventGrowth,
+  MonthlyCostGrowth,
+  RegionalCostGrowth,
+  MonthlySupplyDistributionGrowth,
+  SitePerformance,
+  SupplyDistributionSummary,
+  MonthlyActivityReportData,
+} from '@/components/reports/monthly/types';
 
 // Updated generateMonthlyActivityReport function to include supply distributions
 export async function generateMonthlyActivityReport(
