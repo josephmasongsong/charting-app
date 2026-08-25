@@ -12,20 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  LogOut,
-  Settings,
-  Shield,
-  BarChart3,
-  LayoutGrid,
-  Home,
-} from 'lucide-react';
+import { LogOut, Settings, Home } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 export default function Navigation() {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const isAdmin = session?.user?.role === 'admin';
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/login' });
@@ -54,7 +46,7 @@ export default function Navigation() {
   const isDashboardActive = pathname === '/dashboard';
 
   return (
-    <nav className="border-b bg-background sticky top-0 z-50">
+    <nav className="sticky top-0 z-50 border-b border-(--border-default) bg-(--surface-card)">
       <div className="max-w-7xl mx-auto xl:px-0 px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo/Brand */}
@@ -76,10 +68,10 @@ export default function Navigation() {
               aria-label="Dashboard"
               aria-current={isDashboardActive ? 'page' : undefined}
               className={[
-                'p-2 rounded-xl transition-colors',
+                'rounded-(--radius-control) p-2 transition-colors',
                 isDashboardActive
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground',
+                  ? 'text-(--action-primary)'
+                  : 'text-(--text-muted) hover:text-(--text-body)',
               ].join(' ')}
             >
               <Home className="h-5 w-5" />
@@ -89,15 +81,15 @@ export default function Navigation() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex items-center gap-2 rounded-xl px-2 py-1 transition-colors"
+                  className="flex cursor-pointer items-center gap-2 rounded-(--radius-control) px-2 py-1 transition-colors hover:bg-(--action-selected)"
                   aria-label="User menu"
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-sm">
+                    <AvatarFallback className="bg-[linear-gradient(160deg,#8FA6B5,#6B8496)] text-xs font-bold text-white">
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium hidden sm:inline">
+                  <span className="hidden text-sm font-medium sm:inline">
                     {session.user?.name || session.user?.email}
                   </span>
                 </button>
@@ -109,30 +101,11 @@ export default function Navigation() {
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                {/*
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin" className="w-full">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Admin Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/reports/monthly" className="w-full">
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Monthly Reports
-                    </Link>
-                  </DropdownMenuItem>
-                )} */}
-
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem
                   onClick={handleSignOut}
-                  className="text-red-600"
+                  className="text-(--danger)"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out

@@ -3,8 +3,18 @@
 import { useSession } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+
+function GuardLoading({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-(--surface-page)">
+      <div className="text-center">
+        <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-(--action-primary)" />
+        <p className="text-(--text-muted)">{message}</p>
+      </div>
+    </div>
+  );
+}
 
 interface ClientAuthGuardProps {
   children: React.ReactNode;
@@ -39,44 +49,17 @@ export default function ClientAuthGuard({ children }: ClientAuthGuardProps) {
 
   // Show loading while checking authentication
   if (status === 'loading') {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex items-center justify-center p-6">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            <span>Loading...</span>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <GuardLoading message="Loading..." />;
   }
 
   // Show loading while redirecting unauthenticated users
   if (!session && !isPublicRoute) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex items-center justify-center p-6">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            <span>Redirecting to login...</span>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <GuardLoading message="Redirecting to login..." />;
   }
 
   // Show loading while redirecting authenticated users away from auth pages
   if (session && isPublicRoute && pathname !== '/reset-password') {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex items-center justify-center p-6">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            <span>Redirecting to dashboard...</span>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <GuardLoading message="Redirecting to dashboard..." />;
   }
 
   return <>{children}</>;

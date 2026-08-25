@@ -39,13 +39,18 @@ export default function RootLayout({
             <main className="min-h-screen bg-background">{children}</main>
           </AuthGuard>
         </AuthProvider>
-        <footer className="border-t bg-muted/50 px-6 py-4">
-          <div className="max-w-7xl mx-auto flex justify-between">
-            <span className="text-sm text-foreground">© Copyright 2025.</span>
+        <footer className="border-t border-(--border-default) bg-(--surface-muted) px-6 py-4">
+          <div className="mx-auto flex max-w-7xl justify-between">
+            <span className="text-sm text-(--text-muted)">
+              © Copyright 2025.
+            </span>
             <div>
-              <p className="text-sm text-foreground">
+              <p className="text-sm text-(--text-muted)">
                 Questions? Email&nbsp;
-                <a href="mailto:jmasongson@bchousing.org" className="underline">
+                <a
+                  href="mailto:jmasongson@bchousing.org"
+                  className="text-(--action-primary) underline"
+                >
                   support.
                 </a>
               </p>
