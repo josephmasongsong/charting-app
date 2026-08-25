@@ -114,6 +114,7 @@ export async function GET(req: Request) {
         communityPartnerId: sites.communityPartnerId,
         communityPartnerName: communityPartners.name,
         isSingleSeniorOnly: sites.isSingleSeniorOnly,
+        region: sites.region,
         userId: sites.userId,
         userName:
           sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as(

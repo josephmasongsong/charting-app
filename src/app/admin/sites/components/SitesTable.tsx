@@ -44,6 +44,7 @@ interface Site {
   communityPartnerId: string | null;
   communityPartnerName: string | null;
   isSingleSeniorOnly: boolean;
+  region: string;
   userId: string;
   userName: string;
   createdAt: string;
@@ -294,6 +295,7 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
                   <TableHead className={headCellClass}>
                     Assigned Worker
                   </TableHead>
+                  <TableHead className={headCellClass}>Region</TableHead>
                   <TableHead className={headCellClass}>
                     Community Room
                   </TableHead>
@@ -310,7 +312,7 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
                 {sites.length === 0 ? (
                   <TableRow className="border-0 hover:bg-transparent">
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className={cn(
                         bodyCellClass,
                         'py-10 text-center whitespace-normal text-(--text-muted)'
@@ -367,6 +369,11 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
                       </TableCell>
                       <TableCell className={bodyCellClass}>
                         <div className="text-sm">{site.userName}</div>
+                      </TableCell>
+                      <TableCell className={bodyCellClass}>
+                        <span className="inline-flex rounded-full bg-(--surface-muted) px-2.5 py-[3px] text-[12.5px] font-semibold whitespace-nowrap text-(--text-body)">
+                          {site.region || 'LMDM'}
+                        </span>
                       </TableCell>
                       <TableCell className={bodyCellClass}>
                         <BooleanBadge
