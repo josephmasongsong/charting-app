@@ -45,6 +45,7 @@ async function getEvent(eventId: string) {
       userId: events.userId,
       userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
       userEmail: users.email,
+      userJobTitle: users.jobTitle,
       siteId: events.siteId,
       siteName: sites.name,
       siteAddress: sites.address,
@@ -234,6 +235,11 @@ export default async function EventPage({ params }: EventPageProps) {
                   {/* TODO: /events/[id] — not wired: the template links the
                       organizer to a user profile; no /users/[id] route exists. */}
                   <div className="text-[14.5px] font-bold">{event.userName}</div>
+                  {event.userJobTitle && (
+                    <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
+                      {event.userJobTitle}
+                    </div>
+                  )}
                   <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
                     {event.userEmail}
                   </div>
