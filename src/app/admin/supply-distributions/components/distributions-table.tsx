@@ -35,8 +35,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import { useRouter } from 'next/navigation';
+
 import DeleteDistributionDialog from './delete-distribution-dialog';
-import ViewDistributionDialog from './view-distribution-dialog';
 import { DistributionTypeBadge } from './distribution-type-badge';
 
 interface Distribution {
@@ -143,6 +144,7 @@ const DistributionsTable = forwardRef<
     },
     ref
   ) => {
+    const router = useRouter();
     const [distributions, setDistributions] = useState<Distribution[]>([]);
     const [loading, setLoading] = useState(true);
     const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -164,9 +166,6 @@ const DistributionsTable = forwardRef<
     const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
 
     // Dialog states
-    const [viewOpen, setViewOpen] = useState(false);
-    const [viewingDistribution, setViewingDistribution] =
-      useState<Distribution | null>(null);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deletingDistribution, setDeletingDistribution] =
       useState<Distribution | null>(null);
@@ -272,11 +271,6 @@ const DistributionsTable = forwardRef<
       const newSortConfig = { field, order: newOrder };
       setSortConfig(newSortConfig);
       fetchDistributions(pagination.page, '', newSortConfig, currentFilters());
-    };
-
-    const openViewDistribution = (distribution: Distribution) => {
-      setViewingDistribution(distribution);
-      setViewOpen(true);
     };
 
     const openDeleteDistribution = (distribution: Distribution) => {
@@ -602,7 +596,9 @@ const DistributionsTable = forwardRef<
                                 title="View distribution details"
                                 aria-label="View distribution details"
                                 onClick={() =>
-                                  openViewDistribution(distribution)
+                                  router.push(
+                                    `/supply-distributions/${distribution.id}`
+                                  )
                                 }
                                 className={rowActionClass}
                               >
@@ -643,13 +639,6 @@ const DistributionsTable = forwardRef<
         </div>
 
         {/* Dialogs */}
-        <ViewDistributionDialog
-          open={viewOpen}
-          onOpenChange={setViewOpen}
-          distribution={viewingDistribution}
-          onError={showInternalError}
-        />
-
         <DeleteDistributionDialog
           open={deleteOpen}
           onOpenChange={setDeleteOpen}
