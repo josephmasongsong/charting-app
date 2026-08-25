@@ -3,7 +3,7 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { BrandMark } from '@/components/ui/brand-mark';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -54,13 +54,7 @@ export default function Navigation() {
             href="/dashboard"
             className="flex items-center gap-2.5 text-[17px] font-bold tracking-[.3px] text-(--text-on-chrome)"
           >
-            <Image
-              src="/logo.jpg"
-              width={32}
-              height={32}
-              alt="BC Housing"
-              className="h-8 w-8 rounded-[3px]"
-            />
+            <BrandMark size={32} />
             BC HOUSING
           </Link>
 
