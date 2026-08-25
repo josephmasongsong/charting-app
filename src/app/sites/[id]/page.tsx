@@ -46,6 +46,7 @@ async function getSite(siteId: string) {
       userId: sites.userId,
       userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
       userEmail: users.email,
+      userJobTitle: users.jobTitle,
       createdAt: sites.createdAt,
       updatedAt: sites.updatedAt,
     })
@@ -80,14 +81,20 @@ async function getSiteSupplies(siteId: string) {
   return siteSuppliesData;
 }
 
-async function getSiteEventsCount(siteId: string) {
+async function getSiteEventStats(siteId: string) {
   const { events } = await import('@/db');
   const result = await db
-    .select({ count: sql<number>`count(*)` })
+    .select({
+      count: sql<number>`count(*)`,
+      totalParticipants: sql<number>`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0)`,
+    })
     .from(events)
     .where(eq(events.siteId, siteId));
 
-  return result[0]?.count || 0;
+  return {
+    count: Number(result[0]?.count || 0),
+    totalParticipants: Number(result[0]?.totalParticipants || 0),
+  };
 }
 
 const surfaceCardClass =
@@ -127,7 +134,7 @@ export default async function SitePage({ params }: SitePageProps) {
   const { id } = await params;
   const site = await getSite(id);
   const siteSuppliesData = await getSiteSupplies(id);
-  const eventsCount = await getSiteEventsCount(id);
+  const eventStats = await getSiteEventStats(id);
 
   if (!site) {
     notFound();
@@ -151,15 +158,16 @@ export default async function SitePage({ params }: SitePageProps) {
     },
     {
       label: 'Events Held',
-      value: String(eventsCount),
+      value: String(eventStats.count),
       note: 'All time',
     },
     {
-      // TODO: /sites/[id] — not wired: avg attendance needs an aggregate
-      // over this site's events; only count(*) is fetched today.
       label: 'Avg Attendance',
-      value: '—',
-      note: 'Not tracked yet',
+      value:
+        eventStats.count > 0
+          ? String(Math.round(eventStats.totalParticipants / eventStats.count))
+          : '—',
+      note: eventStats.count > 0 ? 'Per event, all time' : 'No events yet',
     },
     {
       label: 'Inventory Value',
@@ -271,6 +279,11 @@ export default async function SitePage({ params }: SitePageProps) {
               </div>
               <div className="min-w-0">
                 <div className="text-[14.5px] font-bold">{site.userName}</div>
+                {site.userJobTitle && (
+                  <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
+                    {site.userJobTitle}
+                  </div>
+                )}
                 <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
                   {site.userEmail}
                 </div>
