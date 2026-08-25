@@ -100,6 +100,7 @@ export interface MonthlyActivityReportData {
   supplyDistributions: SupplyDistributionSummary[];
   monthlySupplyDistributionGrowth: MonthlySupplyDistributionGrowth;
   sitePerformance: SitePerformance[];
+  totalSiteCount: number;
   regions: string[];
   availableDateRange: { minDate: string; maxDate: string };
 }

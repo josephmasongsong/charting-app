@@ -231,7 +231,10 @@ export function MonthlyActivityReport({
           <SupplyDistributionsSidebar
             supplyDistributions={data.supplyDistributions}
           />
-          <SitePerformanceCard sites={data.sitePerformance} />
+          <SitePerformanceCard
+            sites={data.sitePerformance}
+            totalSiteCount={data.totalSiteCount}
+          />
         </div>
       </div>
     </div>

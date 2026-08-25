@@ -12,18 +12,26 @@ interface SitePerformance {
 
 interface SitePerformanceCardProps {
   sites: SitePerformance[];
+  totalSiteCount?: number;
 }
 
 const progressTrackClass =
   'h-3.5 overflow-hidden rounded-full bg-(--bch-gray-200)';
 
-export function SitePerformanceCard({ sites }: SitePerformanceCardProps) {
+export function SitePerformanceCard({
+  sites,
+  totalSiteCount,
+}: SitePerformanceCardProps) {
   // Sort sites by event count (descending) and take top 5
   const topSites = [...sites]
     .sort((a, b) => b.eventCount - a.eventCount)
     .slice(0, 5);
 
   const maxEvents = topSites[0]?.eventCount || 1;
+  // Coverage derives from the full (unsliced) list: it contains only sites
+  // with events this period.
+  const visitedCount = sites.length;
+  const totalVisits = sites.reduce((sum, site) => sum + site.eventCount, 0);
 
   return (
     <Card className="h-fit gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) p-5 shadow-none">
@@ -55,6 +63,12 @@ export function SitePerformanceCard({ sites }: SitePerformanceCardProps) {
               </div>
             );
           })}
+          {typeof totalSiteCount === 'number' && totalSiteCount > 0 && (
+            <div className="pt-1 text-[12.5px] text-(--text-muted)">
+              {visitedCount} of {totalSiteCount} sites visited this period ·{' '}
+              {totalVisits} total visits
+            </div>
+          )}
         </div>
       ) : (
         <EmptyState

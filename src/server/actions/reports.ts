@@ -115,6 +115,7 @@ interface MonthlyActivityReportData {
   monthlySupplyDistributionGrowth: MonthlySupplyDistributionGrowth;
   supplyDistributions: SupplyDistributionSummary[];
   sitePerformance: SitePerformance[];
+  totalSiteCount: number;
   regions: string[];
   availableDateRange: {
     minDate: string;
@@ -833,6 +834,19 @@ export async function generateMonthlyActivityReport(
       ),
     }));
 
+  // Role-scoped eligible-site denominator for the coverage line: admins see
+  // all sites; workers see only the sites they manage — matching the
+  // event-scoping used by the site performance query above.
+  const [siteCountRow] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(sites)
+    .where(
+      session.user.role === 'admin'
+        ? sql`true`
+        : eq(sites.userId, session.user.id)
+    );
+  const totalSiteCount = Number(siteCountRow?.count || 0);
+
   return {
     reportMonth,
     totalEvents: totalMetrics[0]?.totalEvents || 0,
@@ -872,6 +886,7 @@ export async function generateMonthlyActivityReport(
     supplyDistributions: supplyDistributionsWithNumbers,
     monthlySupplyDistributionGrowth: monthlySupplyDistributionGrowth,
     sitePerformance: sitePerformanceWithUtilization,
+    totalSiteCount,
     regions: activeRegions
       .map(r => r.region)
       .filter((r): r is string => Boolean(r)),
