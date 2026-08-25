@@ -40,6 +40,12 @@ interface DashboardData {
     address: string;
     isSingleSeniorOnly: boolean;
   }>;
+  needsAttention: Array<{
+    siteId: string;
+    siteName: string;
+    lastEventDate: string | null;
+    daysSince: number | null;
+  }>;
   monthlyMetrics: {
     events: number;
     participants: number;
@@ -215,15 +221,39 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* TODO: /dashboard — not wired: the template's Needs Attention rail
-            (stale sites, low stock) has no data source; /api/dashboard returns
-            neither last-event dates nor site inventory. */}
         <section className="mt-6">
           <div className="mb-3 flex items-baseline justify-between gap-3">
             <h2 className={sectionTitleClass}>Needs Attention</h2>
-            <span className="text-[13px] text-(--text-muted)">0 items need action</span>
+            <span className="text-[13px] text-(--text-muted)">
+              {data.needsAttention?.length || 0} item
+              {(data.needsAttention?.length || 0) === 1 ? '' : 's'} need
+              {(data.needsAttention?.length || 0) === 1 ? 's' : ''} action
+            </span>
           </div>
-          <EmptyState title="You're all caught up" className="bg-(--surface-card)" />
+          {data.needsAttention?.length ? (
+            <div className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card)">
+              {data.needsAttention.map(site => (
+                <div
+                  key={site.siteId}
+                  className="flex items-center justify-between gap-4 border-b border-(--bch-gray-200) px-5 py-3 last:border-b-0"
+                >
+                  <Link
+                    href={`/sites/${site.siteId}`}
+                    className="text-[14.5px] font-semibold text-(--text-body) hover:text-(--action-primary) hover:underline"
+                  >
+                    {site.siteName}
+                  </Link>
+                  <span className="text-[12.5px] whitespace-nowrap text-(--warning-text)">
+                    {site.daysSince === null
+                      ? 'No events logged yet'
+                      : `No events in ${site.daysSince} days`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState title="You're all caught up" className="bg-(--surface-card)" />
+          )}
         </section>
 
         <div className="mt-7 grid grid-cols-1 items-start gap-6 lg:grid-cols-[300px_1fr]">

@@ -27,16 +27,53 @@ export async function GET() {
       );
     }
 
-    // Get current user's managed sites
+    // Get current user's managed sites, with each site's most recent event
+    // date (by anyone — a colleague's event means the site isn't neglected).
     const userSites = await db
       .select({
         id: sites.id,
         name: sites.name,
         address: sites.address,
         isSingleSeniorOnly: sites.isSingleSeniorOnly,
+        lastEventDate: sql<string | null>`max(${events.eventDate})`,
       })
       .from(sites)
-      .where(eq(sites.userId, session.user.id));
+      .leftJoin(events, eq(events.siteId, sites.id))
+      .where(eq(sites.userId, session.user.id))
+      .groupBy(sites.id, sites.name, sites.address, sites.isSingleSeniorOnly);
+
+    // Sites with no event in the last STALE_SITE_DAYS days (or ever).
+    const STALE_SITE_DAYS = 30;
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const todayUtc = Date.now();
+    const needsAttention = userSites
+      .map(site => {
+        let daysSince: number | null = null;
+        if (site.lastEventDate) {
+          // event_date is a DATE column serialised as YYYY-MM-DD; parse the
+          // parts to avoid the UTC shift.
+          const [y, m, d] = site.lastEventDate
+            .slice(0, 10)
+            .split('-')
+            .map(Number);
+          daysSince = Math.floor(
+            (todayUtc - Date.UTC(y, m - 1, d)) / msPerDay
+          );
+        }
+        return {
+          siteId: site.id,
+          siteName: site.name,
+          lastEventDate: site.lastEventDate,
+          daysSince,
+        };
+      })
+      .filter(
+        site => site.daysSince === null || site.daysSince > STALE_SITE_DAYS
+      )
+      .sort(
+        (a, b) => (b.daysSince ?? Number.MAX_SAFE_INTEGER) -
+          (a.daysSince ?? Number.MAX_SAFE_INTEGER)
+      );
 
     // Calculate date for "this month"
     const startOfMonth = new Date();
@@ -126,6 +163,7 @@ export async function GET() {
 
     const dashboardData = {
       userSites,
+      needsAttention,
       monthlyMetrics: {
         events: monthlyEvents?.count || 0,
         participants: monthlyParticipants?.totalParticipants || 0,
