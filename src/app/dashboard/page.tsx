@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
   Calendar,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Package,
   Loader2,
   FileText,
@@ -74,6 +76,7 @@ const quickStartItems: Array<{
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
+  const attentionRailRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -152,6 +155,13 @@ export default function Dashboard() {
   const attentionCount =
     (data.needsAttention?.length || 0) + (data.lowStock?.length || 0);
 
+  const scrollAttention = (direction: -1 | 1) => {
+    attentionRailRef.current?.scrollBy({
+      left: direction * 314,
+      behavior: 'smooth',
+    });
+  };
+
   return (
     <div className={pageClass}>
       <div className={containerClass}>
@@ -163,19 +173,44 @@ export default function Dashboard() {
         </div>
 
         <section className="mt-6">
-          <div className="mb-3 flex items-baseline justify-between gap-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className={sectionTitleClass}>Needs Attention</h2>
-            <span className="text-[13px] text-(--text-muted)">
-              {attentionCount} item{attentionCount === 1 ? '' : 's'} need
-              {attentionCount === 1 ? 's' : ''} action
-            </span>
+            <div className="flex items-center gap-2.5">
+              <span className="text-[13px] text-(--text-muted)">
+                {attentionCount} item{attentionCount === 1 ? '' : 's'} need
+                {attentionCount === 1 ? 's' : ''} action
+              </span>
+              {attentionCount > 1 && (
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    aria-label="Scroll alerts left"
+                    onClick={() => scrollAttention(-1)}
+                    className="grid size-7 cursor-pointer place-items-center rounded-(--radius-control) border border-(--border-default) bg-(--surface-card) text-(--action-primary) hover:bg-(--action-selected)"
+                  >
+                    <ChevronLeft className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Scroll alerts right"
+                    onClick={() => scrollAttention(1)}
+                    className="grid size-7 cursor-pointer place-items-center rounded-(--radius-control) border border-(--border-default) bg-(--surface-card) text-(--action-primary) hover:bg-(--action-selected)"
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           {attentionCount > 0 ? (
-            <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
+            <div
+              ref={attentionRailRef}
+              className="flex snap-x snap-mandatory gap-3.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
               {data.needsAttention.map(site => (
                 <div
                   key={site.siteId}
-                  className="flex flex-col gap-2.5 rounded-(--radius-card) border border-(--border-default) border-l-4 border-l-(--bch-red-600) bg-(--surface-card) p-4"
+                  className="flex w-[300px] shrink-0 snap-start flex-col gap-2.5 rounded-(--radius-card) border border-(--border-default) border-l-4 border-l-(--bch-red-600) bg-(--surface-card) p-4"
                 >
                   <div className="flex items-center gap-3">
                     <span className="grid size-[38px] shrink-0 place-items-center rounded-full bg-(--danger-surface) text-(--bch-red-600)">
@@ -206,7 +241,7 @@ export default function Dashboard() {
               {data.lowStock?.map(item => (
                 <div
                   key={`${item.siteId}-${item.supplyName}`}
-                  className="flex flex-col gap-2.5 rounded-(--radius-card) border border-(--border-default) border-l-4 border-l-(--bch-gold-600) bg-(--surface-card) p-4"
+                  className="flex w-[300px] shrink-0 snap-start flex-col gap-2.5 rounded-(--radius-card) border border-(--border-default) border-l-4 border-l-(--bch-gold-600) bg-(--surface-card) p-4"
                 >
                   <div className="flex items-center gap-3">
                     <span className="grid size-[38px] shrink-0 place-items-center rounded-full bg-[#FDF1D3] text-[#B07C0A]">
