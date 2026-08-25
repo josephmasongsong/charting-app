@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Modal } from '@/components/ui/modal';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -20,6 +19,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Calendar, Loader2, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type PeriodType = 'month' | 'quarter' | 'year';
 
 interface DateRangeDialogProps {
   currentParams: {
@@ -46,10 +48,58 @@ const MONTHS = [
   { value: 12, label: 'December' },
 ];
 
+const QUARTERS = [
+  { value: 1, label: 'Q1' },
+  { value: 2, label: 'Q2' },
+  { value: 3, label: 'Q3' },
+  { value: 4, label: 'Q4' },
+];
+
+const quarterStartMonth = (quarter: number) => (quarter - 1) * 3 + 1;
+const quarterEndMonth = (quarter: number) => quarter * 3;
+
+// The three period types all express themselves through the existing
+// startYear/startMonth/endYear/endMonth URL params, so the server action
+// is untouched: month → start only; quarter → its three months; year →
+// January through December.
+function derivePeriod(params: DateRangeDialogProps['currentParams']): {
+  type: PeriodType;
+  month: number;
+  quarter: number;
+  year: number;
+} {
+  const { startYear, startMonth, endYear, endMonth } = params;
+  if (endYear && endMonth && endYear === startYear) {
+    if (startMonth === 1 && endMonth === 12) {
+      return { type: 'year', month: startMonth, quarter: 1, year: startYear };
+    }
+    if (startMonth % 3 === 1 && endMonth === startMonth + 2) {
+      return {
+        type: 'quarter',
+        month: startMonth,
+        quarter: Math.floor(startMonth / 3) + 1,
+        year: startYear,
+      };
+    }
+  }
+  return {
+    type: 'month',
+    month: startMonth,
+    quarter: Math.floor((startMonth - 1) / 3) + 1,
+    year: startYear,
+  };
+}
+
 const outlineButtonClass =
   'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
 const primaryButtonClass =
   'h-auto w-full rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[11px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+const toggleBaseClass =
+  'h-auto rounded-(--radius-control) border px-4 py-[7px] text-[14.5px] font-normal shadow-none';
+const toggleSelectedClass =
+  'border-(--action-primary) bg-(--action-primary) text-(--text-on-chrome) hover:bg-(--action-primary-hover) hover:text-(--text-on-chrome)';
+const toggleUnselectedClass =
+  'border-(--action-primary) bg-(--surface-card) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)';
 const selectTriggerClass =
   'w-full rounded-(--radius-control) border-(--border-input) bg-(--surface-card) shadow-none';
 const subLabelClass = 'text-[12.5px] font-semibold text-(--text-muted)';
@@ -61,24 +111,13 @@ export function DateRangeDialog({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
-  const [isRange, setIsRange] = useState(
-    !!(currentParams.endYear && currentParams.endMonth),
-  );
   const prevOpenRef = useRef(false);
 
-  const [selectedStartYear, setSelectedStartYear] = useState(
-    currentParams.startYear,
-  );
-  const [selectedStartMonth, setSelectedStartMonth] = useState(
-    currentParams.startMonth,
-  );
-  const [selectedEndYear, setSelectedEndYear] = useState(
-    currentParams.endYear || currentParams.startYear,
-  );
-  const [selectedEndMonth, setSelectedEndMonth] = useState(
-    currentParams.endMonth || currentParams.startMonth,
-  );
-  const [validationError, setValidationError] = useState('');
+  const initial = derivePeriod(currentParams);
+  const [periodType, setPeriodType] = useState<PeriodType>(initial.type);
+  const [selectedMonth, setSelectedMonth] = useState(initial.month);
+  const [selectedQuarter, setSelectedQuarter] = useState(initial.quarter);
+  const [selectedYear, setSelectedYear] = useState(initial.year);
 
   // Parse available date range
   const minDate = new Date(availableDateRange.minDate);
@@ -110,16 +149,13 @@ export function DateRangeDialog({
     [minYear, maxYear, minMonth, maxMonth],
   );
 
-  // Check if a month is available for a given year
   const isMonthAvailable = useCallback(
     (year: number, month: number) => {
-      const availableMonths = getAvailableMonths(year);
-      return availableMonths.some(m => m.value === month);
+      return getAvailableMonths(year).some(m => m.value === month);
     },
     [getAvailableMonths],
   );
 
-  // Get the first available month for a year
   const getFirstAvailableMonth = useCallback(
     (year: number) => {
       const availableMonths = getAvailableMonths(year);
@@ -128,131 +164,55 @@ export function DateRangeDialog({
     [getAvailableMonths],
   );
 
-  // Get the last available month for a year
-  const getLastAvailableMonth = useCallback(
+  // Quarters that overlap the available data range for a given year
+  const getAvailableQuarters = useCallback(
     (year: number) => {
-      const availableMonths = getAvailableMonths(year);
-      return availableMonths.length > 0
-        ? availableMonths[availableMonths.length - 1].value
-        : 12;
+      return QUARTERS.filter(quarter => {
+        if (year === minYear && quarterEndMonth(quarter.value) < minMonth) {
+          return false;
+        }
+        if (year === maxYear && quarterStartMonth(quarter.value) > maxMonth) {
+          return false;
+        }
+        return true;
+      });
     },
-    [getAvailableMonths],
+    [minYear, maxYear, minMonth, maxMonth],
   );
 
-  // Validate date range
-  const validateDateRange = useCallback(
-    (
-      startYear: number,
-      startMonth: number,
-      endYear: number,
-      endMonth: number,
-    ) => {
-      if (!isRange) return true;
-
-      const startDate = new Date(startYear, startMonth - 1);
-      const endDate = new Date(endYear, endMonth - 1);
-
-      return startDate <= endDate;
-    },
-    [isRange],
-  );
-
-  // Handle start year change
-  const handleStartYearChange = (newYear: number) => {
-    setSelectedStartYear(newYear);
-
-    // Adjust start month if it's not available in the new year
-    if (!isMonthAvailable(newYear, selectedStartMonth)) {
-      const newMonth = getFirstAvailableMonth(newYear);
-      setSelectedStartMonth(newMonth);
+  const handleYearChange = (newYear: number) => {
+    setSelectedYear(newYear);
+    if (!isMonthAvailable(newYear, selectedMonth)) {
+      setSelectedMonth(getFirstAvailableMonth(newYear));
+    }
+    const quarters = getAvailableQuarters(newYear);
+    if (!quarters.some(q => q.value === selectedQuarter)) {
+      setSelectedQuarter(quarters[0]?.value ?? 1);
     }
   };
-
-  // Handle end year change
-  const handleEndYearChange = (newYear: number) => {
-    setSelectedEndYear(newYear);
-
-    // Adjust end month if it's not available in the new year
-    if (!isMonthAvailable(newYear, selectedEndMonth)) {
-      const newMonth = getLastAvailableMonth(newYear);
-      setSelectedEndMonth(newMonth);
-    }
-  };
-
-  // Handle range mode toggle
-  const handleRangeModeToggle = (checked: boolean) => {
-    setIsRange(checked);
-
-    if (checked) {
-      // When enabling range mode, set end date to start date if not already set
-      if (!currentParams.endYear || !currentParams.endMonth) {
-        setSelectedEndYear(selectedStartYear);
-        setSelectedEndMonth(selectedStartMonth);
-      }
-    }
-  };
-
-  // Validate whenever relevant state changes
-  useEffect(() => {
-    if (
-      isRange &&
-      !validateDateRange(
-        selectedStartYear,
-        selectedStartMonth,
-        selectedEndYear,
-        selectedEndMonth,
-      )
-    ) {
-      setValidationError('Start date must be before or equal to end date');
-    } else {
-      setValidationError('');
-    }
-  }, [
-    selectedStartYear,
-    selectedStartMonth,
-    selectedEndYear,
-    selectedEndMonth,
-    isRange,
-    validateDateRange,
-  ]);
 
   // Reset to current params when dialog opens
   useEffect(() => {
     // Only run when dialog transitions from closed to open
     if (open && !prevOpenRef.current) {
-      // Clamp start year to available years if out of range
-      const validStartYear = availableYears.includes(currentParams.startYear)
-        ? currentParams.startYear
+      const init = derivePeriod(currentParams);
+
+      // Clamp to available years/months if out of range
+      const validYear = availableYears.includes(init.year)
+        ? init.year
         : maxYear;
+      const validMonth = isMonthAvailable(validYear, init.month)
+        ? init.month
+        : getFirstAvailableMonth(validYear);
+      const quarters = getAvailableQuarters(validYear);
+      const validQuarter = quarters.some(q => q.value === init.quarter)
+        ? init.quarter
+        : (quarters[0]?.value ?? 1);
 
-      // Clamp start month to available months for the valid year
-      const validStartMonth = isMonthAvailable(
-        validStartYear,
-        currentParams.startMonth,
-      )
-        ? currentParams.startMonth
-        : getFirstAvailableMonth(validStartYear);
-
-      setSelectedStartYear(validStartYear);
-      setSelectedStartMonth(validStartMonth);
-
-      // Clamp end year to available years if out of range
-      const validEndYear =
-        currentParams.endYear && availableYears.includes(currentParams.endYear)
-          ? currentParams.endYear
-          : validStartYear;
-
-      // Clamp end month to available months for the valid end year
-      const validEndMonth =
-        currentParams.endMonth &&
-        isMonthAvailable(validEndYear, currentParams.endMonth)
-          ? currentParams.endMonth
-          : validStartMonth;
-
-      setSelectedEndYear(validEndYear);
-      setSelectedEndMonth(validEndMonth);
-      setIsRange(!!(currentParams.endYear && currentParams.endMonth));
-      setValidationError('');
+      setPeriodType(init.type);
+      setSelectedYear(validYear);
+      setSelectedMonth(validMonth);
+      setSelectedQuarter(validQuarter);
     }
 
     prevOpenRef.current = open;
@@ -263,30 +223,23 @@ export function DateRangeDialog({
     maxYear,
     isMonthAvailable,
     getFirstAvailableMonth,
+    getAvailableQuarters,
   ]);
 
   const handleSubmit = () => {
-    // Final validation check
-    if (
-      isRange &&
-      !validateDateRange(
-        selectedStartYear,
-        selectedStartMonth,
-        selectedEndYear,
-        selectedEndMonth,
-      )
-    ) {
-      setValidationError('Start date must be before or equal to end date');
-      return;
-    }
-
     const params = new URLSearchParams();
-    params.set('startYear', selectedStartYear.toString());
-    params.set('startMonth', selectedStartMonth.toString());
+    params.set('startYear', String(selectedYear));
 
-    if (isRange) {
-      params.set('endYear', selectedEndYear.toString());
-      params.set('endMonth', selectedEndMonth.toString());
+    if (periodType === 'month') {
+      params.set('startMonth', String(selectedMonth));
+    } else if (periodType === 'quarter') {
+      params.set('startMonth', String(quarterStartMonth(selectedQuarter)));
+      params.set('endYear', String(selectedYear));
+      params.set('endMonth', String(quarterEndMonth(selectedQuarter)));
+    } else {
+      params.set('startMonth', '1');
+      params.set('endYear', String(selectedYear));
+      params.set('endMonth', '12');
     }
 
     startTransition(() => {
@@ -295,54 +248,26 @@ export function DateRangeDialog({
     });
   };
 
-  const monthYearFields = (
-    which: 'start' | 'end',
-    selectedMonth: number,
-    selectedYear: number,
-    onMonth: (value: number) => void,
-    onYear: (value: number) => void,
-  ) => (
-    <div className="grid grid-cols-2 gap-3.5">
-      <div className="space-y-1">
-        <Label htmlFor={`${which}Month`} className={subLabelClass}>
-          Month
-        </Label>
-        <Select
-          value={String(selectedMonth)}
-          onValueChange={value => onMonth(parseInt(value))}
-        >
-          <SelectTrigger id={`${which}Month`} className={selectTriggerClass}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {getAvailableMonths(selectedYear).map(month => (
-              <SelectItem key={month.value} value={String(month.value)}>
-                {month.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor={`${which}Year`} className={subLabelClass}>
-          Year
-        </Label>
-        <Select
-          value={String(selectedYear)}
-          onValueChange={value => onYear(parseInt(value))}
-        >
-          <SelectTrigger id={`${which}Year`} className={selectTriggerClass}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {availableYears.map(year => (
-              <SelectItem key={year} value={String(year)}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+  const yearField = (
+    <div className="space-y-1">
+      <Label htmlFor="periodYear" className={subLabelClass}>
+        Year
+      </Label>
+      <Select
+        value={String(selectedYear)}
+        onValueChange={value => handleYearChange(parseInt(value))}
+      >
+        <SelectTrigger id="periodYear" className={selectTriggerClass}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {availableYears.map(year => (
+            <SelectItem key={year} value={String(year)}>
+              {year}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 
@@ -363,58 +288,105 @@ export function DateRangeDialog({
         className="sm:max-w-[480px]"
       >
         <p className="text-[13.5px] text-(--text-muted)">
-          Choose the date range for your monthly activity report.
+          Choose the period for your activity report.
         </p>
 
         <div className="mt-4 space-y-4">
-          <div className="flex items-center gap-2.5">
-            <Checkbox
-              id="isRange"
-              checked={isRange}
-              onCheckedChange={checked =>
-                handleRangeModeToggle(checked as boolean)
-              }
-            />
-            <Label htmlFor="isRange" className="text-sm font-semibold">
-              Date Range Mode
-            </Label>
-          </div>
-
-          {validationError && (
-            <div className="rounded-[2px] border-l-[5px] border-l-(--danger) bg-(--danger-surface) p-3 text-sm text-(--danger)">
-              {validationError}
-            </div>
-          )}
-
           <div className="space-y-1.5">
-            <Label className="text-[13.5px] font-bold">
-              {isRange ? 'Start Date' : 'Month & Year'}
-            </Label>
-            {monthYearFields(
-              'start',
-              selectedStartMonth,
-              selectedStartYear,
-              setSelectedStartMonth,
-              handleStartYearChange,
-            )}
+            <Label className={subLabelClass}>Period Type</Label>
+            <div className="flex gap-2">
+              {(
+                [
+                  { value: 'month', label: 'Month' },
+                  { value: 'quarter', label: 'Quarter' },
+                  { value: 'year', label: 'Year' },
+                ] as const
+              ).map(option => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={periodType === option.value}
+                  onClick={() => setPeriodType(option.value)}
+                  className={cn(
+                    'cursor-pointer',
+                    toggleBaseClass,
+                    periodType === option.value
+                      ? toggleSelectedClass
+                      : toggleUnselectedClass,
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {isRange && (
-            <div className="space-y-1.5">
-              <Label className="text-[13.5px] font-bold">End Date</Label>
-              {monthYearFields(
-                'end',
-                selectedEndMonth,
-                selectedEndYear,
-                setSelectedEndMonth,
-                handleEndYearChange,
-              )}
+          {periodType === 'month' && (
+            <div className="grid grid-cols-2 gap-3.5">
+              <div className="space-y-1">
+                <Label htmlFor="periodMonth" className={subLabelClass}>
+                  Month
+                </Label>
+                <Select
+                  value={String(selectedMonth)}
+                  onValueChange={value => setSelectedMonth(parseInt(value))}
+                >
+                  <SelectTrigger
+                    id="periodMonth"
+                    className={selectTriggerClass}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableMonths(selectedYear).map(month => (
+                      <SelectItem key={month.value} value={String(month.value)}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {yearField}
             </div>
           )}
+
+          {periodType === 'quarter' && (
+            <div className="grid grid-cols-2 gap-3.5">
+              <div className="space-y-1">
+                <Label htmlFor="periodQuarter" className={subLabelClass}>
+                  Quarter
+                </Label>
+                <Select
+                  value={String(selectedQuarter)}
+                  onValueChange={value => setSelectedQuarter(parseInt(value))}
+                >
+                  <SelectTrigger
+                    id="periodQuarter"
+                    className={selectTriggerClass}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableQuarters(selectedYear).map(quarter => (
+                      <SelectItem
+                        key={quarter.value}
+                        value={String(quarter.value)}
+                      >
+                        {quarter.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {yearField}
+            </div>
+          )}
+
+          {periodType === 'year' && yearField}
 
           <Button
             type="button"
-            disabled={isPending || !!validationError}
+            disabled={isPending}
             className={primaryButtonClass}
             onClick={handleSubmit}
           >
