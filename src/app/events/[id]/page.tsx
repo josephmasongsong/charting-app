@@ -231,9 +231,12 @@ export default async function EventPage({ params }: EventPageProps) {
               <div className="flex items-start gap-3">
                 <AvatarTile initials={organizerInitials ?? ''} size={44} />
                 <div className="min-w-0">
-                  {/* TODO: /events/[id] — not wired: the template links the
-                      organizer to a user profile; no /users/[id] route exists. */}
-                  <div className="text-[14.5px] font-bold">{event.userName}</div>
+                  <Link
+                    href={`/users/${event.userId}`}
+                    className="text-[14.5px] font-bold text-(--text-body) hover:text-(--action-primary) hover:underline"
+                  >
+                    {event.userName}
+                  </Link>
                   {event.userJobTitle && (
                     <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
                       {event.userJobTitle}
