@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
       user: activity.actor,
       userId: activity.actorId,
       timestamp: formatTimeAgo(activity.createdAt),
+      createdAt: activity.createdAt,
       details: activity.metadata,
       targetId: activity.targetId, // ← Add this line!
       targetExists: linkableTypes.includes(activity.targetType)

@@ -5,9 +5,7 @@ import { useActivityFeed } from '@/hooks/useActivityFeed';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 
 type ActivityType =
   | 'user_invited'
@@ -47,6 +45,7 @@ interface Activity {
   user: User;
   userId: string;
   timestamp: string;
+  createdAt: string;
   details: any;
   targetId?: string;
   targetExists?: boolean;
@@ -54,29 +53,45 @@ interface Activity {
 
 const emphasisClass = 'font-semibold text-(--text-body)';
 const linkClass = 'font-semibold text-(--action-primary) hover:underline';
-const pagerButtonClass =
-  'h-8 rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary) disabled:border-(--bch-gray-300) disabled:text-(--bch-gray-500) disabled:opacity-100';
-const pagerActiveClass =
-  'h-8 rounded-(--radius-control) bg-(--action-primary) text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover)';
+const loadMoreClass =
+  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[7px] text-[13.5px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
 
 const ActivityFeed: React.FC = () => {
   const { activities } = useActivityFeed();
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const PAGE_SIZE = 8;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const visibleActivities = activities.slice(0, visibleCount);
 
-  // Calculate pagination
-  const totalPages = Math.ceil(activities.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentActivities = activities.slice(startIndex, endIndex);
-
-  const handlePreviousPage = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
+  const dayLabel = (iso: string) => {
+    const date = new Date(iso);
+    const now = new Date();
+    const startOfDay = (d: Date) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const diffDays = Math.round(
+      (startOfDay(now) - startOfDay(date)) / 86400000
+    );
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      ...(date.getFullYear() !== now.getFullYear()
+        ? { year: 'numeric' as const }
+        : {}),
+    });
   };
 
-  const handleNextPage = () => {
-    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  };
+  // Consecutive rows sharing a calendar day sit under one date rule.
+  const groups: Array<{ label: string; items: Activity[] }> = [];
+  for (const activity of visibleActivities as Activity[]) {
+    const label = activity.createdAt ? dayLabel(activity.createdAt) : '';
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) {
+      last.items.push(activity);
+    } else {
+      groups.push({ label, items: [activity] });
+    }
+  }
 
   const getUserInitials = (user: User): string => {
     return `${user.firstName[0]}${user.lastName[0]}`;
@@ -392,85 +407,51 @@ const ActivityFeed: React.FC = () => {
       {activities.length === 0 ? (
         <EmptyState title="You're all caught up" className="m-4" />
       ) : (
-        <div>
-          {currentActivities.map((activity: Activity) => {
-            return (
-              <div
-                key={activity.id}
-                className="flex items-start gap-3 border-b border-(--bch-gray-200) px-4 py-3 last:border-b-0"
-              >
-                <AvatarTile initials={getUserInitials(activity.user)} size={38} />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[13.5px] text-(--text-body)">
+        <div className="pb-2">
+          {groups.map(group => (
+            <div key={`${group.label}-${group.items[0]?.id}`}>
+              {group.label && (
+                <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-1.5">
+                  <span className="text-[11px] font-bold tracking-[.08em] text-(--text-muted) uppercase">
+                    {group.label}
+                  </span>
+                  <span className="h-px flex-1 bg-(--bch-gray-200)" />
+                </div>
+              )}
+              {group.items.map(activity => (
+                <div
+                  key={activity.id}
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-(--action-selected)"
+                >
+                  <AvatarTile
+                    initials={getUserInitials(activity.user)}
+                    size={38}
+                  />
+                  <div className="min-w-0 flex-1 text-[13.5px] leading-snug text-(--text-body)">
                     {getActivityTitle(activity)}
                   </div>
-                  <div className="mt-[3px] text-xs text-(--text-muted)">
+                  <span className="shrink-0 self-start pt-0.5 text-[12px] whitespace-nowrap text-(--text-muted)">
                     {activity.timestamp}
-                  </div>
+                  </span>
                 </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex flex-col items-center gap-2 border-t border-(--bch-gray-200) px-4 py-3.5">
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-              className={pagerButtonClass}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={cn(
-                      'w-9',
-                      currentPage === pageNum ? pagerActiveClass : pagerButtonClass
-                    )}
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-              className={pagerButtonClass}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+      {/* Load more */}
+      {activities.length > visibleCount && (
+        <div className="flex flex-col items-center gap-1.5 border-t border-(--bch-gray-200) px-4 py-3.5">
+          <Button
+            variant="outline"
+            onClick={() => setVisibleCount(count => count + PAGE_SIZE)}
+            className={loadMoreClass}
+          >
+            Load more
+          </Button>
           <span className="text-xs text-(--text-muted)">
-            Showing {startIndex + 1}–{Math.min(endIndex, activities.length)} of{' '}
-            {activities.length}
+            Showing {visibleActivities.length} of {activities.length}
           </span>
         </div>
       )}
