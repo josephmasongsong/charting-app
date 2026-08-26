@@ -305,8 +305,6 @@ const CommunityPartnersTable = forwardRef<
                         )}
                       </Button>
                     </TableHead>
-                    <TableHead className={headCellClass}>Created</TableHead>
-                    <TableHead className={headCellClass}>Updated</TableHead>
                     <TableHead className={cn(headCellClass, 'text-right')}>
                       Actions
                     </TableHead>
@@ -316,7 +314,7 @@ const CommunityPartnersTable = forwardRef<
                   {partners.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={4}
+                        colSpan={2}
                         className={cn(
                           bodyCellClass,
                           'py-10 text-center whitespace-normal text-(--text-muted)'
@@ -346,16 +344,6 @@ const CommunityPartnersTable = forwardRef<
                       <TableRow key={partner.id} className={bodyRowClass}>
                         <TableCell className={cn(bodyCellClass, 'font-semibold')}>
                           {partner.name}
-                        </TableCell>
-                        <TableCell
-                          className={cn(bodyCellClass, 'text-(--text-muted)')}
-                        >
-                          {new Date(partner.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell
-                          className={cn(bodyCellClass, 'text-(--text-muted)')}
-                        >
-                          {new Date(partner.updatedAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell className={cn(bodyCellClass, 'text-right')}>
                           <div className="flex justify-end gap-1">

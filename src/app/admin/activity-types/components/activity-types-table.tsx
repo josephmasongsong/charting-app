@@ -332,8 +332,6 @@ const ActivityTypesTable = forwardRef<
                       <TableHead className={headCellClass}>
                         Program Goal
                       </TableHead>
-                      <TableHead className={headCellClass}>Created</TableHead>
-                      <TableHead className={headCellClass}>Updated</TableHead>
                       <TableHead className={cn(headCellClass, 'text-right')}>
                         Actions
                       </TableHead>
@@ -343,7 +341,7 @@ const ActivityTypesTable = forwardRef<
                     {activityTypes.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={5}
+                          colSpan={3}
                           className={cn(
                             bodyCellClass,
                             'py-10 text-center whitespace-normal text-(--text-muted)'
@@ -378,20 +376,6 @@ const ActivityTypesTable = forwardRef<
                             <span className="inline-block rounded-full bg-(--surface-muted) px-2.5 py-[3px] text-[12.5px] font-semibold text-(--text-body)">
                               {activityType.programGoalName}
                             </span>
-                          </TableCell>
-                          <TableCell
-                            className={cn(bodyCellClass, 'text-(--text-muted)')}
-                          >
-                            {new Date(
-                              activityType.createdAt
-                            ).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell
-                            className={cn(bodyCellClass, 'text-(--text-muted)')}
-                          >
-                            {new Date(
-                              activityType.updatedAt
-                            ).toLocaleDateString()}
                           </TableCell>
                           <TableCell className={cn(bodyCellClass, 'text-right')}>
                             <div className="flex justify-end gap-1">

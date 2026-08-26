@@ -332,12 +332,6 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
                       <TableHead className={headCellClass}>
                         Total Value
                       </TableHead>
-                      <TableHead className={headCellClass}>
-                        {sortableHead('createdAt', 'Created')}
-                      </TableHead>
-                      <TableHead className={headCellClass}>
-                        {sortableHead('updatedAt', 'Updated')}
-                      </TableHead>
                       <TableHead className={cn(headCellClass, 'text-right')}>
                         Actions
                       </TableHead>
@@ -347,7 +341,7 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
                     {supplies.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={7}
+                          colSpan={5}
                           className={cn(
                             bodyCellClass,
                             'py-10 text-center whitespace-normal text-(--text-muted)'
@@ -398,16 +392,6 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
                             {(
                               parseFloat(supply.costPerUnit) * supply.quantity
                             ).toFixed(2)}
-                          </TableCell>
-                          <TableCell
-                            className={cn(bodyCellClass, 'text-(--text-muted)')}
-                          >
-                            {formatDate(supply.createdAt)}
-                          </TableCell>
-                          <TableCell
-                            className={cn(bodyCellClass, 'text-(--text-muted)')}
-                          >
-                            {formatDate(supply.updatedAt)}
                           </TableCell>
                           <TableCell
                             className={cn(bodyCellClass, 'text-right')}

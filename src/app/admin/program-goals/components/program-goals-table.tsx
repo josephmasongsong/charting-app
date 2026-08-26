@@ -302,8 +302,6 @@ const ProgramGoalsTable = forwardRef<
                         )}
                       </Button>
                     </TableHead>
-                    <TableHead className={headCellClass}>Created</TableHead>
-                    <TableHead className={headCellClass}>Updated</TableHead>
                     <TableHead className={cn(headCellClass, 'text-right')}>
                       Actions
                     </TableHead>
@@ -313,7 +311,7 @@ const ProgramGoalsTable = forwardRef<
                   {goals.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={4}
+                        colSpan={2}
                         className={cn(
                           bodyCellClass,
                           'py-10 text-center whitespace-normal text-(--text-muted)'
@@ -343,16 +341,6 @@ const ProgramGoalsTable = forwardRef<
                       <TableRow key={goal.id} className={bodyRowClass}>
                         <TableCell className={cn(bodyCellClass, 'font-semibold')}>
                           {goal.name}
-                        </TableCell>
-                        <TableCell
-                          className={cn(bodyCellClass, 'text-(--text-muted)')}
-                        >
-                          {new Date(goal.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell
-                          className={cn(bodyCellClass, 'text-(--text-muted)')}
-                        >
-                          {new Date(goal.updatedAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell className={cn(bodyCellClass, 'text-right')}>
                           <div className="flex justify-end gap-1">
