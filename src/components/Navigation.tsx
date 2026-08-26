@@ -44,9 +44,17 @@ export default function Navigation() {
   const userInitials = getUserInitials(session.user?.name, session.user?.email);
 
   const isDashboardActive = pathname === '/dashboard';
+  // Form surfaces (log event, log distribution, create/edit site, ...) wear
+  // the blue header per the templates; everything else stays teal chrome.
+  const isFormRoute = pathname.endsWith('/new') || pathname.endsWith('/edit');
 
   return (
-    <nav className="sticky top-0 z-50 bg-(--surface-chrome)">
+    <nav
+      className={cn(
+        'sticky top-0 z-50',
+        isFormRoute ? 'bg-(--action-primary)' : 'bg-(--surface-chrome)'
+      )}
+    >
       <div className="px-4">
         <div className="flex h-14 items-center justify-between">
           {/* Logo/Brand */}
@@ -77,7 +85,12 @@ export default function Navigation() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex cursor-pointer items-center gap-2.5 rounded-(--radius-control) px-2 py-1.5 transition-colors hover:bg-(--surface-chrome-dark)"
+                  className={cn(
+                    'flex cursor-pointer items-center gap-2.5 rounded-(--radius-control) px-2 py-1.5 transition-colors',
+                    isFormRoute
+                      ? 'hover:bg-(--action-primary-hover)'
+                      : 'hover:bg-(--surface-chrome-dark)'
+                  )}
                   aria-label="User menu"
                 >
                   <span className="grid size-8 shrink-0 place-items-center rounded-(--radius-avatar) bg-white text-[12.5px] font-bold text-(--surface-chrome)">
