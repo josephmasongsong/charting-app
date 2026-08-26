@@ -396,18 +396,6 @@ export default function EventForm({
               </Alert>
             )}
 
-            {!isAdmin && (
-              <Alert variant="warning" className={alertClass}>
-                <AlertTitle className="font-semibold">
-                  Review Carefully Before Submitting
-                </AlertTitle>
-                <AlertDescription className="text-(--warning-text)">
-                  Once submitted, you will not be able to edit this event.
-                  Please ensure all information is accurate before saving.
-                </AlertDescription>
-              </Alert>
-            )}
-
             {submitStatus === 'success' && (
               <Alert className={cn(alertClass, successAlertClass)}>
                 <CheckIcon className="text-(--success)" />
