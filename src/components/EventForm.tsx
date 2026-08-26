@@ -221,8 +221,10 @@ export default function EventForm({
       newErrors.activityTypeId = 'Activity type is required';
     if (!formData.siteId) newErrors.siteId = 'Site is required';
 
-    if (formData.eventDuration && parseInt(formData.eventDuration) < 0) {
-      newErrors.eventDuration = 'Duration cannot be negative';
+    if (!formData.eventDuration.trim()) {
+      newErrors.eventDuration = 'Event duration is required';
+    } else if (parseInt(formData.eventDuration) < 1) {
+      newErrors.eventDuration = 'Duration must be at least 1 minute';
     }
     if (formData.adminDuration && parseInt(formData.adminDuration) < 0) {
       newErrors.adminDuration = 'Duration cannot be negative';
@@ -236,7 +238,9 @@ export default function EventForm({
     ) {
       newErrors.returningParticipants = 'Cannot be negative';
     }
-    if (formData.totalCost && parseFloat(formData.totalCost) < 0) {
+    if (!formData.totalCost.trim()) {
+      newErrors.totalCost = 'Total cost is required';
+    } else if (parseFloat(formData.totalCost) < 0) {
       newErrors.totalCost = 'Cost cannot be negative';
     }
 
@@ -729,6 +733,7 @@ export default function EventForm({
                 <div>
                   <Label htmlFor="eventDuration" className={labelClass}>
                     Event Duration
+                    <Required />
                   </Label>
                   <div className="mt-1.5 flex items-center gap-2">
                     <Input
@@ -798,6 +803,7 @@ export default function EventForm({
                 <div>
                   <Label htmlFor="totalCost" className={labelClass}>
                     Total Cost ($)
+                    <Required />
                   </Label>
                   <div className="mt-1.5 flex items-center gap-2">
                     <span className="text-[15px] text-(--text-muted)">$</span>
