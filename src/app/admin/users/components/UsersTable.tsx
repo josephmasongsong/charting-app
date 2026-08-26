@@ -335,7 +335,6 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                       <TableHead className={headCellClass}>Region</TableHead>
                       <TableHead className={headCellClass}>Status</TableHead>
                       <TableHead className={headCellClass}>Verified</TableHead>
-                      <TableHead className={headCellClass}>Created</TableHead>
                       <TableHead className={cn(headCellClass, 'text-right')}>
                         Actions
                       </TableHead>
@@ -345,7 +344,7 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                     {users.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={9}
+                          colSpan={8}
                           className={cn(
                             bodyCellClass,
                             'py-10 text-center whitespace-normal text-(--text-muted)'
@@ -409,11 +408,6 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                                 Unverified
                               </span>
                             )}
-                          </TableCell>
-                          <TableCell
-                            className={cn(bodyCellClass, 'text-(--text-muted)')}
-                          >
-                            {new Date(user.createdAt).toLocaleDateString()}
                           </TableCell>
                           <TableCell
                             className={cn(bodyCellClass, 'text-right')}
