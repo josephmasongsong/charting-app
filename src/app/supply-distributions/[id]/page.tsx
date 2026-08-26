@@ -17,6 +17,7 @@ import { Card } from '@/components/ui/card';
 import { ProfileField } from '@/components/ui/profile-field';
 import { DataTable } from '@/components/ui/data-table';
 import { DistributionTypeBadge } from '@/app/admin/supply-distributions/components/distribution-type-badge';
+import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
 
 interface DistributionPageProps {
@@ -194,9 +195,7 @@ export default async function DistributionPage({
           <div>
             <div className="mb-3 text-[17px] font-bold">Distributed By</div>
             <div className="flex items-start gap-3">
-              <div className="grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-[linear-gradient(160deg,#8FA6B5,#6B8496)] text-sm font-bold text-white">
-                {initials}
-              </div>
+              <AvatarTile initials={initials ?? ''} size={44} />
               <div className="min-w-0">
                 <Link
                   href={`/users/${distribution.userId}`}

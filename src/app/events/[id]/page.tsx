@@ -17,6 +17,7 @@ import { ProfileField } from '@/components/ui/profile-field';
 import { DataTable } from '@/components/ui/data-table';
 import { Calendar, Edit, Copy } from 'lucide-react';
 import Link from 'next/link';
+import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
 import { DuplicateEventDialog } from '../components/DuplicateEventDialog';
 
@@ -228,9 +229,7 @@ export default async function EventPage({ params }: EventPageProps) {
             <div>
               <div className="mb-2 text-base font-bold">Logged By</div>
               <div className="flex items-start gap-3">
-                <div className="grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-[linear-gradient(160deg,#8FA6B5,#6B8496)] text-sm font-bold text-white">
-                  {organizerInitials}
-                </div>
+                <AvatarTile initials={organizerInitials ?? ''} size={44} />
                 <div className="min-w-0">
                   {/* TODO: /events/[id] — not wired: the template links the
                       organizer to a user profile; no /users/[id] route exists. */}

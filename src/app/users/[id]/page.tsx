@@ -8,6 +8,7 @@ import { Home } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { ProfileField } from '@/components/ui/profile-field';
 import StatusBadge from '@/app/admin/users/components/StatusBadge';
+import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
 
 interface UserPageProps {
@@ -99,9 +100,7 @@ export default async function UserPage({ params }: UserPageProps) {
           )}
         >
           <div>
-            <div className="grid size-24 place-items-center rounded-(--radius-avatar) bg-[linear-gradient(160deg,#8FA6B5,#6B8496)] text-[28px] font-bold text-white">
-              {initials}
-            </div>
+            <AvatarTile initials={initials} size={96} />
             <div className="mt-3.5 text-[22px] leading-[1.25] font-bold">
               {fullName}
             </div>

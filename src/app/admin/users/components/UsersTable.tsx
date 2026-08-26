@@ -29,6 +29,7 @@ import {
   ChevronDown,
   Info,
 } from 'lucide-react';
+import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
 
 import EditUserDialog from './EditUserDialog';
@@ -374,9 +375,10 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                         <TableRow key={user.id} className={bodyRowClass}>
                           <TableCell className={bodyCellClass}>
                             <div className="flex items-center gap-2.5">
-                              <div className="grid size-9 shrink-0 place-items-center rounded-(--radius-avatar) bg-[linear-gradient(160deg,#8FA6B5,#6B8496)] text-xs font-bold text-white">
-                                {userInitials(user.name)}
-                              </div>
+                              <AvatarTile
+                                initials={userInitials(user.name)}
+                                size={36}
+                              />
                               <span className="font-semibold">{user.name}</span>
                             </div>
                           </TableCell>

@@ -17,6 +17,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Package } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
 import BackButton from '@/components/BackButton';
 import EditButton from './components/EditButton';
@@ -271,12 +272,15 @@ export default async function SitePage({ params }: SitePageProps) {
           <div>
             <div className="mb-3 text-[17px] font-bold">Assigned Worker</div>
             <div className="flex items-start gap-3">
-              <div className="grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-[linear-gradient(160deg,#8FA6B5,#6B8496)] text-sm font-bold text-white">
-                {site.userName
-                  ?.split(' ')
-                  .map(n => n[0])
-                  .join('')}
-              </div>
+              <AvatarTile
+                initials={
+                  site.userName
+                    ?.split(' ')
+                    .map(n => n[0])
+                    .join('') ?? ''
+                }
+                size={44}
+              />
               <div className="min-w-0">
                 <div className="text-[14.5px] font-bold">{site.userName}</div>
                 {site.userJobTitle && (
