@@ -14,11 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import {
   Trash2,
   Search,
-  Users,
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
@@ -279,7 +277,6 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
                     </Button>
                   </TableHead>
                   <TableHead className={headCellClass}>Address</TableHead>
-                  <TableHead className={headCellClass}>Tenants</TableHead>
                   <TableHead className={headCellClass}>
                     Assigned Worker
                   </TableHead>
@@ -300,7 +297,7 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
                 {sites.length === 0 ? (
                   <TableRow className="border-0 hover:bg-transparent">
                     <TableCell
-                      colSpan={9}
+                      colSpan={8}
                       className={cn(
                         bodyCellClass,
                         'py-10 text-center whitespace-normal text-(--text-muted)'
@@ -345,15 +342,6 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
                         >
                           {site.address}
                         </div>
-                      </TableCell>
-                      <TableCell className={bodyCellClass}>
-                        <Badge
-                          variant="outline"
-                          className="flex w-fit items-center gap-1 rounded-(--radius-control) border-(--border-default) text-(--text-body)"
-                        >
-                          <Users className="h-3 w-3" />
-                          {site.numberOfTenants}
-                        </Badge>
                       </TableCell>
                       <TableCell className={bodyCellClass}>
                         <div className="text-sm">{site.userName}</div>
