@@ -380,36 +380,6 @@ const ActivityFeed: React.FC = () => {
     }
   };
 
-  const getActivitySubtitle = (activity: Activity): string | null => {
-    const { type, details } = activity;
-
-    switch (type) {
-      case 'event_created':
-        return `${details.totalParticipants} participants`;
-
-      case 'activity_type_created':
-        return details.programGoal;
-
-      case 'site_created':
-        return `${details.tenantCount} tenants`;
-
-      case 'supply_created':
-        return `${details.costPerUnit} per unit`;
-
-      case 'site_supply_updated':
-        return `${details.oldQuantity} → ${details.newQuantity} units`;
-
-      case 'supply_distribution_logged':
-        return `${details.totalCost.toFixed(2)} total cost`;
-
-      case 'supply_distribution_deleted':
-        return `${details.totalItems} items`;
-
-      default:
-        return null;
-    }
-  };
-
   return (
     <div
       data-slot="activity-feed"
@@ -424,7 +394,6 @@ const ActivityFeed: React.FC = () => {
       ) : (
         <div>
           {currentActivities.map((activity: Activity) => {
-            const subtitle = getActivitySubtitle(activity);
             return (
               <div
                 key={activity.id}
@@ -436,7 +405,6 @@ const ActivityFeed: React.FC = () => {
                     {getActivityTitle(activity)}
                   </div>
                   <div className="mt-[3px] text-xs text-(--text-muted)">
-                    {subtitle ? `${subtitle} · ` : ''}
                     {activity.timestamp}
                   </div>
                 </div>
