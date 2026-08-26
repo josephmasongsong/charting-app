@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db, programGoals, users } from '@/db';
+import { db, programGoals, users, activityTypes } from '@/db';
 import { eq } from 'drizzle-orm';
 import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 export async function GET(
@@ -196,6 +196,26 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Program goal not found' },
         { status: 404 }
+      );
+    }
+
+    // A goal referenced by activity types cannot be deleted (FK NO ACTION);
+    // surface a specific, actionable message instead of a generic 500.
+    const referencing = await db
+      .select({ name: activityTypes.name })
+      .from(activityTypes)
+      .where(eq(activityTypes.programGoalId, id))
+      .orderBy(activityTypes.name);
+
+    if (referencing.length > 0) {
+      const names = referencing.slice(0, 3).map(t => `"${t.name}"`).join(', ');
+      const more =
+        referencing.length > 3 ? ` and ${referencing.length - 3} more` : '';
+      return NextResponse.json(
+        {
+          error: `Cannot delete "${existingGoal.name}": ${referencing.length} activity type${referencing.length === 1 ? ' is' : 's are'} assigned to it (${names}${more}). Reassign or delete those activity types first.`,
+        },
+        { status: 409 }
       );
     }
 
