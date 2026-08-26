@@ -254,6 +254,7 @@ export async function generateMonthlyActivityReport(
     .select({
       region: users.region,
       participants: sql<number>`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0)`,
+      newParticipants: sql<number>`coalesce(sum(${events.newParticipants}), 0)`,
     })
     .from(events)
     .leftJoin(users, eq(events.userId, users.id))
@@ -745,6 +746,10 @@ export async function generateMonthlyActivityReport(
     totalNewParticipants: totalMetrics[0]?.totalNewParticipants || 0,
     totalReturningParticipants:
       totalMetrics[0]?.totalReturningParticipants || 0,
+    totalPreviousNewParticipants: previousPeriodParticipantsData.reduce(
+      (sum, row) => sum + Number(row.newParticipants),
+      0
+    ),
     totalCost: Number(totalMetrics[0]?.totalCost || 0),
     totalEventDuration: Number(totalMetrics[0]?.totalEventDuration || 0),
     totalAdminDuration: Number(totalMetrics[0]?.totalAdminDuration || 0),

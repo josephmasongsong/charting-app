@@ -85,6 +85,7 @@ export interface MonthlyActivityReportData {
   totalParticipants: number;
   totalNewParticipants: number;
   totalReturningParticipants: number;
+  totalPreviousNewParticipants: number;
   totalCost: number;
   totalEventDuration: number;
   totalAdminDuration: number;

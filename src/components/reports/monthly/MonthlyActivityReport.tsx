@@ -29,30 +29,11 @@ export function MonthlyActivityReport({
   data,
   currentParams,
 }: MonthlyActivityReportProps) {
-  // Calculate overall growth for participant metric card
-  const totalCurrentParticipants = data.monthlyParticipantGrowth.reduce(
-    (sum, item) => sum + item.currentMonthParticipants,
-    0,
-  );
+  // Previous-period attendance sum (drives the derived-KPI deltas)
   const totalPreviousParticipants = data.monthlyParticipantGrowth.reduce(
     (sum, item) => sum + item.previousMonthParticipants,
     0,
   );
-  const overallParticipantGrowthRate =
-    totalPreviousParticipants > 0
-      ? Math.round(
-          ((totalCurrentParticipants - totalPreviousParticipants) /
-            totalPreviousParticipants) *
-            100,
-        )
-      : 0;
-
-  const overallParticipantGrowthType =
-    overallParticipantGrowthRate > 2
-      ? 'growth'
-      : overallParticipantGrowthRate < -2
-        ? 'decline'
-        : 'stable';
 
   // Calculate overall growth for events metric card
   const totalCurrentEvents =
@@ -103,6 +84,10 @@ export function MonthlyActivityReport({
       ? totalPreviousParticipants / totalPreviousEvents
       : 0;
   const avgParticipantsGrowth = growthOf(avgParticipants, prevAvgParticipants);
+  const newParticipantsGrowth = growthOf(
+    data.totalNewParticipants,
+    data.totalPreviousNewParticipants,
+  );
 
   return (
     <div className="space-y-6">
@@ -155,25 +140,31 @@ export function MonthlyActivityReport({
         />
         <KpiCard
           variant="panel"
-          label="Total Participants"
-          value={data.totalParticipants.toLocaleString()}
+          label="New Participants"
+          value={data.totalNewParticipants.toLocaleString()}
           icon={Users}
           sub={
-            <div className="flex items-center gap-1 text-xs text-(--text-muted)">
-              <div
-                className={cn(
-                  'flex items-center gap-1',
-                  getGrowthColor(overallParticipantGrowthType),
-                )}
-              >
-                {getGrowthIcon(overallParticipantGrowthType)}
-                <span>
-                  {overallParticipantGrowthRate > 0 ? '+' : ''}
-                  {overallParticipantGrowthRate}%
-                </span>
-              </div>{' '}
-              vs Previous Period
-            </div>
+            <>
+              <div className="text-xs text-(--text-muted)">
+                {data.totalParticipants.toLocaleString()} attendances across
+                all events
+              </div>
+              <div className="flex items-center gap-1 text-xs text-(--text-muted)">
+                <div
+                  className={cn(
+                    'flex items-center gap-1',
+                    getGrowthColor(newParticipantsGrowth.type),
+                  )}
+                >
+                  {getGrowthIcon(newParticipantsGrowth.type)}
+                  <span>
+                    {newParticipantsGrowth.rate > 0 ? '+' : ''}
+                    {newParticipantsGrowth.rate}%
+                  </span>
+                </div>{' '}
+                vs Previous Period
+              </div>
+            </>
           }
         />
         <KpiCard
