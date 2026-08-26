@@ -4,7 +4,6 @@
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { BrandMark } from '@/components/ui/brand-mark';
-import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, Home, Menu, X } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { LogOut, Settings, Menu, X } from 'lucide-react';
 
 // Menu chrome follows the design system's Listbox: near-square corners,
 // input border, full-bleed rows, selection-blue hover.
@@ -35,7 +33,6 @@ export default function Navigation({
   sidebarOpen = false,
 }: NavigationProps = {}) {
   const { data: session } = useSession();
-  const pathname = usePathname();
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/login' });
@@ -60,8 +57,6 @@ export default function Navigation({
   };
 
   const userInitials = getUserInitials(session.user?.name, session.user?.email);
-
-  const isDashboardActive = pathname === '/dashboard';
 
   return (
     // PartnerHub chrome: dark teal header above the teal-600 rail, on every
@@ -96,22 +91,8 @@ export default function Navigation({
             </Link>
           </div>
 
-          {/* Right Side: Dashboard Icon + User Menu */}
+          {/* Right Side: User Menu */}
           <div className="flex items-center gap-2">
-            {/* Dashboard (grid) icon */}
-            <Link
-              href="/dashboard"
-              aria-label="Dashboard"
-              aria-current={isDashboardActive ? 'page' : undefined}
-              className={cn(
-                'rounded-(--radius-control) p-2 text-(--text-on-chrome) transition-colors',
-                !isDashboardActive && 'opacity-80 hover:opacity-100'
-              )}
-            >
-              <Home className="h-5 w-5" />
-            </Link>
-
-            {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
