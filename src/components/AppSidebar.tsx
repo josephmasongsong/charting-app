@@ -41,7 +41,6 @@ const navItems: NavItem[] = [
 
 // /admin/settings is deliberately absent — no page exists for it.
 const adminItems: Array<{ href: string; label: string }> = [
-  { href: '/admin', label: 'Overview' },
   { href: '/admin/events', label: 'Events' },
   { href: '/admin/sites', label: 'Sites' },
   { href: '/admin/users', label: 'Users' },
@@ -99,13 +98,11 @@ export default function AppSidebar({
           {adminOpen && (
             <SidebarGroup>
               {adminItems.map(item => {
-                // Section pages stay lit on their nested routes; the index
-                // must match exactly or it would light for every /admin/*.
+                // Section pages stay lit on their nested routes; the
+                // trailing slash keeps sibling prefixes from cross-matching.
                 const active =
-                  item.href === '/admin'
-                    ? pathname === '/admin'
-                    : pathname === item.href ||
-                      pathname.startsWith(`${item.href}/`);
+                  pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`);
                 return (
                   <SidebarItem key={item.href} asChild indent active={active}>
                     <Link

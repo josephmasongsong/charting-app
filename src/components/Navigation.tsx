@@ -15,6 +15,15 @@ import {
 import { LogOut, Settings, Home, Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
+// Menu chrome follows the design system's Listbox: near-square corners,
+// input border, full-bleed rows, selection-blue hover.
+const menuContentClass =
+  'w-56 rounded-(--radius-input) border-(--border-input) bg-(--surface-card) p-0 shadow-(--shadow-card)';
+const menuItemClass =
+  'gap-2.5 rounded-none px-2.5 py-[9px] text-[14.5px] text-(--text-body) focus:bg-(--action-selected) focus:text-(--action-primary)';
+const destructiveMenuItemClass =
+  'gap-2.5 rounded-none px-2.5 py-[9px] text-[14.5px] text-(--danger) focus:bg-(--danger-surface) focus:text-(--danger)';
+
 interface NavigationProps {
   /** Provided by AppShell on signed-in routes to toggle the narrow-screen rail. */
   onMenuClick?: () => void;
@@ -53,17 +62,11 @@ export default function Navigation({
   const userInitials = getUserInitials(session.user?.name, session.user?.email);
 
   const isDashboardActive = pathname === '/dashboard';
-  // Form surfaces (log event, log distribution, create/edit site, ...) wear
-  // the blue header per the templates; everything else stays teal chrome.
-  const isFormRoute = pathname.endsWith('/new') || pathname.endsWith('/edit');
 
   return (
-    <nav
-      className={cn(
-        'sticky top-0 z-50',
-        isFormRoute ? 'bg-(--action-primary)' : 'bg-(--surface-chrome)'
-      )}
-    >
+    // PartnerHub chrome: dark teal header above the teal-600 rail, on every
+    // route (supersedes the earlier blue-on-form-routes treatment).
+    <nav className="sticky top-0 z-50 bg-(--surface-chrome-dark)">
       <div className="px-4">
         <div className="flex h-14 items-center justify-between">
           {/* Logo/Brand */}
@@ -112,15 +115,10 @@ export default function Navigation({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className={cn(
-                    'flex cursor-pointer items-center gap-2.5 rounded-(--radius-control) px-2 py-1.5 transition-colors',
-                    isFormRoute
-                      ? 'hover:bg-(--action-primary-hover)'
-                      : 'hover:bg-(--surface-chrome-dark)'
-                  )}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-(--radius-control) px-2 py-1.5 transition-colors hover:bg-(--surface-chrome)"
                   aria-label="User menu"
                 >
-                  <span className="grid size-8 shrink-0 place-items-center rounded-(--radius-avatar) bg-white text-[12.5px] font-bold text-(--surface-chrome)">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-(--radius-avatar) bg-white text-[12.5px] font-bold text-(--surface-chrome-dark)">
                     {userInitials}
                   </span>
                   <span className="hidden text-sm font-medium text-(--text-on-chrome) sm:inline">
@@ -128,20 +126,23 @@ export default function Navigation({
                   </span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link href="/settings" className="w-full">
-                    <Settings className="h-4 w-4 mr-2" />
+              <DropdownMenuContent
+                align="end"
+                sideOffset={4}
+                className={menuContentClass}
+              >
+                <DropdownMenuItem asChild className={menuItemClass}>
+                  <Link href="/settings">
+                    <Settings className="size-4" />
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-
+                <DropdownMenuSeparator className="my-0 bg-(--border-default)" />
                 <DropdownMenuItem
                   onClick={handleSignOut}
-                  className="text-(--danger)"
+                  className={destructiveMenuItemClass}
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
+                  <LogOut className="size-4" />
                   Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
