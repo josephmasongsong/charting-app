@@ -6,7 +6,7 @@ import AuthProvider from '@/components/AuthProvider';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import ClientAuthGuard from '@/components/ClientAuthGuard';
-import Navigation from '@/components/Navigation';
+import AppShell from '@/components/AppShell';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -35,8 +35,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <AuthGuard>
-            <Navigation />
-            <main className="min-h-screen bg-(--surface-page)">{children}</main>
+            <AppShell>{children}</AppShell>
           </AuthGuard>
         </AuthProvider>
       </body>

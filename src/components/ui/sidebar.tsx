@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react"
 
@@ -72,19 +73,40 @@ function SidebarItem({
   active,
   indent,
   chevron,
+  asChild = false,
   children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof sidebarItemVariants> & {
     icon?: React.ReactNode
     chevron?: "down" | "right"
+    /** Render the child element (e.g. a next/link) as the item itself. */
+    asChild?: boolean
   }) {
+  const itemClass = cn(sidebarItemVariants({ indent, active }), className)
+  const dataActive = active ? "true" : undefined
+
+  // Slot takes exactly one child, so the icon travels inside the slotted
+  // element rather than being appended here.
+  if (asChild) {
+    return (
+      <Slot
+        data-slot="sidebar-item"
+        data-active={dataActive}
+        className={itemClass}
+        {...props}
+      >
+        {children}
+      </Slot>
+    )
+  }
+
   return (
     <button
       type="button"
       data-slot="sidebar-item"
-      data-active={active ? "true" : undefined}
-      className={cn(sidebarItemVariants({ indent, active }), className)}
+      data-active={dataActive}
+      className={itemClass}
       {...props}
     >
       {icon}

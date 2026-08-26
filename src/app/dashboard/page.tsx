@@ -6,14 +6,10 @@ import { redirect } from 'next/navigation';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
   Calendar,
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Package,
   Loader2,
-  FileText,
-  Newspaper,
-  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import ActivityFeed from '@/components/ActivityFeed';
@@ -43,35 +39,6 @@ interface DashboardData {
 const pageClass = 'min-h-screen bg-(--surface-page) px-6 pt-8 pb-12';
 const containerClass = 'mx-auto max-w-[1200px]';
 const sectionTitleClass = 'text-[17px] font-bold';
-const quickStartTileClass =
-  'flex w-full items-start gap-3.5 rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) p-5 text-left shadow-(--shadow-card) hover:bg-(--action-selected)';
-const quickStartIconClass =
-  'grid size-11 shrink-0 place-items-center rounded-(--radius-control) bg-(--action-selected) text-(--action-primary)';
-const quickStartItems: Array<{
-  href: string;
-  icon: LucideIcon;
-  label: string;
-  sub: string;
-}> = [
-  {
-    href: '/events/new',
-    icon: CalendarDays,
-    label: 'Log New Event',
-    sub: 'Record a community event',
-  },
-  {
-    href: '/supply-distributions/new',
-    icon: Package,
-    label: 'Log Supply Distribution',
-    sub: 'Record supply delivery',
-  },
-  {
-    href: '/reports/monthly',
-    icon: Newspaper,
-    label: 'Monthly Reports',
-    sub: 'View analytics and insights',
-  },
-];
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -272,50 +239,7 @@ export default function Dashboard() {
           )}
         </section>
 
-        <div className="mt-7 grid grid-cols-1 items-start gap-6 lg:grid-cols-[300px_1fr]">
-          <div className="flex flex-col gap-6">
-            <section>
-              <h2 className="mb-3.5 text-lg font-bold">Quick Start</h2>
-              <div className="flex flex-col gap-4">
-                {quickStartItems.map(item => (
-                  <Link key={item.href} href={item.href} className={quickStartTileClass}>
-                    <span className={quickStartIconClass}>
-                      <item.icon size={22} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[15.5px] font-bold text-(--text-body)">
-                        {item.label}
-                      </span>
-                      <span className="mt-[3px] block text-[13px] text-(--text-muted)">
-                        {item.sub}
-                      </span>
-                    </span>
-                  </Link>
-                ))}
-                {/* TODO: /dashboard — not wired: no referrals feature exists. */}
-                <button
-                  type="button"
-                  disabled
-                  onClick={() => {}}
-                  className={cn(quickStartTileClass, 'cursor-not-allowed opacity-60 hover:bg-(--surface-card)')}
-                >
-                  <span className={quickStartIconClass}>
-                    <FileText size={22} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[15.5px] font-bold text-(--text-body)">
-                      Log Referral
-                    </span>
-                    <span className="mt-[3px] block text-[13px] text-(--text-muted)">
-                      Record a tenant referral
-                    </span>
-                  </span>
-                </button>
-              </div>
-            </section>
-
-          </div>
-
+        <div className="mt-7">
           <ActivityFeed />
         </div>
       </div>

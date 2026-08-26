@@ -12,10 +12,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, Home } from 'lucide-react';
+import { LogOut, Settings, Home, Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
-export default function Navigation() {
+interface NavigationProps {
+  /** Provided by AppShell on signed-in routes to toggle the narrow-screen rail. */
+  onMenuClick?: () => void;
+  sidebarOpen?: boolean;
+}
+
+export default function Navigation({
+  onMenuClick,
+  sidebarOpen = false,
+}: NavigationProps = {}) {
   const { data: session } = useSession();
   const pathname = usePathname();
 
@@ -58,13 +67,31 @@ export default function Navigation() {
       <div className="px-4">
         <div className="flex h-14 items-center justify-between">
           {/* Logo/Brand */}
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2.5 text-[17px] font-bold tracking-[.3px] text-(--text-on-chrome)"
-          >
-            <BrandMark size={32} />
-            BC HOUSING
-          </Link>
+          <div className="flex items-center gap-1">
+            {onMenuClick && (
+              <button
+                type="button"
+                onClick={onMenuClick}
+                aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={sidebarOpen}
+                aria-controls="app-sidebar"
+                className="-ml-1 cursor-pointer rounded-(--radius-control) p-2 text-(--text-on-chrome) xl:hidden"
+              >
+                {sidebarOpen ? (
+                  <X className="size-5" />
+                ) : (
+                  <Menu className="size-5" />
+                )}
+              </button>
+            )}
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2.5 text-[17px] font-bold tracking-[.3px] text-(--text-on-chrome)"
+            >
+              <BrandMark size={32} />
+              BC HOUSING
+            </Link>
+          </div>
 
           {/* Right Side: Dashboard Icon + User Menu */}
           <div className="flex items-center gap-2">
