@@ -8,7 +8,6 @@ import {
   Calendar,
   CalendarDays,
   Home,
-  MapPin,
   Newspaper,
   Package,
   Shield,
@@ -29,7 +28,6 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/dashboard', icon: Home, label: 'Dashboard' },
   { href: '/events', icon: CalendarDays, label: 'Events' },
-  { href: '/sites', icon: MapPin, label: 'Sites' },
   { href: '/events/new', icon: Calendar, label: 'Log New Event' },
   {
     href: '/supply-distributions/new',
