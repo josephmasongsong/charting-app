@@ -13,28 +13,18 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaginationFooter } from '@/components/ui/pagination-footer';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  PenLine,
-  Search,
-  ArrowUpDown,
-  Check,
-  ChevronUp,
-  ChevronDown,
-  Info,
-} from 'lucide-react';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { PenLine, Search, Check, Info } from 'lucide-react';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
 
 import EditUserDialog from './EditUserDialog';
 import RoleBadge from './RoleBadge';
-import JobTitleBadge from './JobTitleBadge';
 import RegionBadge from './RegionBadge';
 import StatusBadge from './StatusBadge';
 
@@ -86,12 +76,13 @@ export interface UsersTableRef {
   refreshData: () => void;
 }
 
-const headCellClass =
-  'h-auto whitespace-nowrap border border-[#0a7276] bg-(--surface-chrome) px-3.5 py-2.5 text-left text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase';
-const bodyCellClass =
-  'whitespace-nowrap border border-(--bch-gray-200) px-3.5 py-[9px]';
-const bodyRowClass =
-  'border-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+// Directory row per the design system's StaffRow: avatar, name+title,
+// role+region, email link, status, action — striped, hairline-separated.
+const directoryRowClass =
+  'grid min-w-[860px] grid-cols-[56px_1.3fr_1fr_1.4fr_auto_44px] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+const subLineClass = 'text-[13.5px] text-(--text-muted)';
+const selectTriggerClass =
+  'h-9 w-[190px] rounded-(--radius-control) border-(--border-input) bg-(--surface-card) text-sm shadow-none';
 const rowActionClass =
   'size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)';
 const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
@@ -179,14 +170,11 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
       fetchUsers(1, search, sortConfig);
     };
 
-    const handleSort = (field: string) => {
-      const newOrder: SortOrder =
-        sortConfig.field === field && sortConfig.order === 'asc'
-          ? 'desc'
-          : 'asc';
-      const newSortConfig = { field, order: newOrder };
+    const handleSortChange = (value: string) => {
+      const [field, order] = value.split(':');
+      const newSortConfig = { field, order: order as SortOrder };
       setSortConfig(newSortConfig);
-      fetchUsers(pagination.page, search, newSortConfig);
+      fetchUsers(1, search, newSortConfig);
     };
 
     const openEditUser = (user: User) => {
@@ -214,30 +202,6 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
     const displayMessage = message || internalMessage;
     const displayError = error || internalError;
 
-    const sortableHead = (field: string, label: string) => (
-      <Button
-        variant="ghost"
-        onClick={() => handleSort(field)}
-        className="h-auto p-0 text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase hover:bg-transparent hover:text-(--text-on-chrome)"
-      >
-        <span
-          className={cn(
-            sortConfig.field === field ? 'font-extrabold' : 'opacity-85'
-          )}
-        >
-          {label}
-        </span>
-        {sortConfig.field === field ? (
-          sortConfig.order === 'asc' ? (
-            <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-          ) : (
-            <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-          )
-        ) : (
-          <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-60" />
-        )}
-      </Button>
-    );
 
     return (
       <>
@@ -306,128 +270,107 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                 className="h-9 rounded-(--radius-control) border-(--border-input) bg-(--surface-card) pl-8 text-sm shadow-none md:text-sm"
               />
             </form>
+            <Select
+              value={`${sortConfig.field}:${sortConfig.order}`}
+              onValueChange={handleSortChange}
+            >
+              <SelectTrigger aria-label="Sort by" className={selectTriggerClass}>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name:asc">Name (A–Z)</SelectItem>
+                <SelectItem value="name:desc">Name (Z–A)</SelectItem>
+                <SelectItem value="email:asc">Email (A–Z)</SelectItem>
+                <SelectItem value="createdAt:desc">Newest first</SelectItem>
+                <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {loading ? (
-            <div className="space-y-2 p-5">
-              <Skeleton className="h-10 rounded-none bg-(--bch-gray-200)" />
+            <div className="space-y-2 p-4">
               {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton
                   key={i}
-                  className="h-9 rounded-none bg-(--surface-muted)"
+                  className="h-[68px] rounded-none bg-(--surface-muted)"
                 />
               ))}
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
-                <Table className="min-w-[1080px] border-collapse bg-(--surface-card) text-sm">
-                  <TableHeader>
-                    <TableRow className="border-0 hover:bg-transparent">
-                      <TableHead className={headCellClass}>
-                        {sortableHead('name', 'Name')}
-                      </TableHead>
-                      <TableHead className={headCellClass}>
-                        {sortableHead('email', 'Email')}
-                      </TableHead>
-                      <TableHead className={headCellClass}>Role</TableHead>
-                      <TableHead className={headCellClass}>Job Title</TableHead>
-                      <TableHead className={headCellClass}>Region</TableHead>
-                      <TableHead className={headCellClass}>Status</TableHead>
-                      <TableHead className={headCellClass}>Verified</TableHead>
-                      <TableHead className={cn(headCellClass, 'text-right')}>
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={8}
-                          className={cn(
-                            bodyCellClass,
-                            'py-10 text-center whitespace-normal text-(--text-muted)'
-                          )}
+                {users.length === 0 ? (
+                  <div className="px-4 py-10 text-center text-(--text-muted)">
+                    {search ? (
+                      <>
+                        No users found matching &quot;{search}&quot;.
+                        <Button
+                          variant="link"
+                          onClick={() => {
+                            setSearch('');
+                            fetchUsers(1, '', sortConfig);
+                          }}
+                          className="ml-1 h-auto p-0 text-[14px] text-(--action-primary)"
                         >
-                          {search ? (
-                            <>
-                              No users found matching "{search}".
-                              <Button
-                                variant="link"
-                                onClick={() => {
-                                  setSearch('');
-                                  fetchUsers(1, '', sortConfig);
-                                }}
-                                className="ml-1 h-auto p-0 text-[14px] text-(--action-primary)"
-                              >
-                                Clear search
-                              </Button>
-                            </>
-                          ) : (
-                            'No users found.'
-                          )}
-                        </TableCell>
-                      </TableRow>
+                          Clear search
+                        </Button>
+                      </>
                     ) : (
-                      users.map(user => (
-                        <TableRow key={user.id} className={bodyRowClass}>
-                          <TableCell className={bodyCellClass}>
-                            <div className="flex items-center gap-2.5">
-                              <AvatarTile
-                                initials={userInitials(user.name)}
-                                size={36}
-                              />
-                              <span className="font-semibold">{user.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            {user.email}
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            <RoleBadge role={user.role} />
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            <JobTitleBadge jobTitle={user.jobTitle} />
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            <RegionBadge region={user.region} />
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            <StatusBadge isActive={user.isActive} />
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            {user.emailVerified ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--bch-green-50,#EDF6EF)] px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--success) uppercase">
-                                <Check className="size-[11px]" />
-                                Verified
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-(--warning-surface) px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--warning-text) uppercase">
-                                <Info className="size-[11px]" />
-                                Unverified
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell
-                            className={cn(bodyCellClass, 'text-right')}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="Edit user"
-                              aria-label="Edit user"
-                              onClick={() => openEditUser(user)}
-                              className={rowActionClass}
-                            >
-                              <PenLine className="size-[17px]" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      'No users found.'
                     )}
-                  </TableBody>
-                </Table>
+                  </div>
+                ) : (
+                  users.map(user => (
+                    <div key={user.id} className={directoryRowClass}>
+                      <AvatarTile initials={userInitials(user.name)} size={44} />
+
+                      <div className="min-w-0">
+                        <b className="block truncate">{user.name}</b>
+                        <div className={cn(subLineClass, 'truncate')}>
+                          {user.jobTitle || '—'}
+                        </div>
+                      </div>
+
+                      <div className="flex min-w-0 flex-col items-start gap-1">
+                        <RoleBadge role={user.role} />
+                        <RegionBadge region={user.region} />
+                      </div>
+
+                      <a
+                        href={`mailto:${user.email}`}
+                        className="truncate text-(--action-primary) hover:underline"
+                      >
+                        {user.email}
+                      </a>
+
+                      <div className="flex flex-col items-start gap-1">
+                        <StatusBadge isActive={user.isActive} />
+                        {user.emailVerified ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--bch-green-50,#EDF6EF)] px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--success) uppercase">
+                            <Check className="size-[11px]" />
+                            Verified
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-(--warning-surface) px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--warning-text) uppercase">
+                            <Info className="size-[11px]" />
+                            Unverified
+                          </span>
+                        )}
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Edit user"
+                        aria-label={`Edit ${user.name}`}
+                        onClick={() => openEditUser(user)}
+                        className={rowActionClass}
+                      >
+                        <PenLine className="size-[17px]" />
+                      </Button>
+                    </div>
+                  ))
+                )}
               </div>
 
               <PaginationFooter
