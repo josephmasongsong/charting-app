@@ -7,6 +7,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PenLine, Search } from 'lucide-react';
+import { Eye, PenLine, Search } from 'lucide-react';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
 
@@ -77,7 +78,7 @@ export interface UsersTableRef {
 // Directory row per the design system's StaffRow: avatar, name+title,
 // role+region, email link, status, action — striped, hairline-separated.
 const directoryRowClass =
-  'grid min-w-[760px] grid-cols-[56px_1.1fr_1fr_1.4fr_auto_44px] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+  'grid min-w-[760px] grid-cols-[56px_1.1fr_1fr_1.4fr_auto_80px] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
 const subLineClass = 'text-[13.5px] text-(--text-muted)';
 const selectTriggerClass =
   'h-9 w-[190px] rounded-(--radius-control) border-(--border-input) bg-(--surface-card) text-sm shadow-none';
@@ -337,16 +338,32 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
 
                       <StatusBadge isActive={user.isActive} />
 
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="Edit user"
-                        aria-label={`Edit ${user.name}`}
-                        onClick={() => openEditUser(user)}
-                        className={rowActionClass}
-                      >
-                        <PenLine className="size-[17px]" />
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="icon"
+                          title="View profile"
+                          className={rowActionClass}
+                        >
+                          <Link
+                            href={`/users/${user.id}`}
+                            aria-label={`View ${user.name}`}
+                          >
+                            <Eye className="size-[17px]" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Edit user"
+                          aria-label={`Edit ${user.name}`}
+                          onClick={() => openEditUser(user)}
+                          className={rowActionClass}
+                        >
+                          <PenLine className="size-[17px]" />
+                        </Button>
+                      </div>
                     </div>
                   ))
                 )}
