@@ -19,13 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PenLine, Search, Check, Info } from 'lucide-react';
+import { PenLine, Search } from 'lucide-react';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
 
 import EditUserDialog from './EditUserDialog';
-import RoleBadge from './RoleBadge';
-import RegionBadge from './RegionBadge';
 import StatusBadge from './StatusBadge';
 
 interface User {
@@ -79,7 +77,7 @@ export interface UsersTableRef {
 // Directory row per the design system's StaffRow: avatar, name+title,
 // role+region, email link, status, action — striped, hairline-separated.
 const directoryRowClass =
-  'grid min-w-[860px] grid-cols-[56px_1.3fr_1fr_1.4fr_auto_44px] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+  'grid min-w-[620px] grid-cols-[56px_1.3fr_1.4fr_auto_44px] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
 const subLineClass = 'text-[13.5px] text-(--text-muted)';
 const selectTriggerClass =
   'h-9 w-[190px] rounded-(--radius-control) border-(--border-input) bg-(--surface-card) text-sm shadow-none';
@@ -331,11 +329,6 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                         </div>
                       </div>
 
-                      <div className="flex min-w-0 flex-col items-start gap-1">
-                        <RoleBadge role={user.role} />
-                        <RegionBadge region={user.region} />
-                      </div>
-
                       <a
                         href={`mailto:${user.email}`}
                         className="truncate text-(--action-primary) hover:underline"
@@ -343,20 +336,7 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                         {user.email}
                       </a>
 
-                      <div className="flex flex-col items-start gap-1">
-                        <StatusBadge isActive={user.isActive} />
-                        {user.emailVerified ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--bch-green-50,#EDF6EF)] px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--success) uppercase">
-                            <Check className="size-[11px]" />
-                            Verified
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-(--warning-surface) px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--warning-text) uppercase">
-                            <Info className="size-[11px]" />
-                            Unverified
-                          </span>
-                        )}
-                      </div>
+                      <StatusBadge isActive={user.isActive} />
 
                       <Button
                         variant="ghost"
