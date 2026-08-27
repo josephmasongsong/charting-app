@@ -434,23 +434,24 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
                         </div>
                         <div className="text-xl leading-[1.15] font-bold">{d}</div>
                       </div>
-                      <div className="flex min-w-0 flex-1 items-center gap-2">
-                        <span className="truncate text-[14.5px] font-semibold text-(--text-body)">
-                          {event.title}
-                        </span>
-                        {event.eventIsYouthFocused && (
-                          <Badge
-                            variant="secondary"
-                            className="shrink-0 rounded-full border-transparent bg-(--action-selected) text-[11px] font-semibold text-(--action-primary)"
-                          >
-                            Youth
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="hidden min-w-0 flex-1 items-center gap-1.5 text-[12.5px] text-(--text-muted) sm:flex">
-                        <MapPin className="size-[13px] shrink-0" />
-                        <span className="truncate">{event.siteName}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-[14.5px] font-semibold text-(--text-body)">
+                            {event.title}
+                          </span>
+                          {event.eventIsYouthFocused && (
+                            <Badge
+                              variant="secondary"
+                              className="shrink-0 rounded-full border-transparent bg-(--action-selected) text-[11px] font-semibold text-(--action-primary)"
+                            >
+                              Youth
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5 text-[12.5px] text-(--text-muted)">
+                          <MapPin className="size-[13px] shrink-0" />
+                          <span className="truncate">{event.siteName}</span>
+                        </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
                         <Button
