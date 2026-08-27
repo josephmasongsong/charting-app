@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Home, Trash2, Search, Loader2, PenLine } from 'lucide-react';
 import { PaginationFooter } from '@/components/ui/pagination-footer';
+import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
 
 import DeleteSiteDialog from './DeleteSiteDialog';
@@ -54,10 +55,20 @@ interface SortConfig {
 
 // Dense government-software table treatment — the reference for every admin
 // table: teal header band, full cell grid, zebra rows, selection-blue hover.
+function workerInitials(name?: string | null) {
+  if (!name) return '—';
+  return name
+    .split(/\s+/)
+    .map(part => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 // Directory row per the design system's DevelopmentItem: teal Home tile,
 // name link with the address beneath, worker, attribute tags, actions.
 const directoryRowClass =
-  'grid min-w-[620px] grid-cols-[56px_1.6fr_1fr_auto] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+  'grid min-w-[820px] grid-cols-[56px_1.2fr_1.4fr_1fr_auto] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
 const siteTileClass =
   'grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-(--bch-teal-600) text-white';
 const subLineClass = 'text-[13.5px] text-(--text-muted)';
@@ -268,22 +279,29 @@ export default function SitesTable() {
                       <Home size={19} />
                     </div>
 
-                    <div className="min-w-0">
-                      <Link
-                        href={`/sites/${site.id}`}
-                        className="block truncate font-bold text-(--text-body) hover:text-(--action-primary) hover:underline"
-                      >
-                        {site.name}
-                      </Link>
-                      <div
-                        className={cn(subLineClass, 'truncate')}
-                        title={site.address}
-                      >
-                        {site.address}
-                      </div>
+                    <Link
+                      href={`/sites/${site.id}`}
+                      className="min-w-0 truncate font-bold text-(--text-body) hover:text-(--action-primary) hover:underline"
+                    >
+                      {site.name}
+                    </Link>
+
+                    <div
+                      className={cn(subLineClass, 'min-w-0 truncate')}
+                      title={site.address}
+                    >
+                      {site.address}
                     </div>
 
-                    <div className="min-w-0 truncate">{site.userName}</div>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <AvatarTile
+                        initials={workerInitials(site.userName)}
+                        size={28}
+                      />
+                      <span className="min-w-0 truncate">
+                        {site.userName || 'Unassigned'}
+                      </span>
+                    </div>
 
 
                     <div className="flex justify-end gap-1">
