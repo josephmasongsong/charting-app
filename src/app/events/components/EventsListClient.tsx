@@ -14,9 +14,7 @@ import {
 } from '@/components/ui/select';
 import {
   Calendar,
-  Users,
   MapPin,
-  Activity,
   Search,
   X,
   Trash2,
@@ -24,7 +22,6 @@ import {
   Copy,
   ChevronLeft,
   ChevronRight,
-  Contact,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -455,20 +452,8 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-3.5 text-[12.5px] text-(--text-muted)">
                           <span className="inline-flex items-center gap-1.5">
-                            <Contact className="size-[13px]" />
-                            {event.organizerName}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5">
                             <MapPin className="size-[13px]" />
                             {event.siteName}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5">
-                            <Users className="size-[13px]" />
-                            {event.totalParticipants} participants
-                          </span>
-                          <span className="inline-flex items-center gap-1.5">
-                            <Activity className="size-[13px]" />
-                            {event.activityTypeName}
                           </span>
                         </div>
                       </div>
