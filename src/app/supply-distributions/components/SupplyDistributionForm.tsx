@@ -450,7 +450,7 @@ export default function SupplyDistributionForm() {
           Record supplies distributed to tenants and community members
         </p>
 
-        <div className="mt-5 flex flex-col items-start gap-6 lg:flex-row">
+        <div className="mt-5">
           <div className="flex min-w-0 flex-1 flex-col gap-4">
             {error && (
               <Alert variant="destructive" className={alertClass}>
@@ -903,30 +903,6 @@ export default function SupplyDistributionForm() {
             </div>
           </div>
 
-          <div className="w-full shrink-0 overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card) lg:w-[320px]">
-            <div className="border-b border-(--bch-gray-200) px-5 py-3.5">
-              <div className="text-[15px] font-bold">Required fields</div>
-              <div className="text-[12.5px] text-(--text-muted)">
-                Complete these to save
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 px-5 pt-4 pb-5">
-              {checklist.map(item => (
-                <div
-                  key={item.label}
-                  className={cn(
-                    'flex items-center gap-2 text-[13.5px]',
-                    item.ok ? 'text-(--success)' : 'text-(--text-muted)'
-                  )}
-                >
-                  <span className="grid size-4 shrink-0 place-items-center rounded-full border-[1.5px] border-current text-[10px] leading-none">
-                    {item.ok ? '✓' : ''}
-                  </span>
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

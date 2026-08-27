@@ -19,7 +19,6 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Check,
-  CheckIcon,
   Home,
   Loader2,
   MapPin,
@@ -466,7 +465,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
           : 'Update site information and properties'}
       </p>
 
-      <div className="mt-5 flex flex-col items-start gap-6 lg:flex-row">
+      <div className="mt-5">
         <form
           onSubmit={handleSubmit}
           className="flex min-w-0 flex-1 flex-col gap-4"
@@ -1009,28 +1008,6 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
           </div>
         </form>
 
-        <aside className="w-full shrink-0 overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card) lg:w-80">
-          <div className="border-b border-(--bch-gray-200) px-5 py-3.5">
-            <div className="text-[15px] font-bold">Required fields</div>
-            <div className="text-[12.5px] text-(--text-muted)">Complete these to save</div>
-          </div>
-          <ul className="flex flex-col gap-3 px-5 pt-4 pb-5">
-            {checklist.map(item => (
-              <li
-                key={item.label}
-                className={cn(
-                  'flex items-center gap-2 text-[13.5px]',
-                  item.ok ? 'text-(--success)' : 'text-(--text-muted)'
-                )}
-              >
-                <span className="grid size-4 shrink-0 place-items-center rounded-full border-[1.5px] border-current">
-                  {item.ok && <CheckIcon className="size-2.5" strokeWidth={3} />}
-                </span>
-                <span>{item.label}</span>
-              </li>
-            ))}
-          </ul>
-        </aside>
       </div>
     </div>
   );
