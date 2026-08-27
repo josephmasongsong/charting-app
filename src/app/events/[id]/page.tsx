@@ -13,18 +13,7 @@ import { eq, sql } from 'drizzle-orm';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProfileField } from '@/components/ui/profile-field';
-import { KpiCard } from '@/components/ui/kpi-card';
-import {
-  Calendar,
-  Clock,
-  Contact,
-  Copy,
-  DollarSign,
-  Edit,
-  Target,
-  Users,
-  type LucideIcon,
-} from 'lucide-react';
+import { Calendar, Copy, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
@@ -83,6 +72,9 @@ const money = (n: number) => `$${n.toFixed(2)}`;
 
 const surfaceCardClass =
   'gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) shadow-(--shadow-card)';
+// Same KPI tile the site and distribution detail pages use.
+const kpiTileClass =
+  'gap-0 rounded-(--radius-card) border-(--border-default) border-l-4 border-l-(--surface-chrome) bg-(--surface-card) px-[18px] pt-3.5 pb-4 shadow-(--shadow-card)';
 const primaryButtonClass =
   'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover)';
 const outlineButtonClass =
@@ -125,88 +117,85 @@ export default async function EventPage({ params }: EventPageProps) {
     .slice(0, 2);
   const costNote = totalCost > 0 ? 'Supplies and materials' : 'No expenses recorded';
 
-  const kpis: Array<{
-    label: string;
-    value: string;
-    note: string;
-    icon: LucideIcon;
-  }> = [
+  const kpis = [
     {
       label: 'Participants',
       value: String(totalParticipants),
       note: `${event.newParticipants} new · ${event.returningParticipants} returning`,
-      icon: Users,
     },
     {
       label: 'Event time',
       value: hm(event.eventDuration),
       note: 'On site',
-      icon: Clock,
     },
     {
       label: 'Admin time',
       value: hm(event.adminDuration),
       note: 'Setup, cleanup, reporting',
-      icon: Contact,
     },
     {
       label: 'Total cost',
       value: money(totalCost),
       note: costNote,
-      icon: DollarSign,
     },
     {
       label: 'Cost per participant',
       value: money(costPerParticipant),
       note: 'Total cost ÷ participants',
-      icon: Target,
     },
   ];
 
   return (
     <div className="min-h-screen bg-(--surface-page) px-6 pt-6 pb-11">
       <div className="mx-auto max-w-[1180px]">
-        <div className="flex flex-wrap items-center justify-end gap-2.5">
-          <DuplicateEventDialog
-            eventId={event.id}
-            eventTitle={event.title}
-            trigger={
-              <Button variant="outline" className={outlineButtonClass}>
-                <Copy className="h-4 w-4" />
-                Duplicate
-              </Button>
-            }
-          />
-          {isAdmin && (
-            <Button asChild className={primaryButtonClass}>
-              <Link href={`/admin/events/${event.id}/edit`}>
-                <Edit className="h-4 w-4" />
-                Edit
-              </Link>
-            </Button>
-          )}
-        </div>
-
-        <h1 className="mt-4 text-[28px] leading-tight font-bold tracking-[-.2px]">
-          {event.title}
-        </h1>
-
-        <div className="mt-5 grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
-          {kpis.map(kpi => (
-            <KpiCard
-              key={kpi.label}
-              variant="panel"
-              label={kpi.label}
-              value={kpi.value}
-              icon={kpi.icon}
-              sub={
-                <div className="text-xs text-(--text-muted)">{kpi.note}</div>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-[28px] leading-tight font-bold tracking-[-.2px]">
+              {event.title}
+            </h1>
+            <p className="mt-1.5 text-[15px] text-(--text-muted)">
+              {formatDate(event.eventDate)} · {event.siteName}
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2.5">
+            <DuplicateEventDialog
+              eventId={event.id}
+              eventTitle={event.title}
+              trigger={
+                <Button variant="outline" className={outlineButtonClass}>
+                  <Copy className="h-4 w-4" />
+                  Duplicate
+                </Button>
               }
             />
+            {isAdmin && (
+              <Button asChild className={primaryButtonClass}>
+                <Link href={`/admin/events/${event.id}/edit`}>
+                  <Edit className="h-4 w-4" />
+                  Edit
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+          {kpis.map(kpi => (
+            <Card key={kpi.label} className={kpiTileClass}>
+              <div className="text-[11.5px] font-semibold tracking-[.5px] text-(--text-muted) uppercase">
+                {kpi.label}
+              </div>
+              <div className="mt-1.5 text-[30px] leading-[1.1] font-bold text-(--surface-chrome)">
+                {kpi.value}
+              </div>
+              <div className="mt-1 text-[12.5px] text-(--text-muted)">
+                {kpi.note}
+              </div>
+            </Card>
           ))}
         </div>
 
-        <Card className={cn(surfaceCardClass, 'mt-5 grid grid-cols-1 gap-7 p-8 md:grid-cols-[120px_1fr_1fr]')}>
+        <Card className={cn(surfaceCardClass, 'mt-5 grid grid-cols-1 gap-8 p-8 md:grid-cols-[180px_1fr_1.1fr]')}>
           <div>
             <span className="grid size-[72px] place-items-center rounded-(--radius-control) bg-(--surface-chrome) text-(--text-on-chrome)">
               <Calendar size={34} />
