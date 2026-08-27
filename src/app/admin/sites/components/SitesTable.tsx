@@ -57,12 +57,10 @@ interface SortConfig {
 // Directory row per the design system's DevelopmentItem: teal Home tile,
 // name link with the address beneath, worker, attribute tags, actions.
 const directoryRowClass =
-  'grid min-w-[820px] grid-cols-[56px_1.4fr_1fr_1.2fr_auto] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+  'grid min-w-[620px] grid-cols-[56px_1.6fr_1fr_auto] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
 const siteTileClass =
   'grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-(--bch-teal-600) text-white';
 const subLineClass = 'text-[13.5px] text-(--text-muted)';
-const tagClass =
-  'inline-flex rounded-full bg-(--surface-muted) px-2.5 py-[3px] text-[12.5px] font-semibold whitespace-nowrap text-(--text-body)';
 const selectTriggerClass =
   'h-9 w-[190px] rounded-(--radius-control) border-(--border-input) bg-(--surface-card) text-sm shadow-none';
 const rowActionClass =
@@ -73,19 +71,7 @@ const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
 const successAlertClass =
   'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
 
-export interface SiteStats {
-  totalSites: number;
-  totalTenants: number;
-  withCommunityRoom: number;
-  seniorOnly: number;
-}
-
-interface SitesTableProps {
-  /** Called after each successful fetch with the unfiltered stat aggregates. */
-  onStats?: (stats: SiteStats) => void;
-}
-
-export default function SitesTable({ onStats }: SitesTableProps = {}) {
+export default function SitesTable() {
   const router = useRouter();
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,9 +113,6 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
         if (response.ok) {
           setSites(data.sites);
           setPagination(data.pagination);
-          if (data.stats) {
-            onStats?.(data.stats);
-          }
           setError('');
         } else {
           setError(data.error || 'Failed to fetch sites');
@@ -140,7 +123,7 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
         setLoading(false);
       }
     },
-    [sortConfig, onStats]
+    [sortConfig]
   );
 
   useEffect(() => {
@@ -302,22 +285,6 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
 
                     <div className="min-w-0 truncate">{site.userName}</div>
 
-                    {/* Attributes read as tags: only what is true is shown,
-                        rather than a Yes/No cell per flag. */}
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className={tagClass}>{site.region || 'LMDM'}</span>
-                      {site.hasCommunityRoom && (
-                        <span className={tagClass}>Community room</span>
-                      )}
-                      {site.hasCommunityPartner && (
-                        <span className={tagClass}>
-                          {site.communityPartnerName || 'Partner'}
-                        </span>
-                      )}
-                      {site.isSingleSeniorOnly && (
-                        <span className={tagClass}>Seniors only</span>
-                      )}
-                    </div>
 
                     <div className="flex justify-end gap-1">
                       <Button
