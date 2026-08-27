@@ -77,7 +77,7 @@ export interface UsersTableRef {
 // Directory row per the design system's StaffRow: avatar, name+title,
 // role+region, email link, status, action — striped, hairline-separated.
 const directoryRowClass =
-  'grid min-w-[620px] grid-cols-[56px_1.3fr_1.4fr_auto_44px] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+  'grid min-w-[760px] grid-cols-[56px_1.1fr_1fr_1.4fr_auto_44px] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
 const subLineClass = 'text-[13.5px] text-(--text-muted)';
 const selectTriggerClass =
   'h-9 w-[190px] rounded-(--radius-control) border-(--border-input) bg-(--surface-card) text-sm shadow-none';
@@ -322,11 +322,10 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                     <div key={user.id} className={directoryRowClass}>
                       <AvatarTile initials={userInitials(user.name)} size={44} />
 
-                      <div className="min-w-0">
-                        <b className="block truncate">{user.name}</b>
-                        <div className={cn(subLineClass, 'truncate')}>
-                          {user.jobTitle || '—'}
-                        </div>
+                      <b className="min-w-0 truncate">{user.name}</b>
+
+                      <div className={cn(subLineClass, 'min-w-0 truncate')}>
+                        {user.jobTitle || '—'}
                       </div>
 
                       <a
