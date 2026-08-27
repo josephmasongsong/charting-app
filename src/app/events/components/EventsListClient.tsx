@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import {
   Calendar,
+  Eye,
   MapPin,
   Search,
   X,
@@ -434,12 +435,9 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
                         <div className="text-xl leading-[1.15] font-bold">{d}</div>
                       </div>
                       <div className="flex min-w-0 flex-1 items-center gap-2">
-                        <Link
-                          href={`/events/${event.id}`}
-                          className="truncate text-[14.5px] font-semibold text-(--text-body) hover:text-(--action-primary)"
-                        >
+                        <span className="truncate text-[14.5px] font-semibold text-(--text-body)">
                           {event.title}
-                        </Link>
+                        </span>
                         {event.eventIsYouthFocused && (
                           <Badge
                             variant="secondary"
@@ -455,6 +453,20 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
                         <span className="truncate">{event.siteName}</span>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="icon"
+                          className={rowActionClass}
+                        >
+                          <Link
+                            href={`/events/${event.id}`}
+                            aria-label={`View ${event.title}`}
+                            title="View event"
+                          >
+                            <Eye className="size-[17px]" />
+                          </Link>
+                        </Button>
                         {isAdmin && (
                           <>
                             <Button
