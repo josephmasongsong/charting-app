@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Home, Trash2, Search, Loader2, PenLine } from 'lucide-react';
+import { Eye, Home, Trash2, Search, Loader2, PenLine } from 'lucide-react';
 import { PaginationFooter } from '@/components/ui/pagination-footer';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
@@ -279,12 +279,9 @@ export default function SitesTable() {
                       <Home size={19} />
                     </div>
 
-                    <Link
-                      href={`/sites/${site.id}`}
-                      className="min-w-0 truncate font-bold text-(--text-body) hover:text-(--action-primary) hover:underline"
-                    >
+                    <span className="min-w-0 truncate font-bold">
                       {site.name}
-                    </Link>
+                    </span>
 
                     <div
                       className={cn(subLineClass, 'min-w-0 truncate')}
@@ -305,6 +302,20 @@ export default function SitesTable() {
 
 
                     <div className="flex justify-end gap-1">
+                      <Button
+                        asChild
+                        variant="ghost"
+                        size="icon"
+                        title="View site"
+                        className={rowActionClass}
+                      >
+                        <Link
+                          href={`/sites/${site.id}`}
+                          aria-label={`View ${site.name}`}
+                        >
+                          <Eye className="size-[17px]" />
+                        </Link>
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
