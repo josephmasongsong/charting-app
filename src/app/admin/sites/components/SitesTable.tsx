@@ -7,27 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Trash2,
-  Search,
-  ArrowUpDown,
-  ChevronUp,
-  ChevronDown,
-  Loader2,
-  PenLine,
-} from 'lucide-react';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Home, Trash2, Search, Loader2, PenLine } from 'lucide-react';
 import { PaginationFooter } from '@/components/ui/pagination-footer';
 import { cn } from '@/lib/utils';
 
 import DeleteSiteDialog from './DeleteSiteDialog';
-import BooleanBadge from './BooleanBadge';
 
 interface Site {
   id: string;
@@ -64,12 +54,17 @@ interface SortConfig {
 
 // Dense government-software table treatment — the reference for every admin
 // table: teal header band, full cell grid, zebra rows, selection-blue hover.
-const headCellClass =
-  'h-auto whitespace-nowrap border border-[#0a7276] bg-(--surface-chrome) px-3.5 py-2.5 text-left text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase';
-const bodyCellClass =
-  'whitespace-nowrap border border-(--bch-gray-200) px-3.5 py-[9px]';
-const bodyRowClass =
-  'border-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+// Directory row per the design system's DevelopmentItem: teal Home tile,
+// name link with the address beneath, worker, attribute tags, actions.
+const directoryRowClass =
+  'grid min-w-[820px] grid-cols-[56px_1.4fr_1fr_1.2fr_auto] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+const siteTileClass =
+  'grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-(--bch-teal-600) text-white';
+const subLineClass = 'text-[13.5px] text-(--text-muted)';
+const tagClass =
+  'inline-flex rounded-full bg-(--surface-muted) px-2.5 py-[3px] text-[12.5px] font-semibold whitespace-nowrap text-(--text-body)';
+const selectTriggerClass =
+  'h-9 w-[190px] rounded-(--radius-control) border-(--border-input) bg-(--surface-card) text-sm shadow-none';
 const rowActionClass =
   'size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)';
 const destructiveActionClass =
@@ -170,12 +165,11 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
   };
 
   // Handle sorting
-  const handleSort = (field: string) => {
-    const newOrder: SortOrder =
-      sortConfig.field === field && sortConfig.order === 'asc' ? 'desc' : 'asc';
-    const newSortConfig = { field, order: newOrder };
+  const handleSortChange = (value: string) => {
+    const [field, order] = value.split(':');
+    const newSortConfig = { field, order: order as SortOrder };
     setSortConfig(newSortConfig);
-    fetchSites(pagination.page, search, newSortConfig);
+    fetchSites(1, search, newSortConfig);
   };
 
   // Handle delete site
@@ -238,6 +232,22 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
               className="h-9 rounded-(--radius-control) border-(--border-input) bg-(--surface-card) pl-8 text-sm shadow-none md:text-sm"
             />
           </form>
+          <Select
+            value={`${sortConfig.field}:${sortConfig.order}`}
+            onValueChange={handleSortChange}
+          >
+            <SelectTrigger aria-label="Sort by" className={selectTriggerClass}>
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name:asc">Name (A–Z)</SelectItem>
+              <SelectItem value="name:desc">Name (Z–A)</SelectItem>
+              <SelectItem value="address:asc">Address (A–Z)</SelectItem>
+              <SelectItem value="userName:asc">Assigned worker</SelectItem>
+              <SelectItem value="createdAt:desc">Newest first</SelectItem>
+              <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {loading ? (
@@ -247,162 +257,96 @@ export default function SitesTable({ onStats }: SitesTableProps = {}) {
           </div>
         ) : (
           <>
-            <Table className="min-w-[1080px] border-collapse bg-(--surface-card) text-sm">
-              <TableHeader>
-                <TableRow className="border-0 hover:bg-transparent">
-                  <TableHead className={headCellClass}>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('name')}
-                      className="h-auto p-0 text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase hover:bg-transparent hover:text-(--text-on-chrome)"
-                    >
-                      <span
-                        className={
-                          sortConfig.field === 'name'
-                            ? 'font-extrabold'
-                            : 'opacity-85'
-                        }
+            <div className="overflow-x-auto">
+              {sites.length === 0 ? (
+                <div className="px-4 py-10 text-center text-(--text-muted)">
+                  {search ? (
+                    <>
+                      No sites found matching &quot;{search}&quot;.
+                      <Button
+                        variant="link"
+                        onClick={() => {
+                          setSearch('');
+                          fetchSites(1, '', sortConfig);
+                        }}
+                        className="ml-1 h-auto p-0 text-[14px] text-(--action-primary)"
                       >
-                        Name
-                      </span>
-                      {sortConfig.field === 'name' ? (
-                        sortConfig.order === 'asc' ? (
-                          <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-                        ) : (
-                          <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-                        )
-                      ) : (
-                        <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-55" />
-                      )}
-                    </Button>
-                  </TableHead>
-                  <TableHead className={headCellClass}>Address</TableHead>
-                  <TableHead className={headCellClass}>
-                    Assigned Worker
-                  </TableHead>
-                  <TableHead className={headCellClass}>Region</TableHead>
-                  <TableHead className={headCellClass}>
-                    Community Room
-                  </TableHead>
-                  <TableHead className={headCellClass}>
-                    Community Partner
-                  </TableHead>
-                  <TableHead className={headCellClass}>Senior Only</TableHead>
-                  <TableHead className={cn(headCellClass, 'text-right')}>
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sites.length === 0 ? (
-                  <TableRow className="border-0 hover:bg-transparent">
-                    <TableCell
-                      colSpan={8}
-                      className={cn(
-                        bodyCellClass,
-                        'py-10 text-center whitespace-normal text-(--text-muted)'
-                      )}
-                    >
-                      {search ? (
-                        <>
-                          No sites found matching &quot;{search}&quot;.
-                          <Button
-                            variant="link"
-                            onClick={() => {
-                              setSearch('');
-                              fetchSites(1, '', sortConfig);
-                            }}
-                            className="ml-2 text-(--action-primary)"
-                          >
-                            Clear search
-                          </Button>
-                        </>
-                      ) : (
-                        'No sites found.'
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  sites.map(site => (
-                    <TableRow key={site.id} className={bodyRowClass}>
-                      <TableCell className={cn(bodyCellClass, 'font-bold')}>
-                        <Link
-                          href={`/sites/${site.id}`}
-                          className="text-(--text-body) hover:text-(--action-primary) hover:underline"
-                        >
-                          {site.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell
-                        className={cn(bodyCellClass, 'text-(--text-muted)')}
+                        Clear search
+                      </Button>
+                    </>
+                  ) : (
+                    'No sites found.'
+                  )}
+                </div>
+              ) : (
+                sites.map(site => (
+                  <div key={site.id} className={directoryRowClass}>
+                    <div className={siteTileClass}>
+                      <Home size={19} />
+                    </div>
+
+                    <div className="min-w-0">
+                      <Link
+                        href={`/sites/${site.id}`}
+                        className="block truncate font-bold text-(--text-body) hover:text-(--action-primary) hover:underline"
                       >
-                        <div
-                          className="max-w-[220px] truncate"
-                          title={site.address}
-                        >
-                          {site.address}
-                        </div>
-                      </TableCell>
-                      <TableCell className={bodyCellClass}>
-                        <div className="text-sm">{site.userName}</div>
-                      </TableCell>
-                      <TableCell className={bodyCellClass}>
-                        <span className="inline-flex rounded-full bg-(--surface-muted) px-2.5 py-[3px] text-[12.5px] font-semibold whitespace-nowrap text-(--text-body)">
-                          {site.region || 'LMDM'}
+                        {site.name}
+                      </Link>
+                      <div
+                        className={cn(subLineClass, 'truncate')}
+                        title={site.address}
+                      >
+                        {site.address}
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 truncate">{site.userName}</div>
+
+                    {/* Attributes read as tags: only what is true is shown,
+                        rather than a Yes/No cell per flag. */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className={tagClass}>{site.region || 'LMDM'}</span>
+                      {site.hasCommunityRoom && (
+                        <span className={tagClass}>Community room</span>
+                      )}
+                      {site.hasCommunityPartner && (
+                        <span className={tagClass}>
+                          {site.communityPartnerName || 'Partner'}
                         </span>
-                      </TableCell>
-                      <TableCell className={bodyCellClass}>
-                        <BooleanBadge
-                          value={site.hasCommunityRoom}
-                          trueText="Yes"
-                          falseText="No"
-                        />
-                      </TableCell>
-                      <TableCell className={bodyCellClass}>
-                        <BooleanBadge
-                          value={site.hasCommunityPartner}
-                          trueText="Yes"
-                          falseText="No"
-                        />
-                      </TableCell>
-                      <TableCell className={bodyCellClass}>
-                        <BooleanBadge
-                          value={site.isSingleSeniorOnly}
-                          trueText="Yes"
-                          falseText="No"
-                        />
-                      </TableCell>
-                      <TableCell className={cn(bodyCellClass, 'text-right')}>
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              router.push(`/admin/sites/${site.id}/edit`)
-                            }
-                            title="Edit site"
-                            aria-label="Edit site"
-                            className={rowActionClass}
-                          >
-                            <PenLine className="size-[17px]" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openDeleteSite(site)}
-                            title="Delete site"
-                            aria-label="Delete site"
-                            className={destructiveActionClass}
-                          >
-                            <Trash2 className="size-[17px]" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                      )}
+                      {site.isSingleSeniorOnly && (
+                        <span className={tagClass}>Seniors only</span>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          router.push(`/admin/sites/${site.id}/edit`)
+                        }
+                        title="Edit site"
+                        aria-label={`Edit ${site.name}`}
+                        className={rowActionClass}
+                      >
+                        <PenLine className="size-[17px]" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openDeleteSite(site)}
+                        title="Delete site"
+                        aria-label={`Delete ${site.name}`}
+                        className={destructiveActionClass}
+                      >
+                        <Trash2 className="size-[17px]" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
 
             <PaginationFooter
               page={pagination.page}
