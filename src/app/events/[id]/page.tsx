@@ -8,14 +8,23 @@ import {
   sites,
   communityPartners,
   activityTypes,
-  programGoals,
 } from '@/db';
 import { eq, sql } from 'drizzle-orm';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProfileField } from '@/components/ui/profile-field';
-import { DataTable } from '@/components/ui/data-table';
-import { Calendar, Edit, Copy } from 'lucide-react';
+import { KpiCard } from '@/components/ui/kpi-card';
+import {
+  Calendar,
+  Clock,
+  Contact,
+  Copy,
+  DollarSign,
+  Edit,
+  Target,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
@@ -45,14 +54,12 @@ async function getEvent(eventId: string) {
       updatedAt: events.updatedAt,
       userId: events.userId,
       userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
-      userEmail: users.email,
       userJobTitle: users.jobTitle,
       siteId: events.siteId,
       siteName: sites.name,
       siteAddress: sites.address,
       activityTypeId: events.activityTypeId,
       activityTypeName: activityTypes.name,
-      programGoalName: programGoals.name,
       communityPartnerId: events.communityPartnerId,
       communityPartnerName: communityPartners.name,
     })
@@ -60,7 +67,6 @@ async function getEvent(eventId: string) {
     .leftJoin(users, eq(events.userId, users.id))
     .leftJoin(sites, eq(events.siteId, sites.id))
     .leftJoin(activityTypes, eq(events.activityTypeId, activityTypes.id))
-    .leftJoin(programGoals, eq(activityTypes.programGoalId, programGoals.id))
     .leftJoin(
       communityPartners,
       eq(events.communityPartnerId, communityPartners.id)
@@ -77,13 +83,10 @@ const money = (n: number) => `$${n.toFixed(2)}`;
 
 const surfaceCardClass =
   'gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) shadow-(--shadow-card)';
-const kpiTileClass =
-  'gap-0 rounded-(--radius-card) border-(--border-default) border-l-4 border-l-(--surface-chrome) bg-(--surface-card) px-[18px] pt-3.5 pb-4 shadow-(--shadow-card)';
 const primaryButtonClass =
   'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover)';
 const outlineButtonClass =
   'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
-const progressTrackClass = 'h-3.5 overflow-hidden rounded-full bg-(--bch-gray-200)';
 
 export default async function EventPage({ params }: EventPageProps) {
   const session = await getServerSession(authOptions);
@@ -101,7 +104,6 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const isAdmin = session.user?.role === 'admin';
   const totalParticipants = event.newParticipants + event.returningParticipants;
-  const totalTime = event.eventDuration + event.adminDuration;
   const costPerParticipant =
     totalParticipants > 0 ? parseFloat(event.totalCost) / totalParticipants : 0;
 
@@ -116,15 +118,6 @@ export default async function EventPage({ params }: EventPageProps) {
   };
 
   const totalCost = parseFloat(event.totalCost);
-  const pct = (value: number) =>
-    totalParticipants > 0 ? ((value / totalParticipants) * 100).toFixed(1) : 0;
-  const newShare = totalParticipants > 0 ? (event.newParticipants / totalParticipants) * 100 : 0;
-  const returningShare =
-    totalParticipants > 0 ? (event.returningParticipants / totalParticipants) * 100 : 0;
-  const ratio =
-    event.adminDuration > 0
-      ? (event.eventDuration / event.adminDuration).toFixed(1)
-      : event.eventDuration;
   const organizerInitials = event.userName
     .split(' ')
     .map(n => n[0])
@@ -132,25 +125,42 @@ export default async function EventPage({ params }: EventPageProps) {
     .slice(0, 2);
   const costNote = totalCost > 0 ? 'Supplies and materials' : 'No expenses recorded';
 
-  const kpis = [
+  const kpis: Array<{
+    label: string;
+    value: string;
+    note: string;
+    icon: LucideIcon;
+  }> = [
     {
       label: 'Participants',
       value: String(totalParticipants),
       note: `${event.newParticipants} new · ${event.returningParticipants} returning`,
+      icon: Users,
     },
-    { label: 'Event time', value: hm(event.eventDuration), note: 'On site' },
-    { label: 'Admin time', value: hm(event.adminDuration), note: 'Setup, cleanup, reporting' },
-    { label: 'Total cost', value: money(totalCost), note: costNote },
-  ];
-
-  const figureRows = [
-    { measure: 'New participants', value: event.newParticipants, detail: `${pct(event.newParticipants)}% of attendance` },
-    { measure: 'Returning participants', value: event.returningParticipants, detail: `${pct(event.returningParticipants)}% of attendance` },
-    { measure: 'Event duration', value: hm(event.eventDuration), detail: `${event.eventDuration} minutes on site` },
-    { measure: 'Admin time', value: hm(event.adminDuration), detail: 'Setup, cleanup, and reporting' },
-    { measure: 'Event to admin ratio', value: `${ratio}:1`, detail: 'Event minutes per admin minute' },
-    { measure: 'Total cost', value: money(totalCost), detail: costNote },
-    { measure: 'Cost per participant', value: money(costPerParticipant), detail: 'Total cost ÷ participants' },
+    {
+      label: 'Event time',
+      value: hm(event.eventDuration),
+      note: 'On site',
+      icon: Clock,
+    },
+    {
+      label: 'Admin time',
+      value: hm(event.adminDuration),
+      note: 'Setup, cleanup, reporting',
+      icon: Contact,
+    },
+    {
+      label: 'Total cost',
+      value: money(totalCost),
+      note: costNote,
+      icon: DollarSign,
+    },
+    {
+      label: 'Cost per participant',
+      value: money(costPerParticipant),
+      note: 'Total cost ÷ participants',
+      icon: Target,
+    },
   ];
 
   return (
@@ -181,17 +191,18 @@ export default async function EventPage({ params }: EventPageProps) {
           {event.title}
         </h1>
 
-        <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="mt-5 grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
           {kpis.map(kpi => (
-            <Card key={kpi.label} className={kpiTileClass}>
-              <div className="text-[11.5px] font-semibold tracking-[.5px] text-(--text-muted) uppercase">
-                {kpi.label}
-              </div>
-              <div className="mt-1.5 text-[30px] leading-[1.1] font-bold text-(--surface-chrome)">
-                {kpi.value}
-              </div>
-              <div className="mt-1 text-[12.5px] text-(--text-muted)">{kpi.note}</div>
-            </Card>
+            <KpiCard
+              key={kpi.label}
+              variant="panel"
+              label={kpi.label}
+              value={kpi.value}
+              icon={kpi.icon}
+              sub={
+                <div className="text-xs text-(--text-muted)">{kpi.note}</div>
+              }
+            />
           ))}
         </div>
 
@@ -214,7 +225,6 @@ export default async function EventPage({ params }: EventPageProps) {
             </ProfileField>
             <ProfileField label="Address">{event.siteAddress}</ProfileField>
             <ProfileField label="Activity Type">{event.activityTypeName}</ProfileField>
-            <ProfileField label="Program Goal">{event.programGoalName}</ProfileField>
           </div>
 
           <div>
@@ -242,9 +252,6 @@ export default async function EventPage({ params }: EventPageProps) {
                       {event.userJobTitle}
                     </div>
                   )}
-                  <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
-                    {event.userEmail}
-                  </div>
                 </div>
               </div>
             </div>
@@ -258,58 +265,6 @@ export default async function EventPage({ params }: EventPageProps) {
           </p>
         </Card>
 
-        <Card className={cn(surfaceCardClass, 'mt-5 overflow-hidden')}>
-          <div className="flex items-baseline justify-between gap-4 px-6 pt-[18px] pb-3.5">
-            <div className="text-[17px] font-bold">Reported Figures</div>
-            {/* TODO: /events/[id] — not wired: no per-event export exists. */}
-            <button
-              type="button"
-              disabled
-              className="shrink-0 text-[13.5px] text-(--action-primary) opacity-60"
-            >
-              Export CSV
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-3 px-6 pb-5">
-            <div>
-              <div className="mb-1.5 flex justify-between text-[13.5px]">
-                <span className="font-semibold">New Participants</span>
-                <span className="text-(--text-muted)">{pct(event.newParticipants)}%</span>
-              </div>
-              <div className={progressTrackClass}>
-                <div className="h-full bg-(--bch-seafoam)" style={{ width: `${newShare}%` }} />
-              </div>
-            </div>
-            <div>
-              <div className="mb-1.5 flex justify-between text-[13.5px]">
-                <span className="font-semibold">Returning Participants</span>
-                <span className="text-(--text-muted)">
-                  {pct(event.returningParticipants)}%
-                </span>
-              </div>
-              <div className={progressTrackClass}>
-                <div className="h-full bg-(--bch-sky-400)" style={{ width: `${returningShare}%` }} />
-              </div>
-            </div>
-          </div>
-
-          <div className="px-6 pb-6">
-            <DataTable
-              columns={[
-                { key: 'measure', label: 'Measure' },
-                { key: 'value', label: 'Reported', num: true },
-                { key: 'detail', label: 'Detail' },
-              ]}
-              rows={figureRows}
-              footer={{
-                measure: 'Totals',
-                value: `${totalParticipants} participants`,
-                detail: `${hm(totalTime)} staff time · ${money(totalCost)}`,
-              }}
-            />
-          </div>
-        </Card>
       </div>
     </div>
   );
