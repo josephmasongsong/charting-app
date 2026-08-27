@@ -4,8 +4,15 @@ import { Suspense, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UsersTable from './components/UsersTable';
+import PendingInvitations from './components/PendingInvitations';
 import InviteUserDialog from './components/InviteUserDialog';
+
+const tabsListClass =
+  'h-auto gap-1 rounded-(--radius-control) bg-transparent p-0';
+const tabTriggerClass =
+  'rounded-(--radius-control) border border-(--border-default) bg-(--surface-card) px-3.5 py-[7px] text-[14.5px] font-normal text-(--text-body) data-[state=active]:border-(--action-primary) data-[state=active]:bg-(--action-primary) data-[state=active]:text-(--text-on-chrome) data-[state=active]:shadow-none';
 
 function UsersTableSkeleton() {
   return (
@@ -36,9 +43,12 @@ export default function AdminUsersPage({ currentUser }: AdminUsersPageProps) {
   const [error, setError] = useState('');
 
   const usersTableRef = useRef<{ refreshData: () => void }>(null);
+  const pendingRef = useRef<{ refreshData: () => void }>(null);
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
 
   const handleRefresh = () => {
     usersTableRef.current?.refreshData();
+    pendingRef.current?.refreshData();
   };
 
   const showMessage = (msg: string) => {
@@ -74,16 +84,43 @@ export default function AdminUsersPage({ currentUser }: AdminUsersPageProps) {
         </Button>
       </div>
 
-      <Suspense fallback={<UsersTableSkeleton />}>
-        <UsersTable
-          ref={usersTableRef}
-          currentUser={currentUser}
-          message={message}
-          error={error}
-          onClearMessage={() => setMessage('')}
-          onClearError={() => setError('')}
-        />
-      </Suspense>
+      <Tabs defaultValue="directory" className="gap-5">
+        <TabsList className={tabsListClass}>
+          <TabsTrigger value="directory" className={tabTriggerClass}>
+            Directory
+          </TabsTrigger>
+          <TabsTrigger value="pending" className={tabTriggerClass}>
+            Pending invitations
+            {pendingCount !== null && pendingCount > 0 && (
+              <span className="ml-1.5 rounded-full bg-(--warning-surface) px-1.5 py-[1px] text-[12px] font-bold text-(--warning-text)">
+                {pendingCount}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="directory">
+          <Suspense fallback={<UsersTableSkeleton />}>
+            <UsersTable
+              ref={usersTableRef}
+              currentUser={currentUser}
+              message={message}
+              error={error}
+              onClearMessage={() => setMessage('')}
+              onClearError={() => setError('')}
+            />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="pending">
+          <PendingInvitations
+            ref={pendingRef}
+            onSuccess={showMessage}
+            onError={showError}
+            onCount={setPendingCount}
+          />
+        </TabsContent>
+      </Tabs>
 
       <InviteUserDialog
         open={inviteOpen}

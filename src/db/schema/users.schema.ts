@@ -26,6 +26,12 @@ export const users = pgTable(
     jobTitle: text('job_title').default('Tenant Engagement Worker'),
     isActive: boolean('is_active').default(true).notNull(),
     emailVerified: boolean('email_verified').default(false).notNull(),
+    // Invitation tracking: invitedAt/invitedBy are stamped when an admin
+    // creates the account; inviteAcceptedAt is stamped on first sign-in.
+    // A row with invitedAt set and inviteAcceptedAt null is a pending invite.
+    invitedAt: timestamp('invited_at'),
+    invitedBy: uuid('invited_by'),
+    inviteAcceptedAt: timestamp('invite_accepted_at'),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },

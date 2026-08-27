@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, users } from '@/db';
-import { eq, ilike, or, sql, count, desc, asc } from 'drizzle-orm';
+import { eq, ilike, or, and, isNull, isNotNull, sql, count, desc, asc } from 'drizzle-orm';
 
 export async function GET(req: Request) {
   try {
@@ -34,6 +34,13 @@ export async function GET(req: Request) {
     const sortOrder = searchParams.get('sortOrder') || 'desc';
     const offset = (page - 1) * limit;
 
+    // status=pending -> invited accounts that have never signed in.
+    const status = searchParams.get('status');
+    const pendingCondition =
+      status === 'pending'
+        ? and(isNotNull(users.invitedAt), isNull(users.inviteAcceptedAt))
+        : undefined;
+
     // Build search condition
     const searchCondition = search
       ? or(
@@ -47,11 +54,16 @@ export async function GET(req: Request) {
         )
       : undefined;
 
+    const whereCondition =
+      searchCondition && pendingCondition
+        ? and(searchCondition, pendingCondition)
+        : (searchCondition ?? pendingCondition);
+
     // Get total count for pagination
     const countQuery = db.select({ count: count() }).from(users);
 
-    if (searchCondition) {
-      countQuery.where(searchCondition);
+    if (whereCondition) {
+      countQuery.where(whereCondition);
     }
 
     const countResult = await countQuery;
@@ -101,6 +113,8 @@ export async function GET(req: Request) {
         role: users.role,
         region: users.region,
         emailVerified: users.emailVerified,
+        invitedAt: users.invitedAt,
+        inviteAcceptedAt: users.inviteAcceptedAt,
         jobTitle: users.jobTitle,
         isActive: users.isActive,
         createdAt: users.createdAt,
@@ -109,7 +123,7 @@ export async function GET(req: Request) {
       .from(users);
 
     // Add search filter if provided and apply sorting and pagination
-    const query = searchCondition ? baseQuery.where(searchCondition) : baseQuery;
+    const query = whereCondition ? baseQuery.where(whereCondition) : baseQuery;
     const orderedQuery = query.orderBy(sortFunction(sortColumn));
     const allUsers = await orderedQuery.limit(limit).offset(offset);
 

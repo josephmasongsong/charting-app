@@ -113,6 +113,8 @@ export async function POST(req: Request) {
       hashedPassword,
       jobTitle,
       region,
+      invitedAt: new Date(),
+      invitedBy: currentUser.id,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

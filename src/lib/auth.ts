@@ -44,6 +44,14 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // First successful sign-in accepts an outstanding invitation.
+        if (user.invitedAt && !user.inviteAcceptedAt) {
+          await db
+            .update(users)
+            .set({ inviteAcceptedAt: new Date() })
+            .where(eq(users.id, user.id));
+        }
+
         return {
           id: user.id,
           email: user.email,
