@@ -866,7 +866,7 @@ export default function SupplyDistributionForm() {
               </div>
             </Card>
 
-            <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-(--border-default) bg-(--surface-page) pt-3.5 pb-1">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-(--border-default) bg-(--surface-page) pt-3.5 pb-1">
               <span
                 className={cn(
                   'text-[13px]',
@@ -903,7 +903,7 @@ export default function SupplyDistributionForm() {
             </div>
           </div>
 
-          <div className="w-full shrink-0 overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card) lg:sticky lg:top-5 lg:w-[320px]">
+          <div className="w-full shrink-0 overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card) lg:w-[320px]">
             <div className="border-b border-(--bch-gray-200) px-5 py-3.5">
               <div className="text-[15px] font-bold">Required fields</div>
               <div className="text-[12.5px] text-(--text-muted)">

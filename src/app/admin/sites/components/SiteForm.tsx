@@ -988,7 +988,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
           {/* TODO: /admin/sites/new — not wired: the template disables Save
               until the checklist is complete; Save stays enabled so Zod and
               server rejections still surface as field errors. */}
-          <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-(--border-default) bg-(--surface-page) pt-3.5 pb-1">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-(--border-default) bg-(--surface-page) pt-3.5 pb-1">
             <span className="text-[13px] text-(--text-muted)">{readyNote}</span>
             <div className="flex gap-3">
               <Button
@@ -1009,7 +1009,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
           </div>
         </form>
 
-        <aside className="w-full shrink-0 overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card) lg:sticky lg:top-5 lg:w-80">
+        <aside className="w-full shrink-0 overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card) lg:w-80">
           <div className="border-b border-(--bch-gray-200) px-5 py-3.5">
             <div className="text-[15px] font-bold">Required fields</div>
             <div className="text-[12.5px] text-(--text-muted)">Complete these to save</div>
