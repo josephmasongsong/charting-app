@@ -15,6 +15,7 @@ import {
 import {
   Calendar,
   Eye,
+  MapPin,
   Search,
   X,
   Trash2,
@@ -447,8 +448,9 @@ const EventsListClient: React.FC<EventsListClientProps> = ({
                             </Badge>
                           )}
                         </div>
-                        <div className="mt-1 truncate text-[12.5px] text-(--text-muted)">
-                          {event.siteName}
+                        <div className="mt-1 flex items-center gap-1.5 text-[12.5px] text-(--text-muted)">
+                          <MapPin className="size-[13px] shrink-0" />
+                          <span className="truncate">{event.siteName}</span>
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
