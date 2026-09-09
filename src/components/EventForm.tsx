@@ -821,42 +821,21 @@ export default function EventForm({
                     Total Cost ($)
                     <Required />
                   </Label>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <div className="flex min-w-[140px] flex-1 items-center gap-2">
-                      <span className="text-[15px] text-(--text-muted)">$</span>
-                      <Input
-                        id="totalCost"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={formData.totalCost}
-                        onChange={(e) =>
-                          handleInputChange("totalCost", e.target.value)
-                        }
-                        aria-invalid={!!errors.totalCost}
-                        className={inputClass}
-                      />
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2.5">
-                      <Checkbox
-                        id="usedTenantActivityGrant"
-                        checked={formData.usedTenantActivityGrant}
-                        onCheckedChange={() =>
-                          handleCheckboxChange("usedTenantActivityGrant")
-                        }
-                        className="rounded-[2px] border-(--border-input) data-[state=checked]:border-(--action-primary) data-[state=checked]:bg-(--action-primary)"
-                      />
-                      <Label
-                        htmlFor="usedTenantActivityGrant"
-                        className={cn(
-                          labelClass,
-                          "cursor-pointer whitespace-nowrap",
-                        )}
-                      >
-                        Tenant Activity Grant (TAG)
-                      </Label>
-                    </div>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="text-[15px] text-(--text-muted)">$</span>
+                    <Input
+                      id="totalCost"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.totalCost}
+                      onChange={(e) =>
+                        handleInputChange("totalCost", e.target.value)
+                      }
+                      aria-invalid={!!errors.totalCost}
+                      className={inputClass}
+                    />
                   </div>
                   <FieldError message={errors.totalCost} />
                   <p className={helperClass}>
@@ -864,40 +843,58 @@ export default function EventForm({
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-3 md:mt-[27px]">
-                  {totalTime > 0 && (
-                    <div
-                      className={cn(
-                        totalTileClass,
-                        "flex items-center justify-between text-left",
-                      )}
-                    >
-                      <span className="text-sm font-medium">Total Time</span>
-                      <Badge variant="secondary">
-                        {totalTime} minutes ({(totalTime / 60).toFixed(1)}{" "}
-                        hours)
-                      </Badge>
-                    </div>
-                  )}
-                  {formData.totalCost && totalParticipants > 0 && (
-                    <div
-                      className={cn(
-                        totalTileClass,
-                        "flex items-center justify-between text-left",
-                      )}
-                    >
-                      <span className="text-sm font-medium">
-                        Cost per Participant
-                      </span>
-                      <Badge variant="secondary">
-                        $
-                        {(
-                          parseFloat(formData.totalCost) / totalParticipants
-                        ).toFixed(2)}
-                      </Badge>
-                    </div>
-                  )}
+                {/* Same column geometry as the youth-focused checkbox above. */}
+                <div className="flex h-9 items-center gap-2 md:mt-[27px]">
+                  <Checkbox
+                    id="usedTenantActivityGrant"
+                    checked={formData.usedTenantActivityGrant}
+                    onCheckedChange={() =>
+                      handleCheckboxChange("usedTenantActivityGrant")
+                    }
+                    className="rounded-[2px] border-(--border-input) data-[state=checked]:border-(--action-primary) data-[state=checked]:bg-(--action-primary)"
+                  />
+                  <Label
+                    htmlFor="usedTenantActivityGrant"
+                    className={cn(labelClass, "cursor-pointer")}
+                  >
+                    Funded by a Tenant Activity Grant (TAG)
+                  </Label>
                 </div>
+              </div>
+
+              {/* Summary tiles move below now that TAG owns the second column. */}
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                {totalTime > 0 && (
+                  <div
+                    className={cn(
+                      totalTileClass,
+                      "flex items-center justify-between text-left",
+                    )}
+                  >
+                    <span className="text-sm font-medium">Total Time</span>
+                    <Badge variant="secondary">
+                      {totalTime} minutes ({(totalTime / 60).toFixed(1)} hours)
+                    </Badge>
+                  </div>
+                )}
+                {formData.totalCost && totalParticipants > 0 && (
+                  <div
+                    className={cn(
+                      totalTileClass,
+                      "flex items-center justify-between text-left",
+                    )}
+                  >
+                    <span className="text-sm font-medium">
+                      Cost per Participant
+                    </span>
+                    <Badge variant="secondary">
+                      $
+                      {(
+                        parseFloat(formData.totalCost) / totalParticipants
+                      ).toFixed(2)}
+                    </Badge>
+                  </div>
+                )}
               </div>
             </Card>
 
