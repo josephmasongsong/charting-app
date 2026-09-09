@@ -1,28 +1,28 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar } from '@/components/ui/calendar';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@/components/ui/command';
+} from "@/components/ui/command";
 import {
   Calendar as CalIcon,
   Clock,
@@ -36,9 +36,9 @@ import {
   ChevronDown,
   Loader2,
   type LucideIcon,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface Options {
   activityTypes: Array<{ id: string; name: string; programGoalName: string }>;
@@ -47,37 +47,37 @@ interface Options {
 }
 
 interface EventFormProps {
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   eventId?: string;
   initialData?: any;
   isDuplicated?: boolean;
   isAdmin?: boolean;
 }
 
-const pageClass = 'min-h-screen bg-(--surface-page) px-6 pt-7 pb-10';
-const containerClass = 'mx-auto max-w-[1160px]';
+const pageClass = "min-h-screen bg-(--surface-page) px-6 pt-7 pb-10";
+const containerClass = "mx-auto max-w-[1160px]";
 const cardClass =
-  'gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) px-6 pt-5 pb-6 shadow-(--shadow-card)';
-const labelClass = 'text-[15px] font-normal';
+  "gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) px-6 pt-5 pb-6 shadow-(--shadow-card)";
+const labelClass = "text-[15px] font-normal";
 const inputClass =
-  'h-9 rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)';
+  "h-9 rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)";
 const comboTriggerClass =
-  'h-9 w-full justify-between rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] font-normal shadow-none hover:bg-(--surface-card) hover:text-(--text-body) focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)';
+  "h-9 w-full justify-between rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] font-normal shadow-none hover:bg-(--surface-card) hover:text-(--text-body) focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)";
 const comboPanelClass =
-  'w-[var(--radix-popover-trigger-width)] rounded-(--radius-control) border-(--border-default) p-0 shadow-(--shadow-modal)';
-const helperClass = 'mt-2 text-[12.5px] text-(--text-muted)';
-const errorClass = 'mt-1.5 text-xs text-(--danger)';
+  "w-[var(--radix-popover-trigger-width)] rounded-(--radius-control) border-(--border-default) p-0 shadow-(--shadow-modal)";
+const helperClass = "mt-2 text-[12.5px] text-(--text-muted)";
+const errorClass = "mt-1.5 text-xs text-(--danger)";
 const totalTileClass =
-  'rounded-(--radius-control) border border-(--border-default) bg-(--surface-muted) px-4 py-2 text-center';
+  "rounded-(--radius-control) border border-(--border-default) bg-(--surface-muted) px-4 py-2 text-center";
 const primaryButtonClass =
-  'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+  "h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100";
 const outlineButtonClass =
-  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
-const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
+  "h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)";
+const alertClass = "border-y-0 border-r-0 px-3.5 py-3";
 const infoAlertClass =
-  'rounded-[2px] border-l-[5px] border-l-(--action-primary) bg-(--action-selected) text-foreground';
+  "rounded-[2px] border-l-[5px] border-l-(--action-primary) bg-(--action-selected) text-foreground";
 const successAlertClass =
-  'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
+  "rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground";
 
 function Required() {
   return (
@@ -134,20 +134,20 @@ export default function EventForm({
   const [optionsLoading, setOptionsLoading] = useState(true);
 
   const [formData, setFormData] = useState({
-    title: '',
-    eventDate: '',
-    description: '',
-    eventDuration: '',
-    adminDuration: '',
-    newParticipants: '',
-    returningParticipants: '',
+    title: "",
+    eventDate: "",
+    description: "",
+    eventDuration: "",
+    adminDuration: "",
+    newParticipants: "",
+    returningParticipants: "",
     eventIsYouthFocused: false,
     usedTenantActivityGrant: false,
     hasCoHost: false,
-    totalCost: '',
-    activityTypeId: '',
-    siteId: '',
-    communityPartnerId: '',
+    totalCost: "",
+    activityTypeId: "",
+    siteId: "",
+    communityPartnerId: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -160,14 +160,14 @@ export default function EventForm({
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await fetch('/api/events/options');
+        const response = await fetch("/api/events/options");
         const data = await response.json();
 
         if (response.ok) {
           setOptions(data);
         }
       } catch (error) {
-        console.error('Failed to fetch options:', error);
+        console.error("Failed to fetch options:", error);
       } finally {
         setOptionsLoading(false);
       }
@@ -177,37 +177,36 @@ export default function EventForm({
   }, []);
 
   useEffect(() => {
-    if (mode === 'edit' && initialData) {
+    if (mode === "edit" && initialData) {
       setFormData({
-        title: initialData.title || '',
-        eventDate: initialData.eventDate || '',
-        description: initialData.description || '',
-        eventDuration: initialData.eventDuration?.toString() || '',
-        adminDuration: initialData.adminDuration?.toString() || '',
-        newParticipants: initialData.newParticipants?.toString() || '',
+        title: initialData.title || "",
+        eventDate: initialData.eventDate || "",
+        description: initialData.description || "",
+        eventDuration: initialData.eventDuration?.toString() || "",
+        adminDuration: initialData.adminDuration?.toString() || "",
+        newParticipants: initialData.newParticipants?.toString() || "",
         returningParticipants:
-          initialData.returningParticipants?.toString() || '',
+          initialData.returningParticipants?.toString() || "",
         eventIsYouthFocused: initialData.eventIsYouthFocused || false,
-        usedTenantActivityGrant:
-          initialData.usedTenantActivityGrant || false,
+        usedTenantActivityGrant: initialData.usedTenantActivityGrant || false,
         hasCoHost: initialData.hasCoHost || false,
-        totalCost: initialData.totalCost || '',
-        activityTypeId: initialData.activityTypeId || '',
-        siteId: initialData.siteId || '',
-        communityPartnerId: initialData.communityPartnerId || '',
+        totalCost: initialData.totalCost || "",
+        activityTypeId: initialData.activityTypeId || "",
+        siteId: initialData.siteId || "",
+        communityPartnerId: initialData.communityPartnerId || "",
       });
     }
   }, [mode, initialData]);
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
   const handleCheckboxChange = (field: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: !prev[field as keyof typeof prev],
     }));
@@ -216,39 +215,39 @@ export default function EventForm({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.eventDate) newErrors.eventDate = 'Event date is required';
+    if (!formData.title.trim()) newErrors.title = "Title is required";
+    if (!formData.eventDate) newErrors.eventDate = "Event date is required";
     if (!formData.description.trim())
-      newErrors.description = 'Description is required';
+      newErrors.description = "Description is required";
     if (!formData.activityTypeId)
-      newErrors.activityTypeId = 'Activity type is required';
-    if (!formData.siteId) newErrors.siteId = 'Site is required';
+      newErrors.activityTypeId = "Activity type is required";
+    if (!formData.siteId) newErrors.siteId = "Site is required";
 
     if (!formData.eventDuration.trim()) {
-      newErrors.eventDuration = 'Event duration is required';
+      newErrors.eventDuration = "Event duration is required";
     } else if (parseInt(formData.eventDuration) < 1) {
-      newErrors.eventDuration = 'Duration must be at least 1 minute';
+      newErrors.eventDuration = "Duration must be at least 1 minute";
     }
     if (formData.adminDuration && parseInt(formData.adminDuration) < 0) {
-      newErrors.adminDuration = 'Duration cannot be negative';
+      newErrors.adminDuration = "Duration cannot be negative";
     }
     if (formData.newParticipants && parseInt(formData.newParticipants) < 0) {
-      newErrors.newParticipants = 'Cannot be negative';
+      newErrors.newParticipants = "Cannot be negative";
     }
     if (
       formData.returningParticipants &&
       parseInt(formData.returningParticipants) < 0
     ) {
-      newErrors.returningParticipants = 'Cannot be negative';
+      newErrors.returningParticipants = "Cannot be negative";
     }
     if (!formData.totalCost.trim()) {
-      newErrors.totalCost = 'Total cost is required';
+      newErrors.totalCost = "Total cost is required";
     } else if (parseFloat(formData.totalCost) < 0) {
-      newErrors.totalCost = 'Cost cannot be negative';
+      newErrors.totalCost = "Cost cannot be negative";
     }
 
     if (formData.hasCoHost && !formData.communityPartnerId) {
-      newErrors.communityPartnerId = 'Please select a community partner';
+      newErrors.communityPartnerId = "Please select a community partner";
     }
 
     return newErrors;
@@ -260,11 +259,11 @@ export default function EventForm({
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      setSubmitStatus('error');
+      setSubmitStatus("error");
       return;
     }
 
-    setSubmitStatus('loading');
+    setSubmitStatus("loading");
 
     const apiData = {
       title: formData.title,
@@ -290,28 +289,28 @@ export default function EventForm({
       let url: string;
       let method: string;
 
-      if (mode === 'create') {
-        url = '/api/events';
-        method = 'POST';
+      if (mode === "create") {
+        url = "/api/events";
+        method = "POST";
       } else if (isAdmin) {
         url = `/api/admin/events/${eventId}`;
-        method = 'PATCH';
+        method = "PATCH";
       } else {
         url = `/api/events/${eventId}`;
-        method = 'PATCH';
+        method = "PATCH";
       }
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(apiData),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setSubmitStatus('success');
-        const targetEventId = mode === 'create' ? data.event.id : eventId;
+        setSubmitStatus("success");
+        const targetEventId = mode === "create" ? data.event.id : eventId;
         setTimeout(() => {
           router.push(`/events/${targetEventId}`);
         }, 1500);
@@ -320,15 +319,15 @@ export default function EventForm({
           const fieldErrors: Record<string, string> = {};
           data.details.forEach((err: any) => {
             if (err.path.length > 0) {
-              fieldErrors[err.path.join('.')] = err.message;
+              fieldErrors[err.path.join(".")] = err.message;
             }
           });
           setErrors(fieldErrors);
         }
-        setSubmitStatus('error');
+        setSubmitStatus("error");
       }
     } catch (error) {
-      setSubmitStatus('error');
+      setSubmitStatus("error");
     }
   };
 
@@ -347,33 +346,40 @@ export default function EventForm({
     ? new Date(formData.eventDate)
     : undefined;
   const selectedActivityType = options.activityTypes.find(
-    type => type.id === formData.activityTypeId
+    (type) => type.id === formData.activityTypeId,
   );
-  const selectedSite = options.sites.find(site => site.id === formData.siteId);
+  const selectedSite = options.sites.find(
+    (site) => site.id === formData.siteId,
+  );
   const selectedCommunityPartner = options.communityPartners.find(
-    partner => partner.id === formData.communityPartnerId
+    (partner) => partner.id === formData.communityPartnerId,
   );
 
   // Checklist mirrors validateForm()'s required rules; it is display only.
   const checklist = [
-    { label: 'Event title', ok: !!formData.title.trim() },
-    { label: 'Date and site', ok: !!formData.eventDate && !!formData.siteId },
-    { label: 'Activity type', ok: !!formData.activityTypeId },
-    { label: 'Description', ok: !!formData.description.trim() },
+    { label: "Event title", ok: !!formData.title.trim() },
+    { label: "Date and site", ok: !!formData.eventDate && !!formData.siteId },
+    { label: "Activity type", ok: !!formData.activityTypeId },
+    { label: "Description", ok: !!formData.description.trim() },
     ...(formData.hasCoHost
-      ? [{ label: 'Community partner', ok: !!formData.communityPartnerId }]
+      ? [{ label: "Community partner", ok: !!formData.communityPartnerId }]
       : []),
   ];
-  const remaining = checklist.filter(item => !item.ok).length;
+  const remaining = checklist.filter((item) => !item.ok).length;
   const readyNote =
     remaining > 0
-      ? `${remaining} required field${remaining === 1 ? '' : 's'} left`
-      : 'All required fields complete';
+      ? `${remaining} required field${remaining === 1 ? "" : "s"} left`
+      : "All required fields complete";
 
   if (optionsLoading) {
     return (
       <div className={pageClass}>
-        <div className={cn(containerClass, 'flex items-center justify-center py-8 text-(--text-muted)')}>
+        <div
+          className={cn(
+            containerClass,
+            "flex items-center justify-center py-8 text-(--text-muted)",
+          )}
+        >
           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
           Loading...
         </div>
@@ -385,7 +391,7 @@ export default function EventForm({
     <div className={pageClass}>
       <div className={containerClass}>
         <h1 className="text-[30px] leading-tight font-bold tracking-[-.2px]">
-          {mode === 'create' ? 'Log New Event' : 'Edit Event'}
+          {mode === "create" ? "Log New Event" : "Edit Event"}
         </h1>
         <p className="mt-1.5 text-[15px] text-(--text-muted)">
           Record details of a community event or activity
@@ -396,7 +402,9 @@ export default function EventForm({
             {isDuplicated && (
               <Alert className={cn(alertClass, infoAlertClass)}>
                 <Copy className="text-(--action-primary)" />
-                <AlertTitle className="font-semibold">Editing Duplicated Event</AlertTitle>
+                <AlertTitle className="font-semibold">
+                  Editing Duplicated Event
+                </AlertTitle>
                 <AlertDescription className="text-foreground">
                   This event was duplicated. When you save, it will be logged to
                   the activity feed.
@@ -404,22 +412,24 @@ export default function EventForm({
               </Alert>
             )}
 
-            {submitStatus === 'success' && (
+            {submitStatus === "success" && (
               <Alert className={cn(alertClass, successAlertClass)}>
                 <CheckIcon className="text-(--success)" />
                 <AlertTitle className="font-semibold">
-                  Event {mode === 'create' ? 'logged' : 'updated'} successfully!
+                  Event {mode === "create" ? "logged" : "updated"} successfully!
                 </AlertTitle>
                 <AlertDescription className="text-foreground">
-                  Your event has been {mode === 'create' ? 'recorded' : 'updated'}{' '}
-                  in the system.
+                  Your event has been{" "}
+                  {mode === "create" ? "recorded" : "updated"} in the system.
                 </AlertDescription>
               </Alert>
             )}
 
-            {submitStatus === 'error' && (
+            {submitStatus === "error" && (
               <Alert variant="destructive" className={alertClass}>
-                <AlertTitle className="font-semibold">Please fix the errors below</AlertTitle>
+                <AlertTitle className="font-semibold">
+                  Please fix the errors below
+                </AlertTitle>
                 <AlertDescription>
                   Some required fields are missing or invalid.
                 </AlertDescription>
@@ -442,9 +452,9 @@ export default function EventForm({
                   id="title"
                   placeholder="e.g., Community Health Fair"
                   value={formData.title}
-                  onChange={e => handleInputChange('title', e.target.value)}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
                   aria-invalid={!!errors.title}
-                  className={cn(inputClass, 'mt-1.5')}
+                  className={cn(inputClass, "mt-1.5")}
                 />
                 <FieldError message={errors.title} />
               </div>
@@ -463,13 +473,13 @@ export default function EventForm({
                         aria-invalid={!!errors.eventDate}
                         className={cn(
                           comboTriggerClass,
-                          'mt-1.5 justify-start',
-                          !selectedDate && 'text-(--text-muted)'
+                          "mt-1.5 justify-start",
+                          !selectedDate && "text-(--text-muted)",
                         )}
                       >
                         <CalIcon className="mr-2 h-4 w-4" />
                         {selectedDate ? (
-                          format(selectedDate, 'PPP')
+                          format(selectedDate, "PPP")
                         ) : (
                           <span>Pick a date</span>
                         )}
@@ -479,11 +489,11 @@ export default function EventForm({
                       <Calendar
                         mode="single"
                         selected={selectedDate}
-                        onSelect={date => {
+                        onSelect={(date) => {
                           if (date) {
                             handleInputChange(
-                              'eventDate',
-                              date.toISOString().split('T')[0]
+                              "eventDate",
+                              date.toISOString().split("T")[0],
                             );
                           }
                           setCalendarOpen(false);
@@ -507,9 +517,9 @@ export default function EventForm({
                         role="combobox"
                         aria-expanded={siteOpen}
                         aria-invalid={!!errors.siteId}
-                        className={cn(comboTriggerClass, 'mt-1.5')}
+                        className={cn(comboTriggerClass, "mt-1.5")}
                       >
-                        {selectedSite ? selectedSite.name : 'Select site...'}
+                        {selectedSite ? selectedSite.name : "Select site..."}
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-(--text-muted)" />
                       </Button>
                     </PopoverTrigger>
@@ -518,21 +528,21 @@ export default function EventForm({
                         <CommandInput placeholder="Search sites..." />
                         <CommandEmpty>No site found.</CommandEmpty>
                         <CommandGroup>
-                          {options.sites.map(site => (
+                          {options.sites.map((site) => (
                             <CommandItem
                               key={site.id}
                               value={`${site.name} ${site.address}`}
                               onSelect={() => {
-                                handleInputChange('siteId', site.id);
+                                handleInputChange("siteId", site.id);
                                 setSiteOpen(false);
                               }}
                             >
                               <Check
                                 className={cn(
-                                  'mr-2 h-4 w-4',
+                                  "mr-2 h-4 w-4",
                                   formData.siteId === site.id
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
+                                    ? "opacity-100"
+                                    : "opacity-0",
                                 )}
                               />
                               {site.name}
@@ -562,11 +572,11 @@ export default function EventForm({
                         role="combobox"
                         aria-expanded={activityTypeOpen}
                         aria-invalid={!!errors.activityTypeId}
-                        className={cn(comboTriggerClass, 'mt-1.5')}
+                        className={cn(comboTriggerClass, "mt-1.5")}
                       >
                         {selectedActivityType
                           ? selectedActivityType.name
-                          : 'Select activity type...'}
+                          : "Select activity type..."}
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-(--text-muted)" />
                       </Button>
                     </PopoverTrigger>
@@ -575,21 +585,21 @@ export default function EventForm({
                         <CommandInput placeholder="Search activity types..." />
                         <CommandEmpty>No activity type found.</CommandEmpty>
                         <CommandGroup>
-                          {options.activityTypes.map(type => (
+                          {options.activityTypes.map((type) => (
                             <CommandItem
                               key={type.id}
                               value={`${type.name} ${type.programGoalName}`}
                               onSelect={() => {
-                                handleInputChange('activityTypeId', type.id);
+                                handleInputChange("activityTypeId", type.id);
                                 setActivityTypeOpen(false);
                               }}
                             >
                               <Check
                                 className={cn(
-                                  'mr-2 h-4 w-4',
+                                  "mr-2 h-4 w-4",
                                   formData.activityTypeId === type.id
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
+                                    ? "opacity-100"
+                                    : "opacity-0",
                                 )}
                               />
                               {type.name}
@@ -607,13 +617,13 @@ export default function EventForm({
                     id="eventIsYouthFocused"
                     checked={formData.eventIsYouthFocused}
                     onCheckedChange={() =>
-                      handleCheckboxChange('eventIsYouthFocused')
+                      handleCheckboxChange("eventIsYouthFocused")
                     }
                     className="rounded-[2px] border-(--border-input) data-[state=checked]:border-(--action-primary) data-[state=checked]:bg-(--action-primary)"
                   />
                   <Label
                     htmlFor="eventIsYouthFocused"
-                    className={cn(labelClass, 'cursor-pointer')}
+                    className={cn(labelClass, "cursor-pointer")}
                   >
                     This is a youth-focused event
                   </Label>
@@ -635,13 +645,13 @@ export default function EventForm({
                   placeholder="Describe what happened during the event, activities, and outcomes..."
                   rows={4}
                   value={formData.description}
-                  onChange={e =>
-                    handleInputChange('description', e.target.value)
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
                   }
                   aria-invalid={!!errors.description}
                   maxLength={600}
                   className={cn(
-                    'mt-1.5 min-h-[110px] rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)'
+                    "mt-1.5 min-h-[110px] rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)",
                   )}
                 />
                 <div className="mt-1 text-right text-[12.5px] text-(--text-muted)">
@@ -669,11 +679,11 @@ export default function EventForm({
                     min="0"
                     placeholder="0"
                     value={formData.newParticipants}
-                    onChange={e =>
-                      handleInputChange('newParticipants', e.target.value)
+                    onChange={(e) =>
+                      handleInputChange("newParticipants", e.target.value)
                     }
                     aria-invalid={!!errors.newParticipants}
-                    className={cn(inputClass, 'mt-1.5')}
+                    className={cn(inputClass, "mt-1.5")}
                   />
                   <FieldError message={errors.newParticipants} />
                 </div>
@@ -688,16 +698,16 @@ export default function EventForm({
                     min="0"
                     placeholder="0"
                     value={formData.returningParticipants}
-                    onChange={e =>
-                      handleInputChange('returningParticipants', e.target.value)
+                    onChange={(e) =>
+                      handleInputChange("returningParticipants", e.target.value)
                     }
                     aria-invalid={!!errors.returningParticipants}
-                    className={cn(inputClass, 'mt-1.5')}
+                    className={cn(inputClass, "mt-1.5")}
                   />
                   <FieldError message={errors.returningParticipants} />
                 </div>
 
-                <div className={cn(totalTileClass, 'min-w-28')}>
+                <div className={cn(totalTileClass, "min-w-28")}>
                   <div className="text-xs tracking-[.4px] text-(--text-muted) uppercase">
                     Total
                   </div>
@@ -715,7 +725,7 @@ export default function EventForm({
                       (parseInt(formData.newParticipants) / totalParticipants) *
                       100
                     ).toFixed(1)}
-                    % new,{' '}
+                    % new,{" "}
                     {(
                       (parseInt(formData.returningParticipants) /
                         totalParticipants) *
@@ -746,8 +756,8 @@ export default function EventForm({
                       min="0"
                       placeholder="60"
                       value={formData.eventDuration}
-                      onChange={e =>
-                        handleInputChange('eventDuration', e.target.value)
+                      onChange={(e) =>
+                        handleInputChange("eventDuration", e.target.value)
                       }
                       aria-invalid={!!errors.eventDuration}
                       className={inputClass}
@@ -756,7 +766,7 @@ export default function EventForm({
                   </div>
                   <FieldError message={errors.eventDuration} />
                   <div className="mt-2 flex gap-1.5">
-                    {[30, 60, 90, 120].map(minutes => (
+                    {[30, 60, 90, 120].map((minutes) => (
                       <button
                         key={minutes}
                         type="button"
@@ -764,13 +774,13 @@ export default function EventForm({
                           formData.eventDuration === String(minutes)
                         }
                         onClick={() =>
-                          handleInputChange('eventDuration', String(minutes))
+                          handleInputChange("eventDuration", String(minutes))
                         }
                         className={cn(
-                          'cursor-pointer rounded-full border px-2.5 py-[3px] text-[12.5px]',
+                          "cursor-pointer rounded-full border px-2.5 py-[3px] text-[12.5px]",
                           formData.eventDuration === String(minutes)
-                            ? 'border-(--action-primary) bg-(--action-selected) text-(--action-primary)'
-                            : 'border-(--border-default) bg-(--surface-card) text-(--text-muted) hover:border-(--action-primary) hover:text-(--action-primary)'
+                            ? "border-(--action-primary) bg-(--action-selected) text-(--action-primary)"
+                            : "border-(--border-default) bg-(--surface-card) text-(--text-muted) hover:border-(--action-primary) hover:text-(--action-primary)",
                         )}
                       >
                         {minutes} min
@@ -790,8 +800,8 @@ export default function EventForm({
                       min="0"
                       placeholder="30"
                       value={formData.adminDuration}
-                      onChange={e =>
-                        handleInputChange('adminDuration', e.target.value)
+                      onChange={(e) =>
+                        handleInputChange("adminDuration", e.target.value)
                       }
                       aria-invalid={!!errors.adminDuration}
                       className={inputClass}
@@ -799,7 +809,9 @@ export default function EventForm({
                     <span className="text-sm text-(--text-muted)">min</span>
                   </div>
                   <FieldError message={errors.adminDuration} />
-                  <p className={helperClass}>Setup, cleanup, and planning time</p>
+                  <p className={helperClass}>
+                    Setup, cleanup, and planning time
+                  </p>
                 </div>
               </div>
 
@@ -809,57 +821,74 @@ export default function EventForm({
                     Total Cost ($)
                     <Required />
                   </Label>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <span className="text-[15px] text-(--text-muted)">$</span>
-                    <Input
-                      id="totalCost"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={formData.totalCost}
-                      onChange={e =>
-                        handleInputChange('totalCost', e.target.value)
-                      }
-                      aria-invalid={!!errors.totalCost}
-                      className={inputClass}
-                    />
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <div className="flex min-w-[140px] flex-1 items-center gap-2">
+                      <span className="text-[15px] text-(--text-muted)">$</span>
+                      <Input
+                        id="totalCost"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={formData.totalCost}
+                        onChange={(e) =>
+                          handleInputChange("totalCost", e.target.value)
+                        }
+                        aria-invalid={!!errors.totalCost}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2.5">
+                      <Checkbox
+                        id="usedTenantActivityGrant"
+                        checked={formData.usedTenantActivityGrant}
+                        onCheckedChange={() =>
+                          handleCheckboxChange("usedTenantActivityGrant")
+                        }
+                        className="rounded-[2px] border-(--border-input) data-[state=checked]:border-(--action-primary) data-[state=checked]:bg-(--action-primary)"
+                      />
+                      <Label
+                        htmlFor="usedTenantActivityGrant"
+                        className={cn(
+                          labelClass,
+                          "cursor-pointer whitespace-nowrap",
+                        )}
+                      >
+                        Tenant Activity Grant (TAG)
+                      </Label>
+                    </div>
                   </div>
                   <FieldError message={errors.totalCost} />
                   <p className={helperClass}>
                     Include supplies, food, materials, and other expenses
                   </p>
-
-                  <div className="mt-3.5 flex items-center gap-2.5">
-                    <Checkbox
-                      id="usedTenantActivityGrant"
-                      checked={formData.usedTenantActivityGrant}
-                      onCheckedChange={() =>
-                        handleCheckboxChange('usedTenantActivityGrant')
-                      }
-                      className="rounded-[2px] border-(--border-input) data-[state=checked]:border-(--action-primary) data-[state=checked]:bg-(--action-primary)"
-                    />
-                    <Label
-                      htmlFor="usedTenantActivityGrant"
-                      className={cn(labelClass, 'cursor-pointer')}
-                    >
-                      Funded by a Tenant Activity Grant (TAG)
-                    </Label>
-                  </div>
                 </div>
 
                 <div className="flex flex-col gap-3 md:mt-[27px]">
                   {totalTime > 0 && (
-                    <div className={cn(totalTileClass, 'flex items-center justify-between text-left')}>
+                    <div
+                      className={cn(
+                        totalTileClass,
+                        "flex items-center justify-between text-left",
+                      )}
+                    >
                       <span className="text-sm font-medium">Total Time</span>
                       <Badge variant="secondary">
-                        {totalTime} minutes ({(totalTime / 60).toFixed(1)} hours)
+                        {totalTime} minutes ({(totalTime / 60).toFixed(1)}{" "}
+                        hours)
                       </Badge>
                     </div>
                   )}
                   {formData.totalCost && totalParticipants > 0 && (
-                    <div className={cn(totalTileClass, 'flex items-center justify-between text-left')}>
-                      <span className="text-sm font-medium">Cost per Participant</span>
+                    <div
+                      className={cn(
+                        totalTileClass,
+                        "flex items-center justify-between text-left",
+                      )}
+                    >
+                      <span className="text-sm font-medium">
+                        Cost per Participant
+                      </span>
                       <Badge variant="secondary">
                         $
                         {(
@@ -883,12 +912,12 @@ export default function EventForm({
                 <Checkbox
                   id="hasCoHost"
                   checked={formData.hasCoHost}
-                  onCheckedChange={() => handleCheckboxChange('hasCoHost')}
+                  onCheckedChange={() => handleCheckboxChange("hasCoHost")}
                   className="rounded-[2px] border-(--border-input) data-[state=checked]:border-(--action-primary) data-[state=checked]:bg-(--action-primary)"
                 />
                 <Label
                   htmlFor="hasCoHost"
-                  className={cn(labelClass, 'cursor-pointer')}
+                  className={cn(labelClass, "cursor-pointer")}
                 >
                   This event has a community partner co-host
                 </Label>
@@ -910,11 +939,11 @@ export default function EventForm({
                         role="combobox"
                         aria-expanded={communityPartnerOpen}
                         aria-invalid={!!errors.communityPartnerId}
-                        className={cn(comboTriggerClass, 'mt-1.5')}
+                        className={cn(comboTriggerClass, "mt-1.5")}
                       >
                         {selectedCommunityPartner
                           ? selectedCommunityPartner.name
-                          : 'Select community partner...'}
+                          : "Select community partner..."}
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-(--text-muted)" />
                       </Button>
                     </PopoverTrigger>
@@ -923,24 +952,24 @@ export default function EventForm({
                         <CommandInput placeholder="Search community partners..." />
                         <CommandEmpty>No community partner found.</CommandEmpty>
                         <CommandGroup>
-                          {options.communityPartners.map(partner => (
+                          {options.communityPartners.map((partner) => (
                             <CommandItem
                               key={partner.id}
                               value={partner.name}
                               onSelect={() => {
                                 handleInputChange(
-                                  'communityPartnerId',
-                                  partner.id
+                                  "communityPartnerId",
+                                  partner.id,
                                 );
                                 setCommunityPartnerOpen(false);
                               }}
                             >
                               <Check
                                 className={cn(
-                                  'mr-2 h-4 w-4',
+                                  "mr-2 h-4 w-4",
                                   formData.communityPartnerId === partner.id
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
+                                    ? "opacity-100"
+                                    : "opacity-0",
                                 )}
                               />
                               {partner.name}
@@ -970,13 +999,15 @@ export default function EventForm({
                 the checklist is complete; Save stays enabled so validateForm()
                 and server-side rejections still surface as field errors. */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-(--border-default) bg-(--surface-page) pt-3.5 pb-1">
-              <span className="text-[13px] text-(--text-muted)">{readyNote}</span>
+              <span className="text-[13px] text-(--text-muted)">
+                {readyNote}
+              </span>
               <div className="flex gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleCancel}
-                  disabled={submitStatus === 'loading'}
+                  disabled={submitStatus === "loading"}
                   className={outlineButtonClass}
                 >
                   <X className="h-4 w-4" />
@@ -984,10 +1015,10 @@ export default function EventForm({
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={submitStatus === 'loading'}
-                  className={cn(primaryButtonClass, 'min-w-32')}
+                  disabled={submitStatus === "loading"}
+                  className={cn(primaryButtonClass, "min-w-32")}
                 >
-                  {submitStatus === 'loading' ? (
+                  {submitStatus === "loading" ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Saving...
@@ -1002,7 +1033,6 @@ export default function EventForm({
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
