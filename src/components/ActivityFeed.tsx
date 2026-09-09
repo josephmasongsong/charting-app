@@ -54,7 +54,7 @@ interface Activity {
 const emphasisClass = 'font-semibold text-(--text-body)';
 const linkClass = 'font-semibold text-(--action-primary) hover:underline';
 const loadMoreClass =
-  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[7px] text-[13.5px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
+  'h-auto w-full rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-3.5 py-2 text-[13.5px] font-semibold text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
 
 const ActivityFeed: React.FC = () => {
   const { activities } = useActivityFeed();
@@ -400,60 +400,66 @@ const ActivityFeed: React.FC = () => {
       data-slot="activity-feed"
       className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card)"
     >
-      <div className="border-b border-(--bch-gray-200) px-4 py-3.5">
-        <h4 className="text-[17px] font-bold">Recent Activity</h4>
+      <div className="border-b border-(--border-default) px-4 pt-4 pb-3">
+        <h4 className="text-[17px] font-bold text-(--text-body)">
+          Recent Activity
+        </h4>
       </div>
 
       {activities.length === 0 ? (
-        <EmptyState title="You're all caught up" className="m-4" />
+        <EmptyState title="You're all caught up" className="border-0" />
       ) : (
-        <div className="pb-2">
+        <>
           {groups.map(group => (
             <div key={`${group.label}-${group.items[0]?.id}`}>
               {group.label && (
-                <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-1.5">
-                  <span className="text-[11px] font-bold tracking-[.08em] text-(--text-muted) uppercase">
+                <div className="border-b border-(--border-default) bg-(--surface-muted) px-4 py-2">
+                  <span className="text-[11.5px] font-bold tracking-[.03em] text-(--text-muted) uppercase">
                     {group.label}
                   </span>
-                  <span className="h-px flex-1 bg-(--bch-gray-200)" />
                 </div>
               )}
               {group.items.map(activity => (
                 <div
                   key={activity.id}
-                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-(--action-selected)"
+                  className="flex items-start gap-3 border-b border-(--bch-gray-200) px-4 py-3 hover:bg-(--action-selected)"
                 >
                   <AvatarTile
                     initials={getUserInitials(activity.user)}
-                    size={38}
+                    size={32}
                   />
-                  <div className="min-w-0 flex-1 text-[13.5px] leading-snug text-(--text-body)">
-                    {getActivityTitle(activity)}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13.5px] text-(--text-body) [text-wrap:pretty]">
+                      {getActivityTitle(activity)}
+                    </div>
+                    <div className="mt-[3px] text-[12px] text-(--text-muted)">
+                      {activity.timestamp}
+                    </div>
                   </div>
-                  <span className="shrink-0 self-start pt-0.5 text-[12px] whitespace-nowrap text-(--text-muted)">
-                    {activity.timestamp}
-                  </span>
                 </div>
               ))}
             </div>
           ))}
-        </div>
-      )}
 
-      {/* Load more */}
-      {activities.length > visibleCount && (
-        <div className="flex flex-col items-center gap-1.5 border-t border-(--bch-gray-200) px-4 py-3.5">
-          <Button
-            variant="outline"
-            onClick={() => setVisibleCount(count => count + PAGE_SIZE)}
-            className={loadMoreClass}
-          >
-            Load more
-          </Button>
-          <span className="text-xs text-(--text-muted)">
-            Showing {visibleActivities.length} of {activities.length}
-          </span>
-        </div>
+          {activities.length > visibleCount ? (
+            <div className="flex flex-col items-center gap-1.5 px-4 py-3">
+              <Button
+                variant="outline"
+                onClick={() => setVisibleCount(count => count + PAGE_SIZE)}
+                className={loadMoreClass}
+              >
+                Load more
+              </Button>
+              <span className="text-[12px] text-(--text-muted)">
+                Showing {visibleActivities.length} of {activities.length}
+              </span>
+            </div>
+          ) : (
+            <div className="px-4 py-3.5 text-center text-[12.5px] text-(--text-muted)">
+              You&apos;re all caught up
+            </div>
+          )}
+        </>
       )}
     </div>
   );
