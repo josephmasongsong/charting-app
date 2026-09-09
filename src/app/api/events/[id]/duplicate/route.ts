@@ -41,7 +41,8 @@ export async function POST(
       .values({
         title: `${originalEvent.title} (Copy)`,
         eventDate: today, // Set to today's date
-        description: originalEvent.description,
+        successes: originalEvent.successes,
+        challenges: originalEvent.challenges,
         eventDuration: originalEvent.eventDuration,
         adminDuration: originalEvent.adminDuration,
         newParticipants: originalEvent.newParticipants,

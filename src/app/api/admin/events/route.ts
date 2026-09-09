@@ -46,7 +46,8 @@ export async function GET(req: Request) {
     const searchCondition = search
       ? or(
           ilike(events.title, `%${search}%`),
-          ilike(events.description, `%${search}%`),
+          ilike(events.successes, `%${search}%`),
+          ilike(events.challenges, `%${search}%`),
           ilike(sites.name, `%${search}%`),
           ilike(activityTypes.name, `%${search}%`),
           ilike(communityPartners.name, `%${search}%`)
@@ -87,7 +88,8 @@ export async function GET(req: Request) {
         id: events.id,
         title: events.title,
         eventDate: events.eventDate,
-        description: events.description,
+        successes: events.successes,
+        challenges: events.challenges,
         eventDuration: events.eventDuration,
         adminDuration: events.adminDuration,
         newParticipants: events.newParticipants,

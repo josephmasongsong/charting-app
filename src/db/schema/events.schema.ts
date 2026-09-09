@@ -22,7 +22,9 @@ export const events = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     title: varchar('title', { length: 255 }).notNull(),
     eventDate: date('event_date').notNull(),
-    description: text('description').notNull(),
+    // Qualitative notes, both optional.
+    successes: text('successes'),
+    challenges: text('challenges'),
     eventDuration: integer('event_duration').default(0).notNull(),
     adminDuration: integer('admin_duration').default(0).notNull(),
     newParticipants: integer('new_participants').default(0).notNull(),

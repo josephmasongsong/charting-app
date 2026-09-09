@@ -16,10 +16,14 @@ const durationSchema = z
 export const eventBasicInfoSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255, 'Title too long'),
   eventDate: z.date({ required_error: 'Event date is required' }),
-  description: z
+  successes: z
     .string()
-    .min(1, 'Description is required')
-    .max(600, 'Description must be 600 characters or fewer'),
+    .max(600, 'Successes must be 600 characters or fewer')
+    .optional(),
+  challenges: z
+    .string()
+    .max(600, 'Challenges must be 600 characters or fewer')
+    .optional(),
 });
 
 // Details schema (Step 2) - matches form state exactly
@@ -76,10 +80,14 @@ export const createEventSchema = z.object({
       z.date(),
     ])
     .transform(date => (typeof date === 'string' ? date : date.toISOString())),
-  description: z
+  successes: z
     .string()
-    .min(1, 'Description is required')
-    .max(600, 'Description must be 600 characters or fewer'),
+    .max(600, 'Successes must be 600 characters or fewer')
+    .optional(),
+  challenges: z
+    .string()
+    .max(600, 'Challenges must be 600 characters or fewer')
+    .optional(),
   eventDuration: z.number().min(1, 'Event duration must be at least 1 minute'),
   adminDuration: z.number().min(0, 'Admin duration cannot be negative'),
   newParticipants: z.number().min(0, 'New participants cannot be negative'),
@@ -106,10 +114,14 @@ export const updateEventSchema = z.object({
   eventDate: z
     .string()
     .refine(date => !isNaN(Date.parse(date)), 'Invalid date format'),
-  description: z
+  successes: z
     .string()
-    .min(1, 'Description is required')
-    .max(600, 'Description must be 600 characters or fewer'),
+    .max(600, 'Successes must be 600 characters or fewer')
+    .optional(),
+  challenges: z
+    .string()
+    .max(600, 'Challenges must be 600 characters or fewer')
+    .optional(),
   eventDuration: z.number().min(1, 'Event duration must be at least 1 minute'),
   adminDuration: z.number().min(0, 'Admin duration cannot be negative'),
   newParticipants: z.number().min(0, 'New participants cannot be negative'),

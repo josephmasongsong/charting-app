@@ -8,7 +8,8 @@ interface Event {
   id: string;
   title: string;
   eventDate: string;
-  description: string;
+  successes: string | null;
+  challenges: string | null;
   eventDuration: number;
   adminDuration: number;
   newParticipants: number;

@@ -136,7 +136,8 @@ export default function EventForm({
   const [formData, setFormData] = useState({
     title: "",
     eventDate: "",
-    description: "",
+    successes: "",
+    challenges: "",
     eventDuration: "",
     adminDuration: "",
     newParticipants: "",
@@ -181,7 +182,8 @@ export default function EventForm({
       setFormData({
         title: initialData.title || "",
         eventDate: initialData.eventDate || "",
-        description: initialData.description || "",
+        successes: initialData.successes || "",
+        challenges: initialData.challenges || "",
         eventDuration: initialData.eventDuration?.toString() || "",
         adminDuration: initialData.adminDuration?.toString() || "",
         newParticipants: initialData.newParticipants?.toString() || "",
@@ -217,8 +219,7 @@ export default function EventForm({
 
     if (!formData.title.trim()) newErrors.title = "Title is required";
     if (!formData.eventDate) newErrors.eventDate = "Event date is required";
-    if (!formData.description.trim())
-      newErrors.description = "Description is required";
+
     if (!formData.activityTypeId)
       newErrors.activityTypeId = "Activity type is required";
     if (!formData.siteId) newErrors.siteId = "Site is required";
@@ -268,7 +269,8 @@ export default function EventForm({
     const apiData = {
       title: formData.title,
       eventDate: formData.eventDate,
-      description: formData.description,
+      successes: formData.successes,
+      challenges: formData.challenges,
       eventDuration: parseInt(formData.eventDuration) || 0,
       adminDuration: parseInt(formData.adminDuration) || 0,
       newParticipants: parseInt(formData.newParticipants) || 0,
@@ -360,7 +362,7 @@ export default function EventForm({
     { label: "Event title", ok: !!formData.title.trim() },
     { label: "Date and site", ok: !!formData.eventDate && !!formData.siteId },
     { label: "Activity type", ok: !!formData.activityTypeId },
-    { label: "Description", ok: !!formData.description.trim() },
+
     ...(formData.hasCoHost
       ? [{ label: "Community partner", ok: !!formData.communityPartnerId }]
       : []),
@@ -630,34 +632,41 @@ export default function EventForm({
                 </div>
               </div>
 
-              <div className="mt-4">
-                <div className="flex items-baseline justify-between">
-                  <Label htmlFor="description" className={labelClass}>
-                    Description
-                    <Required />
-                  </Label>
-                  <span className="text-[12.5px] text-(--text-muted)">
-                    {formData.description.length} characters
-                  </span>
-                </div>
-                <Textarea
-                  id="description"
-                  placeholder="Describe what happened during the event, activities, and outcomes..."
-                  rows={4}
-                  value={formData.description}
-                  onChange={(e) =>
-                    handleInputChange("description", e.target.value)
-                  }
-                  aria-invalid={!!errors.description}
-                  maxLength={600}
-                  className={cn(
-                    "mt-1.5 min-h-[110px] rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)",
-                  )}
-                />
-                <div className="mt-1 text-right text-[12.5px] text-(--text-muted)">
-                  {formData.description.length} / 600
-                </div>
-                <FieldError message={errors.description} />
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                {[
+                  {
+                    field: "successes" as const,
+                    label: "Successes",
+                    placeholder:
+                      "What went well? Turnout, engagement, partnerships, outcomes...",
+                  },
+                  {
+                    field: "challenges" as const,
+                    label: "Challenges",
+                    placeholder:
+                      "What was difficult? Barriers, no-shows, supply or space issues...",
+                  },
+                ].map(({ field, label, placeholder }) => (
+                  <div key={field}>
+                    <Label htmlFor={field} className={labelClass}>
+                      {label}
+                    </Label>
+                    <Textarea
+                      id={field}
+                      placeholder={placeholder}
+                      rows={4}
+                      value={formData[field]}
+                      onChange={(e) => handleInputChange(field, e.target.value)}
+                      aria-invalid={!!errors[field]}
+                      maxLength={600}
+                      className="mt-1.5 min-h-[110px] rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)"
+                    />
+                    <div className="mt-1 text-right text-[12.5px] text-(--text-muted)">
+                      {formData[field].length} / 600
+                    </div>
+                    <FieldError message={errors[field]} />
+                  </div>
+                ))}
               </div>
             </Card>
 

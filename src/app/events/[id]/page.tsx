@@ -31,7 +31,8 @@ async function getEvent(eventId: string) {
       id: events.id,
       title: events.title,
       eventDate: events.eventDate,
-      description: events.description,
+      successes: events.successes,
+      challenges: events.challenges,
       eventDuration: events.eventDuration,
       adminDuration: events.adminDuration,
       newParticipants: events.newParticipants,
@@ -251,12 +252,24 @@ export default async function EventPage({ params }: EventPageProps) {
           </div>
         </Card>
 
-        <Card className={cn(surfaceCardClass, 'mt-5 px-6 pt-[18px] pb-3.5')}>
-          <div className="text-[17px] font-bold">What Happened</div>
-          <p className="mt-2 text-[15px] leading-[1.6] text-(--text-body) [text-wrap:pretty]">
-            {event.description}
-          </p>
-        </Card>
+        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Card className={cn(surfaceCardClass, 'px-6 pt-[18px] pb-4')}>
+            <div className="text-[17px] font-bold">Successes</div>
+            <p className="mt-2 text-[15px] leading-[1.6] text-(--text-body) [text-wrap:pretty]">
+              {event.successes || (
+                <span className="text-(--text-muted)">None recorded</span>
+              )}
+            </p>
+          </Card>
+          <Card className={cn(surfaceCardClass, 'px-6 pt-[18px] pb-4')}>
+            <div className="text-[17px] font-bold">Challenges</div>
+            <p className="mt-2 text-[15px] leading-[1.6] text-(--text-body) [text-wrap:pretty]">
+              {event.challenges || (
+                <span className="text-(--text-muted)">None recorded</span>
+              )}
+            </p>
+          </Card>
+        </div>
 
       </div>
     </div>
