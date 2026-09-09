@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import AuthProvider from '@/components/AuthProvider';
@@ -17,6 +17,14 @@ const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  // Lets the fixed bottom bar sit under the iPhone home indicator via
+  // env(safe-area-inset-bottom).
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: 'Create Next App',
