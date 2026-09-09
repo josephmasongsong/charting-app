@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "used_tenant_activity_grant" boolean DEFAULT false NOT NULL;

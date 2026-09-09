@@ -93,6 +93,7 @@ export async function GET(req: Request) {
         newParticipants: events.newParticipants,
         returningParticipants: events.returningParticipants,
         eventIsYouthFocused: events.eventIsYouthFocused,
+        usedTenantActivityGrant: events.usedTenantActivityGrant,
         hasCoHost: events.hasCoHost,
         totalCost: events.totalCost,
         activityTypeName: activityTypes.name,

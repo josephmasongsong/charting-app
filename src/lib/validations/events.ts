@@ -34,6 +34,7 @@ export const eventDetailsSchema = z.object({
     .number()
     .min(0, 'Returning participants cannot be negative'),
   eventIsYouthFocused: z.boolean(),
+  usedTenantActivityGrant: z.boolean(),
   totalCost: z
     .string()
     .refine(
@@ -86,6 +87,7 @@ export const createEventSchema = z.object({
     .number()
     .min(0, 'Returning participants cannot be negative'),
   eventIsYouthFocused: z.boolean(),
+  usedTenantActivityGrant: z.boolean(),
   hasCoHost: z.boolean(),
   totalCost: z
     .string()
@@ -115,6 +117,7 @@ export const updateEventSchema = z.object({
     .number()
     .min(0, 'Returning participants cannot be negative'),
   eventIsYouthFocused: z.boolean(),
+  usedTenantActivityGrant: z.boolean(),
   hasCoHost: z.boolean(),
   totalCost: z
     .string()

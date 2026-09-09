@@ -33,6 +33,10 @@ export const events = pgTable(
       .notNull()
       .default(false),
     hasCoHost: boolean('has_co_host').default(false).notNull(),
+    // Tenant Activity Grant (TAG) funding flag.
+    usedTenantActivityGrant: boolean('used_tenant_activity_grant')
+      .default(false)
+      .notNull(),
     communityPartnerId: uuid('community_partner_id').references(
       () => communityPartners.id
     ),

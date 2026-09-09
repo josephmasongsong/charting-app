@@ -31,6 +31,7 @@ async function getEventData(eventId: string) {
       newParticipants: events.newParticipants,
       returningParticipants: events.returningParticipants,
       eventIsYouthFocused: events.eventIsYouthFocused,
+      usedTenantActivityGrant: events.usedTenantActivityGrant,
       hasCoHost: events.hasCoHost,
       totalCost: events.totalCost,
       activityTypeId: events.activityTypeId,

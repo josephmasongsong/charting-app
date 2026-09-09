@@ -47,6 +47,7 @@ export async function POST(
         newParticipants: originalEvent.newParticipants,
         returningParticipants: originalEvent.returningParticipants,
         eventIsYouthFocused: originalEvent.eventIsYouthFocused,
+        usedTenantActivityGrant: originalEvent.usedTenantActivityGrant,
         hasCoHost: originalEvent.hasCoHost,
         communityPartnerId: originalEvent.communityPartnerId,
         totalCost: originalEvent.totalCost,

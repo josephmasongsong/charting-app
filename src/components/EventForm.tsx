@@ -142,6 +142,7 @@ export default function EventForm({
     newParticipants: '',
     returningParticipants: '',
     eventIsYouthFocused: false,
+    usedTenantActivityGrant: false,
     hasCoHost: false,
     totalCost: '',
     activityTypeId: '',
@@ -187,6 +188,8 @@ export default function EventForm({
         returningParticipants:
           initialData.returningParticipants?.toString() || '',
         eventIsYouthFocused: initialData.eventIsYouthFocused || false,
+        usedTenantActivityGrant:
+          initialData.usedTenantActivityGrant || false,
         hasCoHost: initialData.hasCoHost || false,
         totalCost: initialData.totalCost || '',
         activityTypeId: initialData.activityTypeId || '',
@@ -272,6 +275,7 @@ export default function EventForm({
       newParticipants: parseInt(formData.newParticipants) || 0,
       returningParticipants: parseInt(formData.returningParticipants) || 0,
       eventIsYouthFocused: formData.eventIsYouthFocused,
+      usedTenantActivityGrant: formData.usedTenantActivityGrant,
       hasCoHost: formData.hasCoHost,
       totalCost: formData.totalCost,
       activityTypeId: formData.activityTypeId,
@@ -825,6 +829,23 @@ export default function EventForm({
                   <p className={helperClass}>
                     Include supplies, food, materials, and other expenses
                   </p>
+
+                  <div className="mt-3.5 flex items-center gap-2.5">
+                    <Checkbox
+                      id="usedTenantActivityGrant"
+                      checked={formData.usedTenantActivityGrant}
+                      onCheckedChange={() =>
+                        handleCheckboxChange('usedTenantActivityGrant')
+                      }
+                      className="rounded-[2px] border-(--border-input) data-[state=checked]:border-(--action-primary) data-[state=checked]:bg-(--action-primary)"
+                    />
+                    <Label
+                      htmlFor="usedTenantActivityGrant"
+                      className={cn(labelClass, 'cursor-pointer')}
+                    >
+                      Funded by a Tenant Activity Grant (TAG)
+                    </Label>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-3 md:mt-[27px]">

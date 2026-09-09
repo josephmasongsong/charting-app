@@ -37,6 +37,7 @@ async function getEvent(eventId: string) {
       newParticipants: events.newParticipants,
       returningParticipants: events.returningParticipants,
       eventIsYouthFocused: events.eventIsYouthFocused,
+      usedTenantActivityGrant: events.usedTenantActivityGrant,
       hasCoHost: events.hasCoHost,
       totalCost: events.totalCost,
       createdAt: events.createdAt,
@@ -224,6 +225,9 @@ export default async function EventPage({ params }: EventPageProps) {
             </ProfileField>
             <ProfileField label="Youth Focused">
               {event.eventIsYouthFocused ? 'Yes' : 'No'}
+            </ProfileField>
+            <ProfileField label="Tenant Activity Grant">
+              {event.usedTenantActivityGrant ? 'Yes' : 'No'}
             </ProfileField>
             <div>
               <div className="mb-2 text-base font-bold">Logged By</div>
