@@ -16,8 +16,9 @@ export interface Site {
   communityPartnerId: string | null;
   communityPartnerName: string | null;
   isSingleSeniorOnly: boolean;
-  userId: string;
-  userName: string;
+  tewId: string;
+  pphId: string | null;
+  tewName: string;
   createdAt: string;
   updatedAt: string;
 }

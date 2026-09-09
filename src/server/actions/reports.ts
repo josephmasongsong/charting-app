@@ -11,7 +11,7 @@ import {
   supplyDistributionItems,
   supplies,
 } from '@/db';
-import { sql, eq, and, gte, lt } from 'drizzle-orm';
+import { or, sql, eq, and, gte, lt } from 'drizzle-orm';
 import { authOptions } from '@/lib/auth';
 import { getServerSession } from 'next-auth';
 
@@ -735,7 +735,10 @@ export async function generateMonthlyActivityReport(
     .where(
       session.user.role === 'admin'
         ? sql`true`
-        : eq(sites.userId, session.user.id)
+        : or(
+            eq(sites.tewId, session.user.id),
+            eq(sites.pphId, session.user.id)
+          )
     );
   const totalSiteCount = Number(siteCountRow?.count || 0);
 

@@ -16,8 +16,10 @@ interface Site {
   communityPartnerId: string | null;
   communityPartnerName: string | null;
   isSingleSeniorOnly: boolean;
-  userId: string;
-  userName: string;
+  tewId: string;
+  tewName: string;
+  pphId: string | null;
+  pphName: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -114,7 +116,7 @@ export default function DeleteSiteDialog({
             <strong>Address:</strong> {site.address}
           </p>
           <p>
-            <strong>Manager:</strong> {site.userName}
+            <strong>TEW:</strong> {site.tewName}
           </p>
           <p>
             <strong>Tenants:</strong> {site.numberOfTenants}

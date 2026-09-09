@@ -11,6 +11,11 @@ import {
   siteSupplies,
 } from '@/db';
 import { eq, sql, and } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+import { PPH_JOB_TITLE, TEW_JOB_TITLE } from '@/lib/job-titles';
+
+const tew = alias(users, 'tew');
+const pph = alias(users, 'pph');
 import { updateSiteSchema } from '@/lib/validations/sites';
 import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 
@@ -55,17 +60,21 @@ export async function GET(
         communityPartnerId: sites.communityPartnerId,
         communityPartnerName: communityPartners.name,
         isSingleSeniorOnly: sites.isSingleSeniorOnly,
-        userId: sites.userId,
-        userName:
-          sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as(
-            'userName'
-          ),
+        tewId: sites.tewId,
+        tewName: sql<string>`CONCAT(${tew.firstName}, ' ', ${tew.lastName})`.as(
+          'tewName'
+        ),
+        pphId: sites.pphId,
+        pphName: sql<
+          string | null
+        >`CONCAT(${pph.firstName}, ' ', ${pph.lastName})`.as('pphName'),
         createdAt: sites.createdAt,
         updatedAt: sites.updatedAt,
         region: sites.region,
       })
       .from(sites)
-      .leftJoin(users, eq(sites.userId, users.id))
+      .leftJoin(tew, eq(sites.tewId, tew.id))
+      .leftJoin(pph, eq(sites.pphId, pph.id))
       .leftJoin(
         communityPartners,
         eq(sites.communityPartnerId, communityPartners.id)
@@ -315,18 +324,45 @@ export async function PATCH(
       }
     }
 
-    // Check if user exists
-    const [user] = await db
+    // Both assignments must exist AND hold the matching job title.
+    const [tewUser] = await db
       .select()
       .from(users)
-      .where(eq(users.id, data.userId))
+      .where(eq(users.id, data.tewId))
       .limit(1);
 
-    if (!user) {
+    if (!tewUser) {
       return NextResponse.json(
-        { error: 'Selected user does not exist' },
+        { error: 'Selected Tenant Engagement Worker does not exist' },
         { status: 400 }
       );
+    }
+    if (tewUser.jobTitle !== TEW_JOB_TITLE) {
+      return NextResponse.json(
+        { error: `${tewUser.firstName} ${tewUser.lastName} is not a Tenant Engagement Worker` },
+        { status: 400 }
+      );
+    }
+
+    if (data.pphId) {
+      const [pphUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, data.pphId))
+        .limit(1);
+
+      if (!pphUser) {
+        return NextResponse.json(
+          { error: 'Selected PPH programmer does not exist' },
+          { status: 400 }
+        );
+      }
+      if (pphUser.jobTitle !== PPH_JOB_TITLE) {
+        return NextResponse.json(
+          { error: `${pphUser.firstName} ${pphUser.lastName} is not a People Plants & Homes programmer` },
+          { status: 400 }
+        );
+      }
     }
 
     // Check community partner if specified
@@ -430,7 +466,8 @@ export async function PATCH(
             : null,
           isSingleSeniorOnly: data.isSingleSeniorOnly,
           region: data.region,
-          userId: data.userId,
+          tewId: data.tewId,
+          pphId: data.pphId || null,
           updatedAt: new Date(),
         })
         .where(eq(sites.id, id))

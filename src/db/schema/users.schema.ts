@@ -46,7 +46,8 @@ export const users = pgTable(
 // Define relations
 export const usersRelations = relations(users, ({ many }) => ({
   events: many(events),
-  sites: many(sites),
+  tewSites: many(sites, { relationName: 'siteTew' }),
+  pphSites: many(sites, { relationName: 'sitePph' }),
 }));
 
 // Type for user records

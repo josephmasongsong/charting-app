@@ -1,5 +1,5 @@
 import { db, users, sites } from '@/db';
-import { eq } from 'drizzle-orm';
+import { or, eq } from 'drizzle-orm';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
@@ -59,7 +59,8 @@ async function getAssignedSites(userId: string) {
       numberOfTenants: sites.numberOfTenants,
     })
     .from(sites)
-    .where(eq(sites.userId, userId))
+    // Sites where this person is either the TEW or the PPH programmer.
+    .where(or(eq(sites.tewId, userId), eq(sites.pphId, userId)))
     .orderBy(sites.name);
 }
 

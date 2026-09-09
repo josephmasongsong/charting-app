@@ -43,7 +43,13 @@ export const createSiteSchema = z
     region: z.enum(['LMDM', 'VIR', 'Interior', 'Northern'], {
       message: 'Please select a region',
     }),
-    userId: z.string().uuid('Please select a valid user'),
+    tewId: z.string().uuid('Please select a Tenant Engagement Worker'),
+    // Optional: the Select yields '' when nothing is chosen.
+    pphId: z
+      .string()
+      .uuid('Please select a valid PPH programmer')
+      .optional()
+      .or(z.literal('')),
   })
   .refine(
     data => {

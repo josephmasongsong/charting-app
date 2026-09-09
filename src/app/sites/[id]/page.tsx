@@ -10,6 +10,12 @@ import {
   supplies,
 } from '@/db';
 import { eq, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+
+// Two assignments join users twice, so each needs its own alias.
+const tew = alias(users, 'tew');
+const pph = alias(users, 'pph');
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProfileField } from '@/components/ui/profile-field';
@@ -44,15 +50,20 @@ async function getSite(siteId: string) {
       communityPartnerName: communityPartners.name,
       isSingleSeniorOnly: sites.isSingleSeniorOnly,
       region: sites.region,
-      userId: sites.userId,
-      userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
-      userEmail: users.email,
-      userJobTitle: users.jobTitle,
+      tewId: sites.tewId,
+      tewName: sql<string>`CONCAT(${tew.firstName}, ' ', ${tew.lastName})`,
+      tewEmail: tew.email,
+      pphId: sites.pphId,
+      pphName: sql<
+        string | null
+      >`CONCAT(${pph.firstName}, ' ', ${pph.lastName})`,
+      pphEmail: pph.email,
       createdAt: sites.createdAt,
       updatedAt: sites.updatedAt,
     })
     .from(sites)
-    .leftJoin(users, eq(sites.userId, users.id))
+    .leftJoin(tew, eq(sites.tewId, tew.id))
+    .leftJoin(pph, eq(sites.pphId, pph.id))
     .leftJoin(
       communityPartners,
       eq(sites.communityPartnerId, communityPartners.id)
@@ -104,6 +115,54 @@ const kpiTileClass =
   'gap-0 rounded-(--radius-card) border-(--border-default) border-l-4 border-l-(--surface-chrome) bg-(--surface-card) px-[18px] pt-3.5 pb-4 shadow-(--shadow-card)';
 const outlineButtonClass =
   'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary) disabled:border-(--bch-gray-300) disabled:text-(--bch-gray-500) disabled:opacity-100';
+
+function StaffBlock({
+  role,
+  name,
+  email,
+  userId,
+}: {
+  role: string;
+  name: string | null;
+  email: string | null;
+  userId: string | null;
+}) {
+  return (
+    <div>
+      <div className="text-[11.5px] font-semibold tracking-[.5px] text-(--text-muted) uppercase">
+        {role}
+      </div>
+      {userId && name ? (
+        <div className="mt-1.5 flex items-start gap-3">
+          <AvatarTile
+            initials={
+              name
+                .split(' ')
+                .map(n => n[0])
+                .join('') ?? ''
+            }
+            size={44}
+          />
+          <div className="min-w-0">
+            <Link
+              href={`/users/${userId}`}
+              className="text-[14.5px] font-bold text-(--text-body) hover:text-(--action-primary) hover:underline"
+            >
+              {name}
+            </Link>
+            <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
+              {email}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-1.5 text-[14.5px] text-(--text-muted)">
+          Unassigned
+        </div>
+      )}
+    </div>
+  );
+}
 
 function money(value: number) {
   return `$${value.toFixed(2)}`;
@@ -270,28 +329,20 @@ export default async function SitePage({ params }: SitePageProps) {
           </div>
 
           <div>
-            <div className="mb-3 text-[17px] font-bold">Assigned Worker</div>
-            <div className="flex items-start gap-3">
-              <AvatarTile
-                initials={
-                  site.userName
-                    ?.split(' ')
-                    .map(n => n[0])
-                    .join('') ?? ''
-                }
-                size={44}
+            <div className="mb-3 text-[17px] font-bold">Assigned Staff</div>
+            <div className="flex flex-col gap-4">
+              <StaffBlock
+                role="Tenant Engagement Worker"
+                name={site.tewName}
+                email={site.tewEmail}
+                userId={site.tewId}
               />
-              <div className="min-w-0">
-                <div className="text-[14.5px] font-bold">{site.userName}</div>
-                {site.userJobTitle && (
-                  <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
-                    {site.userJobTitle}
-                  </div>
-                )}
-                <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
-                  {site.userEmail}
-                </div>
-              </div>
+              <StaffBlock
+                role="PPH Programmer"
+                name={site.pphName}
+                email={site.pphEmail}
+                userId={site.pphId}
+              />
             </div>
           </div>
         </Card>

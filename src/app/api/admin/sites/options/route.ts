@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, users, communityPartners, supplies } from '@/db';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
+import { PPH_JOB_TITLE, TEW_JOB_TITLE } from '@/lib/job-titles';
 
 export async function GET() {
   try {
@@ -27,17 +28,24 @@ export async function GET() {
     }
 
     // Get all users for dropdown
-    const usersData = await db
-      .select({
-        id: users.id,
-        name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as(
-          'name'
-        ),
-        email: users.email,
-      })
-      .from(users)
-      // .orderBy(users.name)
-      .orderBy(sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`);
+    // Each assignment field only offers active users holding that job title.
+    const staffByJobTitle = (jobTitle: string) =>
+      db
+        .select({
+          id: users.id,
+          name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as(
+            'name'
+          ),
+          email: users.email,
+        })
+        .from(users)
+        .where(and(eq(users.jobTitle, jobTitle), eq(users.isActive, true)))
+        .orderBy(sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`);
+
+    const [tewUsers, pphUsers] = await Promise.all([
+      staffByJobTitle(TEW_JOB_TITLE),
+      staffByJobTitle(PPH_JOB_TITLE),
+    ]);
 
     // Get all community partners for dropdown
     const partnersData = await db
@@ -60,7 +68,8 @@ export async function GET() {
       .orderBy(supplies.name);
 
     return NextResponse.json({
-      users: usersData,
+      tewUsers,
+      pphUsers,
       communityPartners: partnersData,
       supplies: allSupplies,
     });

@@ -11,7 +11,7 @@ import {
   siteSupplies,
   supplies,
 } from '@/db';
-import { eq, sql, gte, and, lt, asc } from 'drizzle-orm';
+import { or, eq, sql, gte, and, lt, asc } from 'drizzle-orm';
 
 export async function GET() {
   try {
@@ -47,7 +47,10 @@ export async function GET() {
       })
       .from(sites)
       .leftJoin(events, eq(events.siteId, sites.id))
-      .where(eq(sites.userId, session.user.id))
+      // A site is "mine" if I am its TEW or its PPH programmer.
+      .where(
+        or(eq(sites.tewId, session.user.id), eq(sites.pphId, session.user.id))
+      )
       .groupBy(sites.id, sites.name, sites.address, sites.isSingleSeniorOnly);
 
     // Sites with no event in the last STALE_SITE_DAYS days (or ever).
@@ -99,7 +102,10 @@ export async function GET() {
       .innerJoin(supplies, eq(siteSupplies.supplyId, supplies.id))
       .where(
         and(
-          eq(sites.userId, session.user.id),
+          or(
+            eq(sites.tewId, session.user.id),
+            eq(sites.pphId, session.user.id)
+          ),
           lt(siteSupplies.quantity, LOW_STOCK_THRESHOLD)
         )
       )

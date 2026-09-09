@@ -34,16 +34,21 @@ export const sites = pgTable(
       .default(true)
       .notNull(),
     region: text('region').default('LMDM').notNull(),
-    userId: uuid('user_id')
+    // A site is staffed by a Tenant Engagement Worker (required) and,
+    // optionally, a People Plants & Homes programmer. Job-title correctness is
+    // enforced in the API — users.job_title is plain text with no DB enum.
+    tewId: uuid('tew_id')
       .notNull()
       .references(() => users.id),
+    pphId: uuid('pph_id').references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   table => [
     {
       nameIdx: index('site_name_idx').on(table.name),
-      userIdx: index('site_user_idx').on(table.userId),
+      tewIdx: index('site_tew_idx').on(table.tewId),
+      pphIdx: index('site_pph_idx').on(table.pphId),
       locationIdx: index('site_location_idx').on(
         table.latitude,
         table.longitude
@@ -54,9 +59,15 @@ export const sites = pgTable(
 
 // Define relations
 export const sitesRelations = relations(sites, ({ one, many }) => ({
-  user: one(users, {
-    fields: [sites.userId],
+  tew: one(users, {
+    fields: [sites.tewId],
     references: [users.id],
+    relationName: 'siteTew',
+  }),
+  pph: one(users, {
+    fields: [sites.pphId],
+    references: [users.id],
+    relationName: 'sitePph',
   }),
   communityPartner: one(communityPartners, {
     fields: [sites.communityPartnerId],

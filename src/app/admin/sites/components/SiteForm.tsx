@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Check,
   Home,
@@ -28,12 +28,12 @@ import {
   Users,
   X,
   type LucideIcon,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   createSiteSchema,
   type CreateSiteInput,
-} from '@/lib/validations/sites';
+} from "@/lib/validations/sites";
 
 interface User {
   id: string;
@@ -66,40 +66,44 @@ interface ExistingSupplyEdit {
   costPerUnit: string;
 }
 
+// Radix Select forbids an empty string as an item value.
+const NONE_VALUE = "__none__";
+
 interface Options {
-  users: User[];
+  tewUsers: User[];
+  pphUsers: User[];
   communityPartners: CommunityPartner[];
   supplies: Supply[];
 }
 
 interface SiteFormProps {
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   siteId?: string;
   initialData?: Partial<CreateSiteInput>;
 }
 
 const cardClass =
-  'gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) px-6 pt-5 pb-6 shadow-(--shadow-card)';
-const labelClass = 'text-[15px] font-normal';
+  "gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) px-6 pt-5 pb-6 shadow-(--shadow-card)";
+const labelClass = "text-[15px] font-normal";
 const inputClass =
-  'h-9 rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)';
+  "h-9 rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)";
 const textareaClass =
-  'rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)';
+  "rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none md:text-[15px] focus-visible:border-(--action-primary) focus-visible:ring-[3px] focus-visible:ring-(--action-selected)";
 const selectTriggerClass =
-  'h-9 w-full rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none';
-const helperClass = 'mt-2 text-[12.5px] text-(--text-muted)';
-const errorClass = 'mt-1.5 text-xs text-(--danger)';
+  "h-9 w-full rounded-(--radius-input) border-(--border-input) bg-(--surface-card) px-2.5 text-[15px] shadow-none";
+const helperClass = "mt-2 text-[12.5px] text-(--text-muted)";
+const errorClass = "mt-1.5 text-xs text-(--danger)";
 const primaryButtonClass =
-  'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
+  "h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100";
 const outlineButtonClass =
-  'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
+  "h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)";
 const destructiveGhostClass =
-  'rounded-(--radius-control) text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)';
-const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
+  "rounded-(--radius-control) text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)";
+const alertClass = "border-y-0 border-r-0 px-3.5 py-3";
 const successAlertClass =
-  'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
+  "rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground";
 const supplyHeaderClass =
-  'gap-3 border-b border-(--border-default) bg-(--surface-muted) px-3.5 py-2 text-xs tracking-[.4px] text-(--text-muted) uppercase';
+  "gap-3 border-b border-(--border-default) bg-(--surface-muted) px-3.5 py-2 text-xs tracking-[.4px] text-(--text-muted) uppercase";
 
 function Required() {
   return (
@@ -136,31 +140,32 @@ function FieldError({ message }: { message?: string }) {
 }
 
 const propertyTiles: Array<{
-  key: 'hasCommunityRoom' | 'isSingleSeniorOnly' | 'hasCommunityPartner';
+  key: "hasCommunityRoom" | "isSingleSeniorOnly" | "hasCommunityPartner";
   label: string;
   desc: string;
 }> = [
   {
-    key: 'hasCommunityRoom',
-    label: 'Community room',
-    desc: 'Has an indoor space bookable for events.',
+    key: "hasCommunityRoom",
+    label: "Community room",
+    desc: "Has an indoor space bookable for events.",
   },
   {
-    key: 'isSingleSeniorOnly',
-    label: 'Single seniors only',
-    desc: 'Tenancy restricted to single senior residents.',
+    key: "isSingleSeniorOnly",
+    label: "Single seniors only",
+    desc: "Tenancy restricted to single senior residents.",
   },
   {
-    key: 'hasCommunityPartner',
-    label: 'Community partner',
-    desc: 'An outside organization delivers programs here.',
+    key: "hasCommunityPartner",
+    label: "Community partner",
+    desc: "An outside organization delivers programs here.",
   },
 ];
 
 export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
   const router = useRouter();
   const [options, setOptions] = useState<Options>({
-    users: [],
+    tewUsers: [],
+    pphUsers: [],
     communityPartners: [],
     supplies: [],
   });
@@ -169,18 +174,23 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
   // Form state
   const [formData, setFormData] = useState<CreateSiteInput>({
-    name: initialData?.name || '',
-    latitude: initialData?.latitude || '',
-    longitude: initialData?.longitude || '',
-    address: initialData?.address || '',
-    numberOfTenants: initialData?.numberOfTenants || '',
+    name: initialData?.name || "",
+    latitude: initialData?.latitude || "",
+    longitude: initialData?.longitude || "",
+    address: initialData?.address || "",
+    numberOfTenants: initialData?.numberOfTenants || "",
     hasCommunityRoom: initialData?.hasCommunityRoom ?? true,
     hasCommunityPartner: initialData?.hasCommunityPartner ?? false,
-    communityPartnerId: initialData?.communityPartnerId || '',
+    communityPartnerId: initialData?.communityPartnerId || "",
     isSingleSeniorOnly: initialData?.isSingleSeniorOnly ?? true,
-    region: initialData?.region || 'LMDM',
-    userId: initialData?.userId || '',
+    region: initialData?.region || "LMDM",
+    tewId: initialData?.tewId || "",
+    pphId: initialData?.pphId || "",
   });
+
+  // Names of the assignees as saved, used only for the fallback above.
+  const [storedTewName, setStoredTewName] = useState<string | null>(null);
+  const [storedPphName, setStoredPphName] = useState<string | null>(null);
 
   // Supply management state
   const [siteSupplies, setSiteSupplies] = useState<SiteSupplyInput[]>([]);
@@ -190,21 +200,21 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
   const [removedSupplies, setRemovedSupplies] = useState<string[]>([]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   // Fetch options for dropdowns
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await fetch('/api/admin/sites/options');
+        const response = await fetch("/api/admin/sites/options");
         const data = await response.json();
 
         if (response.ok) {
           setOptions(data);
         }
       } catch (error) {
-        console.error('Failed to fetch options:', error);
+        console.error("Failed to fetch options:", error);
       } finally {
         setOptionsLoading(false);
       }
@@ -215,7 +225,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
   // Fetch existing site data for edit mode
   useEffect(() => {
-    if (mode === 'edit' && siteId) {
+    if (mode === "edit" && siteId) {
       const fetchSite = async () => {
         try {
           const response = await fetch(`/api/admin/sites/${siteId}`);
@@ -231,11 +241,14 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
               numberOfTenants: site.numberOfTenants.toString(),
               hasCommunityRoom: site.hasCommunityRoom,
               hasCommunityPartner: site.hasCommunityPartner,
-              communityPartnerId: site.communityPartnerId || '',
+              communityPartnerId: site.communityPartnerId || "",
               isSingleSeniorOnly: site.isSingleSeniorOnly,
-              region: site.region || 'LMDM',
-              userId: site.userId,
+              region: site.region || "LMDM",
+              tewId: site.tewId,
+              pphId: site.pphId || "",
             });
+            setStoredTewName(site.tewName ?? null);
+            setStoredPphName(site.pphName ?? null);
 
             // Fetch existing site supplies
             if (data.siteSupplies) {
@@ -246,13 +259,13 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                   supplyName: supply.supplyName,
                   quantity: supply.quantity,
                   costPerUnit: supply.costPerUnit,
-                })
+                }),
               );
               setExistingSupplies(formattedSupplies);
             }
           }
         } catch (error) {
-          console.error('Failed to fetch site:', error);
+          console.error("Failed to fetch site:", error);
         }
       };
 
@@ -262,7 +275,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
   // Supply management functions
   const addSupplyRow = () => {
-    setSiteSupplies([...siteSupplies, { supplyId: '', quantity: 0 }]);
+    setSiteSupplies([...siteSupplies, { supplyId: "", quantity: 0 }]);
   };
 
   const removeSupplyRow = (index: number) => {
@@ -272,7 +285,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
   const updateSupplyRow = (
     index: number,
     field: keyof SiteSupplyInput,
-    value: string | number
+    value: string | number,
   ) => {
     const updated = [...siteSupplies];
     updated[index] = { ...updated[index], [field]: value };
@@ -281,19 +294,19 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
   // Existing supply management functions
   const updateExistingSupply = (siteSupplyId: string, newQuantity: number) => {
-    setExistingSupplies(prev =>
-      prev.map(supply =>
+    setExistingSupplies((prev) =>
+      prev.map((supply) =>
         supply.siteSupplyId === siteSupplyId
           ? { ...supply, quantity: newQuantity }
-          : supply
-      )
+          : supply,
+      ),
     );
   };
 
   const removeExistingSupply = (siteSupplyId: string) => {
-    setRemovedSupplies(prev => [...prev, siteSupplyId]);
-    setExistingSupplies(prev =>
-      prev.filter(supply => supply.siteSupplyId !== siteSupplyId)
+    setRemovedSupplies((prev) => [...prev, siteSupplyId]);
+    setExistingSupplies((prev) =>
+      prev.filter((supply) => supply.siteSupplyId !== siteSupplyId),
     );
   };
 
@@ -302,7 +315,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
       .map((s, i) => (i !== currentIndex ? s.supplyId : null))
       .filter(Boolean);
 
-    const existingSupplyIds = existingSupplies.map(s => s.supplyId);
+    const existingSupplyIds = existingSupplies.map((s) => s.supplyId);
 
     // Safety check to ensure options.supplies exists
     if (!options.supplies || !Array.isArray(options.supplies)) {
@@ -310,9 +323,9 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
     }
 
     return options.supplies.filter(
-      supply =>
+      (supply) =>
         !selectedSupplyIds.includes(supply.id) &&
-        !existingSupplyIds.includes(supply.id)
+        !existingSupplyIds.includes(supply.id),
     );
   };
 
@@ -321,15 +334,15 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
     e.preventDefault();
     setLoading(true);
     setErrors({});
-    setError('');
-    setMessage('');
+    setError("");
+    setMessage("");
 
     // Validate with Zod
     const validation = createSiteSchema.safeParse(formData);
 
     if (!validation.success) {
       const fieldErrors: Record<string, string> = {};
-      validation.error.errors.forEach(err => {
+      validation.error.errors.forEach((err) => {
         if (err.path.length > 0) {
           fieldErrors[err.path[0] as string] = err.message;
         }
@@ -341,42 +354,42 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
     // Validate supplies
     const validSupplies = siteSupplies.filter(
-      s => s.supplyId && s.quantity > 0
+      (s) => s.supplyId && s.quantity > 0,
     );
-    if (siteSupplies.some(s => s.supplyId && s.quantity <= 0)) {
-      setError('All supply quantities must be greater than 0');
+    if (siteSupplies.some((s) => s.supplyId && s.quantity <= 0)) {
+      setError("All supply quantities must be greater than 0");
       setLoading(false);
       return;
     }
 
     // Validate existing supplies (edit mode)
-    if (mode === 'edit' && existingSupplies.some(s => s.quantity <= 0)) {
-      setError('All existing supply quantities must be greater than 0');
+    if (mode === "edit" && existingSupplies.some((s) => s.quantity <= 0)) {
+      setError("All existing supply quantities must be greater than 0");
       setLoading(false);
       return;
     }
 
     try {
       const url =
-        mode === 'create' ? '/api/admin/sites' : `/api/admin/sites/${siteId}`;
-      const method = mode === 'create' ? 'POST' : 'PATCH';
+        mode === "create" ? "/api/admin/sites" : `/api/admin/sites/${siteId}`;
+      const method = mode === "create" ? "POST" : "PATCH";
 
       const requestBody = {
         ...validation.data,
         newSupplies: validSupplies, // new supplies to add
         existingSupplies:
-          mode === 'edit'
-            ? existingSupplies.map(s => ({
+          mode === "edit"
+            ? existingSupplies.map((s) => ({
                 siteSupplyId: s.siteSupplyId,
                 quantity: s.quantity,
               }))
             : undefined,
-        removedSupplies: mode === 'edit' ? removedSupplies : undefined,
+        removedSupplies: mode === "edit" ? removedSupplies : undefined,
       };
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
 
@@ -384,10 +397,10 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
       if (data.success) {
         setMessage(
-          `Site ${mode === 'create' ? 'created' : 'updated'} successfully!`
+          `Site ${mode === "create" ? "created" : "updated"} successfully!`,
         );
         setTimeout(() => {
-          router.push('/admin/sites');
+          router.push("/admin/sites");
         }, 2000);
       } else {
         if (data.details) {
@@ -404,34 +417,70 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
         }
       }
     } catch (error) {
-      setError('Network error occurred');
+      setError("Network error occurred");
     } finally {
       setLoading(false);
     }
   };
 
   const located =
-    formData.latitude !== '' &&
-    formData.longitude !== '' &&
+    formData.latitude !== "" &&
+    formData.longitude !== "" &&
     !isNaN(Number(formData.latitude)) &&
     !isNaN(Number(formData.longitude));
 
   // Display-only checklist mirroring createSiteSchema's required rules.
+  // The options lists only contain active users with the matching job title.
+  // If a site's stored assignee no longer qualifies (title changed, or they
+  // were deactivated), surface them anyway so opening the form doesn't
+  // silently blank the assignment on save.
+  const withStored = (
+    list: User[],
+    storedId: string,
+    storedName?: string | null,
+  ) =>
+    !storedId || list.some((u) => u.id === storedId)
+      ? list
+      : [
+          ...list,
+          {
+            id: storedId,
+            name: `${storedName || "Current assignee"} (no longer eligible)`,
+            email: "",
+          },
+        ];
+
+  const tewChoices = withStored(
+    options.tewUsers,
+    formData.tewId,
+    storedTewName,
+  );
+  const pphChoices = withStored(
+    options.pphUsers,
+    formData.pphId || "",
+    storedPphName,
+  );
+
   const checklist = [
-    { label: 'Site name', ok: !!formData.name.trim() },
-    { label: 'Number of tenants', ok: Number(formData.numberOfTenants) > 0 },
-    { label: 'Address', ok: !!formData.address.trim() },
-    { label: 'Location coordinates', ok: located },
-    { label: 'Tenant engagement worker', ok: !!formData.userId },
+    { label: "Site name", ok: !!formData.name.trim() },
+    { label: "Number of tenants", ok: Number(formData.numberOfTenants) > 0 },
+    { label: "Address", ok: !!formData.address.trim() },
+    { label: "Location coordinates", ok: located },
+    { label: "Tenant engagement worker", ok: !!formData.tewId },
     ...(formData.hasCommunityPartner
-      ? [{ label: 'Community partner named', ok: !!formData.communityPartnerId }]
+      ? [
+          {
+            label: "Community partner named",
+            ok: !!formData.communityPartnerId,
+          },
+        ]
       : []),
   ];
-  const remaining = checklist.filter(item => !item.ok).length;
+  const remaining = checklist.filter((item) => !item.ok).length;
   const readyNote =
     remaining > 0
-      ? `${remaining} required field${remaining === 1 ? '' : 's'} left`
-      : 'All required fields complete';
+      ? `${remaining} required field${remaining === 1 ? "" : "s"} left`
+      : "All required fields complete";
 
   if (optionsLoading) {
     return (
@@ -445,24 +494,30 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
   return (
     <div className="mx-auto max-w-[1180px]">
       <div className="mb-2.5 flex items-center gap-1.5 text-[13px] text-(--text-muted)">
-        <Link href="/dashboard" className="text-(--action-primary) hover:underline">
+        <Link
+          href="/dashboard"
+          className="text-(--action-primary) hover:underline"
+        >
           Dashboard
         </Link>
         <span>/</span>
-        <Link href="/admin/sites" className="text-(--action-primary) hover:underline">
+        <Link
+          href="/admin/sites"
+          className="text-(--action-primary) hover:underline"
+        >
           Sites
         </Link>
         <span>/</span>
-        <span>{mode === 'create' ? 'Create site' : 'Edit site'}</span>
+        <span>{mode === "create" ? "Create site" : "Edit site"}</span>
       </div>
 
       <h1 className="text-[30px] leading-tight font-bold tracking-[-.2px]">
-        {mode === 'create' ? 'Create New Site' : 'Edit Site'}
+        {mode === "create" ? "Create New Site" : "Edit Site"}
       </h1>
       <p className="mt-1.5 max-w-[620px] text-[15px] text-(--text-muted)">
-        {mode === 'create'
-          ? 'Add a new site to your system'
-          : 'Update site information and properties'}
+        {mode === "create"
+          ? "Add a new site to your system"
+          : "Update site information and properties"}
       </p>
 
       <div className="mt-5">
@@ -480,7 +535,9 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
           {error && (
             <Alert variant="destructive" className={alertClass}>
-              <AlertDescription className="text-[14px]">{error}</AlertDescription>
+              <AlertDescription className="text-[14px]">
+                {error}
+              </AlertDescription>
             </Alert>
           )}
 
@@ -500,13 +557,13 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={e =>
+                  onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
                   placeholder="Enter site name"
                   disabled={loading}
                   aria-invalid={!!errors.name}
-                  className={cn(inputClass, 'mt-1.5')}
+                  className={cn(inputClass, "mt-1.5")}
                 />
                 <FieldError message={errors.name} />
               </div>
@@ -521,7 +578,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                   type="number"
                   min="1"
                   value={formData.numberOfTenants}
-                  onChange={e =>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
                       numberOfTenants: e.target.value,
@@ -530,41 +587,77 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                   placeholder="Enter number of tenants"
                   disabled={loading}
                   aria-invalid={!!errors.numberOfTenants}
-                  className={cn(inputClass, 'mt-1.5')}
+                  className={cn(inputClass, "mt-1.5")}
                 />
                 <FieldError message={errors.numberOfTenants} />
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[1.6fr_1fr]">
+            {/* Three assignments/attributes share this row now. */}
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
-                <Label htmlFor="userId" className={labelClass}>
+                <Label htmlFor="tewId" className={labelClass}>
                   Tenant Engagement Worker
                   <Required />
                 </Label>
                 <Select
-                  value={formData.userId}
-                  onValueChange={value =>
-                    setFormData({ ...formData, userId: value })
+                  value={formData.tewId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, tewId: value })
                   }
                   disabled={loading}
                 >
                   <SelectTrigger
-                    id="userId"
-                    aria-invalid={!!errors.userId}
-                    className={cn(selectTriggerClass, 'mt-1.5')}
+                    id="tewId"
+                    aria-invalid={!!errors.tewId}
+                    className={cn(selectTriggerClass, "mt-1.5")}
                   >
                     <SelectValue placeholder="Select a worker..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {options.users.map(user => (
+                    {tewChoices.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
-                        {user.name} ({user.email})
+                        {user.name}
+                        {user.email ? ` (${user.email})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <FieldError message={errors.userId} />
+                <FieldError message={errors.tewId} />
+              </div>
+
+              <div>
+                <Label htmlFor="pphId" className={labelClass}>
+                  PPH Programmer
+                </Label>
+                <Select
+                  value={formData.pphId || NONE_VALUE}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      pphId: value === NONE_VALUE ? "" : value,
+                    })
+                  }
+                  disabled={loading}
+                >
+                  <SelectTrigger
+                    id="pphId"
+                    aria-invalid={!!errors.pphId}
+                    className={cn(selectTriggerClass, "mt-1.5")}
+                  >
+                    <SelectValue placeholder="Select a programmer..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE_VALUE}>None</SelectItem>
+                    {pphChoices.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                        {user.email ? ` (${user.email})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldError message={errors.pphId} />
               </div>
 
               <div>
@@ -573,17 +666,17 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                 </Label>
                 <Select
                   value={formData.region}
-                  onValueChange={value =>
+                  onValueChange={(value) =>
                     setFormData({
                       ...formData,
-                      region: value as CreateSiteInput['region'],
+                      region: value as CreateSiteInput["region"],
                     })
                   }
                 >
                   <SelectTrigger
                     id="region"
                     aria-invalid={!!errors.region}
-                    className={cn(selectTriggerClass, 'mt-1.5')}
+                    className={cn(selectTriggerClass, "mt-1.5")}
                   >
                     <SelectValue />
                   </SelectTrigger>
@@ -614,14 +707,14 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
               <Textarea
                 id="address"
                 value={formData.address}
-                onChange={e =>
+                onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
                 }
                 placeholder="Enter full address"
                 disabled={loading}
                 aria-invalid={!!errors.address}
                 rows={3}
-                className={cn(textareaClass, 'mt-1.5')}
+                className={cn(textareaClass, "mt-1.5")}
               />
               <FieldError message={errors.address} />
             </div>
@@ -637,13 +730,13 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                   type="number"
                   step="any"
                   value={formData.latitude}
-                  onChange={e =>
+                  onChange={(e) =>
                     setFormData({ ...formData, latitude: e.target.value })
                   }
                   placeholder="e.g., 49.2827"
                   disabled={loading}
                   aria-invalid={!!errors.latitude}
-                  className={cn(inputClass, 'mt-1.5')}
+                  className={cn(inputClass, "mt-1.5")}
                 />
                 <FieldError message={errors.latitude} />
               </div>
@@ -658,13 +751,13 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                   type="number"
                   step="any"
                   value={formData.longitude}
-                  onChange={e =>
+                  onChange={(e) =>
                     setFormData({ ...formData, longitude: e.target.value })
                   }
                   placeholder="e.g., -123.1207"
                   disabled={loading}
                   aria-invalid={!!errors.longitude}
-                  className={cn(inputClass, 'mt-1.5')}
+                  className={cn(inputClass, "mt-1.5")}
                 />
                 <FieldError message={errors.longitude} />
               </div>
@@ -673,7 +766,12 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
             {/* TODO: /admin/sites/new — not wired: no geocoder exists; the
                 template's Find on map needs a server route + external API. */}
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Button type="button" variant="outline" disabled className={outlineButtonClass}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled
+                className={outlineButtonClass}
+              >
                 Find on map
               </Button>
             </div>
@@ -704,7 +802,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
             />
 
             <div className="mt-[18px] grid grid-cols-1 gap-3 md:grid-cols-3">
-              {propertyTiles.map(tile => {
+              {propertyTiles.map((tile) => {
                 const on = formData[tile.key];
                 return (
                   <button
@@ -713,14 +811,14 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                     aria-pressed={on}
                     disabled={loading}
                     onClick={() => {
-                      if (tile.key === 'hasCommunityPartner') {
+                      if (tile.key === "hasCommunityPartner") {
                         const next = !formData.hasCommunityPartner;
                         setFormData({
                           ...formData,
                           hasCommunityPartner: next,
                           communityPartnerId: next
                             ? formData.communityPartnerId
-                            : '',
+                            : "",
                         });
                       } else {
                         setFormData({
@@ -730,19 +828,19 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                       }
                     }}
                     className={cn(
-                      'flex cursor-pointer flex-col gap-1 rounded-(--radius-control) px-3.5 py-3 text-left',
+                      "flex cursor-pointer flex-col gap-1 rounded-(--radius-control) px-3.5 py-3 text-left",
                       on
-                        ? 'border border-(--action-primary) bg-(--action-selected)'
-                        : 'border border-(--border-default) bg-(--surface-card) hover:border-(--action-primary)'
+                        ? "border border-(--action-primary) bg-(--action-selected)"
+                        : "border border-(--border-default) bg-(--surface-card) hover:border-(--action-primary)",
                     )}
                   >
                     <span className="flex items-center gap-2">
                       <span
                         className={cn(
-                          'grid size-[17px] shrink-0 place-items-center rounded-[2px]',
+                          "grid size-[17px] shrink-0 place-items-center rounded-[2px]",
                           on
-                            ? 'bg-(--action-primary) text-(--text-on-chrome)'
-                            : 'border border-(--border-input) bg-(--surface-card)'
+                            ? "bg-(--action-primary) text-(--text-on-chrome)"
+                            : "border border-(--border-input) bg-(--surface-card)",
                         )}
                       >
                         {on && <Check size={12} />}
@@ -767,7 +865,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                 </Label>
                 <Select
                   value={formData.communityPartnerId}
-                  onValueChange={value =>
+                  onValueChange={(value) =>
                     setFormData({ ...formData, communityPartnerId: value })
                   }
                   disabled={loading}
@@ -775,12 +873,12 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                   <SelectTrigger
                     id="communityPartnerId"
                     aria-invalid={!!errors.communityPartnerId}
-                    className={cn(selectTriggerClass, 'mt-1.5')}
+                    className={cn(selectTriggerClass, "mt-1.5")}
                   >
                     <SelectValue placeholder="Select a community partner" />
                   </SelectTrigger>
                   <SelectContent>
-                    {options.communityPartners.map(partner => (
+                    {options.communityPartners.map((partner) => (
                       <SelectItem key={partner.id} value={partner.id}>
                         {partner.name}
                       </SelectItem>
@@ -798,9 +896,9 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                 icon={Package}
                 title="Supply Management"
                 sub={
-                  mode === 'edit'
-                    ? 'Manage supplies at this site. Update quantities, remove supplies, or add new ones.'
-                    : 'Add supplies to this site. Quantities will be added to both site inventory and main supply counts.'
+                  mode === "edit"
+                    ? "Manage supplies at this site. Update quantities, remove supplies, or add new ones."
+                    : "Add supplies to this site. Quantities will be added to both site inventory and main supply counts."
                 }
               />
               <Button
@@ -816,30 +914,37 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
             </div>
 
             {/* Existing Supplies (Edit Mode) */}
-            {mode === 'edit' && (
+            {mode === "edit" && (
               <div className="mt-5">
                 <div className="flex items-center justify-between">
-                  <div className="text-[15px] font-semibold">Current Inventory</div>
+                  <div className="text-[15px] font-semibold">
+                    Current Inventory
+                  </div>
                   {existingSupplies.length > 0 && (
                     <Badge
                       variant="secondary"
                       className="rounded-(--radius-control) bg-(--bch-gray-100) text-(--text-muted)"
                     >
-                      {existingSupplies.length}{' '}
-                      {existingSupplies.length === 1 ? 'item' : 'items'}
+                      {existingSupplies.length}{" "}
+                      {existingSupplies.length === 1 ? "item" : "items"}
                     </Badge>
                   )}
                 </div>
 
                 {existingSupplies.length > 0 ? (
                   <div className="mt-3 overflow-hidden rounded-(--radius-control) border border-(--border-default)">
-                    <div className={cn(supplyHeaderClass, 'grid grid-cols-[1fr_150px_150px_44px]')}>
+                    <div
+                      className={cn(
+                        supplyHeaderClass,
+                        "grid grid-cols-[1fr_150px_150px_44px]",
+                      )}
+                    >
                       <span>Supply</span>
                       <span>Quantity</span>
                       <span>Total Value</span>
                       <span></span>
                     </div>
-                    {existingSupplies.map(supply => (
+                    {existingSupplies.map((supply) => (
                       <div
                         key={supply.siteSupplyId}
                         className="grid grid-cols-[1fr_150px_150px_44px] items-center gap-3 border-b border-(--bch-gray-200) px-3.5 py-2.5 last:border-b-0"
@@ -855,11 +960,11 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                         <Input
                           type="number"
                           min="1"
-                          value={supply.quantity || ''}
-                          onChange={e =>
+                          value={supply.quantity || ""}
+                          onChange={(e) =>
                             updateExistingSupply(
                               supply.siteSupplyId,
-                              parseInt(e.target.value) || 0
+                              parseInt(e.target.value) || 0,
                             )
                           }
                           placeholder="Enter quantity"
@@ -883,7 +988,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                           disabled={loading}
                           title="Remove supply"
                           aria-label={`Remove ${supply.supplyName}`}
-                          className={cn(destructiveGhostClass, 'size-8')}
+                          className={cn(destructiveGhostClass, "size-8")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -904,12 +1009,17 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
             {/* Add New Supplies */}
             <div className="mt-5">
               <div className="text-[15px] font-semibold">
-                {mode === 'edit' ? 'Add New Supplies' : 'Add Supplies to Site'}
+                {mode === "edit" ? "Add New Supplies" : "Add Supplies to Site"}
               </div>
 
               {siteSupplies.length > 0 ? (
                 <div className="mt-3 overflow-hidden rounded-(--radius-control) border border-(--border-default)">
-                  <div className={cn(supplyHeaderClass, 'grid grid-cols-[1fr_150px_44px]')}>
+                  <div
+                    className={cn(
+                      supplyHeaderClass,
+                      "grid grid-cols-[1fr_150px_44px]",
+                    )}
+                  >
                     <span>Supply</span>
                     <span>Quantity</span>
                     <span></span>
@@ -921,8 +1031,8 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                     >
                       <Select
                         value={supply.supplyId}
-                        onValueChange={value =>
-                          updateSupplyRow(index, 'supplyId', value)
+                        onValueChange={(value) =>
+                          updateSupplyRow(index, "supplyId", value)
                         }
                         disabled={loading}
                       >
@@ -933,25 +1043,27 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                           <SelectValue placeholder="Select a supply" />
                         </SelectTrigger>
                         <SelectContent>
-                          {getAvailableSupplies(index).map(availableSupply => (
-                            <SelectItem
-                              key={availableSupply.id}
-                              value={availableSupply.id}
-                            >
-                              {availableSupply.name}
-                            </SelectItem>
-                          ))}
+                          {getAvailableSupplies(index).map(
+                            (availableSupply) => (
+                              <SelectItem
+                                key={availableSupply.id}
+                                value={availableSupply.id}
+                              >
+                                {availableSupply.name}
+                              </SelectItem>
+                            ),
+                          )}
                         </SelectContent>
                       </Select>
                       <Input
                         type="number"
                         min="1"
-                        value={supply.quantity || ''}
-                        onChange={e =>
+                        value={supply.quantity || ""}
+                        onChange={(e) =>
                           updateSupplyRow(
                             index,
-                            'quantity',
-                            parseInt(e.target.value) || 0
+                            "quantity",
+                            parseInt(e.target.value) || 0,
                           )
                         }
                         placeholder="Enter quantity"
@@ -967,7 +1079,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                         disabled={loading}
                         title="Remove supply row"
                         aria-label="Remove supply row"
-                        className={cn(destructiveGhostClass, 'size-8')}
+                        className={cn(destructiveGhostClass, "size-8")}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -976,7 +1088,7 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
                 </div>
               ) : (
                 <div className="mt-3 rounded-(--radius-control) border border-dashed border-(--border-default) px-6 py-6 text-center text-sm text-(--text-muted)">
-                  {mode === 'edit'
+                  {mode === "edit"
                     ? 'No new supplies to add. Click "Add Supply" to add more supplies to this site.'
                     : 'No supplies added. Click "Add Supply" to start adding supplies to this site.'}
                 </div>
@@ -999,15 +1111,18 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading} className={primaryButtonClass}>
+              <Button
+                type="submit"
+                disabled={loading}
+                className={primaryButtonClass}
+              >
                 {loading
-                  ? `${mode === 'create' ? 'Creating' : 'Updating'}...`
-                  : `${mode === 'create' ? 'Create' : 'Update'} Site`}
+                  ? `${mode === "create" ? "Creating" : "Updating"}...`
+                  : `${mode === "create" ? "Create" : "Update"} Site`}
               </Button>
             </div>
           </div>
         </form>
-
       </div>
     </div>
   );

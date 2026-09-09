@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, users, sites, events, supplyDistributions } from '@/db';
-import { eq, count } from 'drizzle-orm';
+import { or, eq, count } from 'drizzle-orm';
 
 /** Revokes a pending invitation by deleting the never-used account. */
 export async function DELETE(
@@ -64,7 +64,10 @@ export async function DELETE(
     // users is referenced by sites/events/supply_distributions with NO ACTION,
     // so report what blocks the delete instead of surfacing an FK violation.
     const [[siteCount], [eventCount], [distCount]] = await Promise.all([
-      db.select({ n: count() }).from(sites).where(eq(sites.userId, id)),
+      db
+        .select({ n: count() })
+        .from(sites)
+        .where(or(eq(sites.tewId, id), eq(sites.pphId, id))),
       db.select({ n: count() }).from(events).where(eq(events.userId, id)),
       db
         .select({ n: count() })
