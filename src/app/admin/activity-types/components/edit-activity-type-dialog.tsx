@@ -6,6 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Modal } from '@/components/ui/modal';
 import {
+  fieldInputClass,
+  fieldLabelClass,
+  fieldSelectTriggerClass,
+} from '@/components/ui/form-fields';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -108,7 +113,7 @@ export default function EditActivityTypeDialog({
       {activityType && (
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="editName" className="text-[13.5px] font-bold">
+            <Label htmlFor="editName" className={fieldLabelClass}>
               Name
             </Label>
             <Input
@@ -119,15 +124,12 @@ export default function EditActivityTypeDialog({
               required
               disabled={loading}
               maxLength={255}
-              className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+              className={fieldInputClass}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label
-              htmlFor="editProgramGoal"
-              className="text-[13.5px] font-bold"
-            >
+            <Label htmlFor="editProgramGoal" className={fieldLabelClass}>
               Program Goal
             </Label>
             <Select
@@ -140,7 +142,7 @@ export default function EditActivityTypeDialog({
             >
               <SelectTrigger
                 id="editProgramGoal"
-                className="w-full rounded-(--radius-control) border-(--border-input) shadow-none"
+                className={fieldSelectTriggerClass}
               >
                 <SelectValue placeholder="Select a program goal" />
               </SelectTrigger>

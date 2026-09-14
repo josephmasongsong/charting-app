@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Modal } from '@/components/ui/modal';
+import { fieldInputClass, fieldLabelClass } from '@/components/ui/form-fields';
 
 interface CreateSupplyDialogProps {
   open: boolean;
@@ -79,7 +80,7 @@ export default function CreateSupplyDialog({
       </p>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="createName" className="text-[13.5px] font-bold">
+          <Label htmlFor="createName" className={fieldLabelClass}>
             Name <span className="text-(--danger)">*</span>
           </Label>
           <Input
@@ -92,15 +93,12 @@ export default function CreateSupplyDialog({
             required
             disabled={loading}
             maxLength={255}
-            className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+            className={fieldInputClass}
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label
-            htmlFor="createCostPerUnit"
-            className="text-[13.5px] font-bold"
-          >
+          <Label htmlFor="createCostPerUnit" className={fieldLabelClass}>
             Cost Per Unit ($)
           </Label>
           <Input
@@ -114,7 +112,7 @@ export default function CreateSupplyDialog({
             }
             placeholder="0.00"
             disabled={loading}
-            className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+            className={fieldInputClass}
           />
           <p className="text-[12.5px] text-(--text-muted)">
             Optional - can be updated later

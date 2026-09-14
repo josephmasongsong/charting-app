@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Modal } from '@/components/ui/modal';
+import { fieldInputClass, fieldLabelClass } from '@/components/ui/form-fields';
 
 interface Supply {
   id: string;
@@ -98,7 +99,7 @@ export default function EditSupplyDialog({
       {supply && (
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="editName" className="text-[13.5px] font-bold">
+            <Label htmlFor="editName" className={fieldLabelClass}>
               Name <span className="text-(--danger)">*</span>
             </Label>
             <Input
@@ -111,15 +112,12 @@ export default function EditSupplyDialog({
               required
               disabled={loading}
               maxLength={255}
-              className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+              className={fieldInputClass}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label
-              htmlFor="editCostPerUnit"
-              className="text-[13.5px] font-bold"
-            >
+            <Label htmlFor="editCostPerUnit" className={fieldLabelClass}>
               Cost Per Unit ($)
             </Label>
             <Input
@@ -133,7 +131,7 @@ export default function EditSupplyDialog({
               }
               placeholder="0.00"
               disabled={loading}
-              className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+              className={fieldInputClass}
             />
           </div>
 

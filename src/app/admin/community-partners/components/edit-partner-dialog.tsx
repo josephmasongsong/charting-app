@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Modal } from '@/components/ui/modal';
+import { fieldInputClass, fieldLabelClass } from '@/components/ui/form-fields';
 
 interface CommunityPartner {
   id: string;
@@ -89,7 +90,7 @@ export default function EditPartnerDialog({
       {partner && (
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="editName" className="text-[13.5px] font-bold">
+            <Label htmlFor="editName" className={fieldLabelClass}>
               Name
             </Label>
             <Input
@@ -100,7 +101,7 @@ export default function EditPartnerDialog({
               required
               disabled={loading}
               maxLength={255}
-              className="rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm"
+              className={fieldInputClass}
             />
           </div>
 

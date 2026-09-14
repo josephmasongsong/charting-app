@@ -22,7 +22,7 @@ Every row is the same mechanical delta applied to program-goals — same treatme
 | Empty state | colSpan row, `py-8` | colSpan=4, `py-10`, `--text-muted`, link-style Clear search in `--action-primary` |
 | Pagination | Local ~150-line block, hidden ≤1 page | **`ui/pagination-footer`** (7th consumer) — no local copy |
 | Loading | "Loading..." text | Skeleton rows (header band + 5) |
-| Create/edit dialogs | shadcn `Dialog` `sm:max-w-md`, stock header | `ui/modal` (`sm:max-w-[480px]`), muted description line, `13.5px` bold labels, DS-styled Input, DS outline Cancel + primary submit with progressive verbs |
+| Create/edit dialogs | shadcn `Dialog` `sm:max-w-md`, stock header | `ui/modal` (`sm:max-w-[480px]`), muted description line, fields from `ui/form-fields` (`fieldLabelClass` / `fieldInputClass` / `fieldSelectTriggerClass`), DS outline Cancel + primary submit with progressive verbs |
 | Delete dialog | Raw `bg-red-50 border-red-200 text-red-800` callout | `ui/modal` + `--danger-surface` left-bar callout ("Partner to delete: …") + DS danger button (`#98060D` hover) |
 | Dev comments | The standard set (`// Create a ref…`, `// Handle …`, etc.) | Deleted |
 

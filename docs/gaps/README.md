@@ -48,3 +48,19 @@ These recur in several files and are worth deciding once:
 - **Vocabulary mismatches** that would break writes if copied literally: role `staff` (DB has `user`), job title "People, Plants and Homes" (DB has `People Plants & Homes`) and "Community Partner" (stored as NULL), status "Deactivated" vs "Inactive".
 - **Data-model conflicts** to settle before the visual pass: site starter supplies add to vs. move from inventory; `recipient_notes` required vs optional.
 - **Bugs found while comparing** (not template-related): `[object Object]` in distribution "Distributed By"; `/sites/new` link; `isAdmin` not passed on `/events/new`; no `<Toaster />` for the duplicate-event toast; `$` missing from the report's Total Cost formatter.
+
+## Amendments since generation
+
+These files record what was true on 2026-08-23. Where a later decision has
+overtaken one, the file is corrected in place and the change is listed here.
+
+- **2026-09-13 — field styling.** Three passages described fields with the
+  button radius (`--radius-control`, 4px) and 13.5–14px text: the canonical
+  spec's search strip (`admin-activity-types.md` §5), its create/edit dialog
+  section (§10), and the community-partners dialog row. The design system puts
+  fields on `--radius-input` (2px) at 15px with a 15px normal-weight label
+  (`bch-shadcn-implementation-guide.md` §4.2), which is what `EventForm`,
+  `SiteForm` and `ReferralForm` already did. All three passages now point at
+  the shared constants — `ui/list-controls` for list pages, `ui/form-fields`
+  for dialogs — so the treatment has one source rather than a prose copy per
+  doc.
