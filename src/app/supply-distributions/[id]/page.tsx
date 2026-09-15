@@ -73,7 +73,6 @@ async function getDistribution(id: string) {
       id: supplyDistributions.id,
       distributionDate: supplyDistributions.distributionDate,
       distributionType: supplyDistributions.distributionType,
-      recipientNotes: supplyDistributions.recipientNotes,
       totalCost: supplyDistributions.totalCost,
       notes: supplyDistributions.notes,
       createdAt: supplyDistributions.createdAt,
@@ -212,14 +211,9 @@ export default async function DistributionPage({
             </div>
 
             <div className="mt-5">
-              <ProfileField label="Recipients">
-                {distribution.recipientNotes}
+              <ProfileField label="Notes">
+                {distribution.notes || 'None recorded'}
               </ProfileField>
-              {distribution.notes && (
-                <ProfileField label="Additional Notes">
-                  {distribution.notes}
-                </ProfileField>
-              )}
             </div>
           </div>
         </Card>

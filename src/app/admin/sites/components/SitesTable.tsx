@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import {
+  listSearchInputClass,
+  listSelectTriggerClass,
+} from '@/components/ui/list-controls';
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,9 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, Home, Trash2, Search, Loader2, PenLine } from "lucide-react";
+import { Home, Search, Loader2 } from "lucide-react";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
-import { AvatarTile } from "@/components/ui/avatar-tile";
+import { DirectoryRow } from "@/components/ui/directory-row";
+import { RowActions } from "@/components/ui/row-actions";
 import { cn } from "@/lib/utils";
 
 import DeleteSiteDialog from "./DeleteSiteDialog";
@@ -55,31 +59,9 @@ interface SortConfig {
   order: SortOrder;
 }
 
-// Dense government-software table treatment — the reference for every admin
-// table: teal header band, full cell grid, zebra rows, selection-blue hover.
-function workerInitials(name?: string | null) {
-  if (!name) return "—";
-  return name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
 
-// Directory row per the design system's DevelopmentItem: teal Home tile,
-// name link with the address beneath, worker, attribute tags, actions.
-const directoryRowClass =
-  "grid min-w-[820px] grid-cols-[56px_1.2fr_1.4fr_1fr_auto] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)";
 const siteTileClass =
   "grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-(--bch-teal-600) text-white";
-const subLineClass = "text-[13.5px] text-(--text-muted)";
-const selectTriggerClass =
-  "h-9 w-[190px] rounded-(--radius-control) border-(--border-input) bg-(--surface-card) text-sm shadow-none";
-const rowActionClass =
-  "size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)";
-const destructiveActionClass =
-  "size-8 rounded-(--radius-control) text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)";
 const alertClass = "border-y-0 border-r-0 px-3.5 py-3";
 const successAlertClass =
   "rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground";
@@ -225,21 +207,19 @@ export default function SitesTable() {
               placeholder="Search by name, address, user, or community partner..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-9 rounded-(--radius-control) border-(--border-input) bg-(--surface-card) pl-8 text-sm shadow-none md:text-sm"
+              className={listSearchInputClass}
             />
           </form>
           <Select
             value={`${sortConfig.field}:${sortConfig.order}`}
             onValueChange={handleSortChange}
           >
-            <SelectTrigger aria-label="Sort by" className={selectTriggerClass}>
+            <SelectTrigger aria-label="Sort by" className={cn(listSelectTriggerClass, "w-[190px]")}>
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="name:asc">Name (A–Z)</SelectItem>
               <SelectItem value="name:desc">Name (Z–A)</SelectItem>
-              <SelectItem value="address:asc">Address (A–Z)</SelectItem>
-              <SelectItem value="userName:asc">TEW</SelectItem>
               <SelectItem value="createdAt:desc">Newest first</SelectItem>
               <SelectItem value="createdAt:asc">Oldest first</SelectItem>
             </SelectContent>
@@ -253,7 +233,7 @@ export default function SitesTable() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div>
               {sites.length === 0 ? (
                 <div className="px-4 py-10 text-center text-(--text-muted)">
                   {search ? (
@@ -276,76 +256,33 @@ export default function SitesTable() {
                 </div>
               ) : (
                 sites.map((site) => (
-                  <div key={site.id} className={directoryRowClass}>
-                    <div className={siteTileClass}>
-                      <Home size={19} />
-                    </div>
-
-                    <span className="min-w-0 truncate font-bold">
-                      {site.name}
-                    </span>
-
-                    <div
-                      className={cn(subLineClass, "min-w-0 truncate")}
-                      title={site.address}
-                    >
-                      {site.address}
-                    </div>
-
-                    <div className="flex min-w-0 items-center gap-2">
-                      <AvatarTile
-                        initials={workerInitials(site.tewName)}
-                        size={28}
-                      />
-                      <div className="min-w-0">
-                        <div className="truncate">
-                          {site.tewName || "Unassigned"}
-                        </div>
-                        <div className="truncate text-[12.5px] text-(--text-muted)">
-                          {site.pphName || "No PPH programmer"}
-                        </div>
+                  <DirectoryRow
+                    key={site.id}
+                    leading={
+                      <div className={siteTileClass}>
+                        <Home size={19} />
                       </div>
-                    </div>
-
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        asChild
-                        variant="ghost"
-                        size="icon"
-                        title="View site"
-                        className={rowActionClass}
-                      >
-                        <Link
-                          href={`/sites/${site.id}`}
-                          aria-label={`View ${site.name}`}
-                        >
-                          <Eye className="size-[17px]" />
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          router.push(`/admin/sites/${site.id}/edit`)
-                        }
-                        title="Edit site"
-                        aria-label={`Edit ${site.name}`}
-                        className={rowActionClass}
-                      >
-                        <PenLine className="size-[17px]" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openDeleteSite(site)}
-                        title="Delete site"
-                        aria-label={`Delete ${site.name}`}
-                        className={destructiveActionClass}
-                      >
-                        <Trash2 className="size-[17px]" />
-                      </Button>
-                    </div>
-                  </div>
+                    }
+                    title={site.name}
+                    actions={
+                      <RowActions
+                        label={`Actions for ${site.name}`}
+                        actions={[
+                          { label: "View", href: `/sites/${site.id}` },
+                          {
+                            label: "Edit",
+                            onSelect: () =>
+                              router.push(`/admin/sites/${site.id}/edit`),
+                          },
+                          {
+                            label: "Delete",
+                            danger: true,
+                            onSelect: () => openDeleteSite(site),
+                          },
+                        ]}
+                      />
+                    }
+                  />
                 ))
               )}
             </div>

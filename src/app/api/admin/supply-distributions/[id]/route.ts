@@ -55,7 +55,6 @@ export async function GET(
         userEmail: users.email,
         distributionDate: supplyDistributions.distributionDate,
         distributionType: supplyDistributions.distributionType,
-        recipientNotes: supplyDistributions.recipientNotes,
         totalCost: supplyDistributions.totalCost,
         notes: supplyDistributions.notes,
         createdAt: supplyDistributions.createdAt,

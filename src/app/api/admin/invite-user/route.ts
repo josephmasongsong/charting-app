@@ -40,7 +40,6 @@ export async function POST(req: Request) {
       email,
       password,
       role = 'user',
-      region = 'LMDM',
       jobTitle = 'Tenant Engagement Worker',
       sendInvite = true,
     } = await req.json();
@@ -63,13 +62,8 @@ export async function POST(req: Request) {
     }
 
     // Validate role
-    if (!['admin', 'user', 'partner'].includes(role)) {
+    if (!['admin', 'user'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
-    }
-
-    // Validate region
-    if (!['LMDM', 'VIR', 'Interior', 'Northern'].includes(region)) {
-      return NextResponse.json({ error: 'Invalid region' }, { status: 400 });
     }
 
     // Validate jobTitle
@@ -112,19 +106,13 @@ export async function POST(req: Request) {
       email: email.toLowerCase(),
       hashedPassword,
       jobTitle,
-      region,
       invitedAt: new Date(),
       invitedBy: currentUser.id,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    // Set jobTitle based on role
-    if (role === 'partner') {
-      userData.jobTitle = null;
-    } else {
-      userData.jobTitle = jobTitle;
-    }
+    userData.jobTitle = jobTitle;
 
     // Create user
     const [newUser] = await db.insert(users).values(userData).returning();
@@ -147,8 +135,7 @@ export async function POST(req: Request) {
                 <p><strong>Email:</strong> ${email}</p>
                 <p><strong>Temporary Password:</strong> ${password}</p>
                 <p><strong>Role:</strong> ${role}</p>
-                <p><strong>Region:</strong> ${region}</p>
-                ${role !== 'partner' ? `<p><strong>Job Title:</strong> ${jobTitle}</p>` : ''}
+                <p><strong>Job Title:</strong> ${jobTitle}</p>
               </div>
 
               <p style="margin: 20px 0;">

@@ -1,4 +1,4 @@
-import { Lock, User, Users } from 'lucide-react';
+import { Lock, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface RoleBadgeProps {
@@ -15,17 +15,11 @@ const roleChips: Record<string, { className: string; label: string }> = {
       'border border-(--bch-blue-100) bg-(--bch-blue-50) font-semibold text-(--bch-blue-700)',
     label: 'Staff user',
   },
-  partner: {
-    className:
-      'border border-(--border-default) bg-(--bch-gray-100) font-semibold text-(--text-muted)',
-    label: 'Partner',
-  },
 };
 
 const roleIcons: Record<string, React.ReactNode> = {
   admin: <Lock className="size-3" />,
   user: <User className="size-3" />,
-  partner: <Users className="size-3" />,
 };
 
 export default function RoleBadge({ role }: RoleBadgeProps) {

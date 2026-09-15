@@ -57,7 +57,6 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.firstName + ' ' + user.lastName,
           isActive: user.isActive,
-          region: user.region,
           jobTitle: user.jobTitle,
         };
       },
@@ -75,7 +74,6 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.isActive = user.isActive;
-        token.region = user.region;
         token.jobTitle = user.jobTitle;
         // Fetch user role from database
         const [dbUser] = await db
@@ -93,7 +91,6 @@ export const authOptions: NextAuthOptions = {
             .where(eq(users.id, token.id as string))
             .limit(1);
           token.isActive = dbUser?.isActive ?? false;
-          token.region = dbUser?.region ?? 'LMDM';
           token.jobTitle = dbUser?.jobTitle ?? null;
         }
       }
@@ -104,7 +101,6 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.isActive = token.isActive as boolean;
-        session.user.region = token.region as string;
         session.user.jobTitle = token.jobTitle as string | null;
       }
       return session;

@@ -81,9 +81,6 @@ export async function GET(req: Request) {
       case 'role':
         sortColumn = users.role;
         break;
-      case 'region':
-        sortColumn = users.region;
-        break;
       case 'jobTitle':
         sortColumn = users.jobTitle;
         break;
@@ -111,8 +108,6 @@ export async function GET(req: Request) {
         ),
         email: users.email,
         role: users.role,
-        region: users.region,
-        emailVerified: users.emailVerified,
         invitedAt: users.invitedAt,
         inviteAcceptedAt: users.inviteAcceptedAt,
         jobTitle: users.jobTitle,

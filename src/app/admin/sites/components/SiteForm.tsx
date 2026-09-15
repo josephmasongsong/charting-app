@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -493,24 +492,6 @@ export default function SiteForm({ mode, siteId, initialData }: SiteFormProps) {
 
   return (
     <div className="mx-auto max-w-[1180px]">
-      <div className="mb-2.5 flex items-center gap-1.5 text-[13px] text-(--text-muted)">
-        <Link
-          href="/dashboard"
-          className="text-(--action-primary) hover:underline"
-        >
-          Dashboard
-        </Link>
-        <span>/</span>
-        <Link
-          href="/admin/sites"
-          className="text-(--action-primary) hover:underline"
-        >
-          Sites
-        </Link>
-        <span>/</span>
-        <span>{mode === "create" ? "Create site" : "Edit site"}</span>
-      </div>
-
       <h1 className="text-[30px] leading-tight font-bold tracking-[-.2px]">
         {mode === "create" ? "Create New Site" : "Edit Site"}
       </h1>

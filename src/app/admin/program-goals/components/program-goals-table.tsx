@@ -8,26 +8,24 @@ import {
   useImperativeHandle,
 } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  listSearchInputClass,
+  listSelectTriggerClass,
+} from '@/components/ui/list-controls';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaginationFooter } from '@/components/ui/pagination-footer';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  PenLine,
-  Trash2,
-  Search,
-  ArrowUpDown,
-  ChevronUp,
-  ChevronDown,
-} from 'lucide-react';
+import { DirectoryRow } from '@/components/ui/directory-row';
+import { RowActions } from '@/components/ui/row-actions';
+import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import EditGoalDialog from './edit-goal-dialog';
@@ -65,16 +63,6 @@ export interface ProgramGoalsTableRef {
   refreshData: () => void;
 }
 
-const headCellClass =
-  'h-auto whitespace-nowrap border border-[#0a7276] bg-(--surface-chrome) px-3.5 py-2.5 text-left text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase';
-const bodyCellClass =
-  'whitespace-nowrap border border-(--bch-gray-200) px-3.5 py-[9px]';
-const bodyRowClass =
-  'border-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
-const rowActionClass =
-  'size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)';
-const destructiveActionClass =
-  'size-8 rounded-(--radius-control) text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)';
 const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
 const successAlertClass =
   'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
@@ -159,6 +147,15 @@ const ProgramGoalsTable = forwardRef<
     const newSortConfig = { field, order: newOrder };
     setSortConfig(newSortConfig);
     fetchGoals(pagination.page, search, newSortConfig);
+  };
+
+  // Sorting moved from clickable column headers to this Select when the
+  // table became a responsive list — there are no headers to click now.
+  const handleSortChange = (value: string) => {
+    const [field, order] = value.split(':');
+    const next = { field, order: order as SortOrder };
+    setSortConfig(next);
+    fetchGoals(1, search, next);
   };
 
   const openEditGoal = (goal: ProgramGoal) => {
@@ -255,122 +252,81 @@ const ProgramGoalsTable = forwardRef<
               placeholder="Search by name..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="h-9 rounded-(--radius-control) border-(--border-input) bg-(--surface-card) pl-8 text-sm shadow-none md:text-sm"
+              className={listSearchInputClass}
             />
           </form>
+          <Select
+            value={`${sortConfig.field}:${sortConfig.order}`}
+            onValueChange={handleSortChange}
+          >
+            <SelectTrigger
+              aria-label="Sort by"
+              className={cn(listSelectTriggerClass, "w-[190px]")}
+            >
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name:asc">Name (A–Z)</SelectItem>
+              <SelectItem value="name:desc">Name (Z–A)</SelectItem>
+              <SelectItem value="createdAt:desc">Newest first</SelectItem>
+              <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {loading ? (
           <div className="space-y-2 p-5">
-            <Skeleton className="h-10 rounded-none bg-(--bch-gray-200)" />
-            {Array.from({ length: 5 }, (_, i) => (
+                        {Array.from({ length: 5 }, (_, i) => (
               <Skeleton
                 key={i}
-                className="h-9 rounded-none bg-(--surface-muted)"
+                className="h-[62px] rounded-none bg-(--surface-muted)"
               />
             ))}
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <Table className="min-w-[720px] border-collapse bg-(--surface-card) text-sm">
-                <TableHeader>
-                  <TableRow className="border-0 hover:bg-transparent">
-                    <TableHead className={headCellClass}>
+            <div>
+              {goals.length === 0 ? (
+                <div className="px-4 py-10 text-center text-(--text-muted)">
+                  {search ? (
+                    <>
+                      No program goals found matching &quot;{search}&quot;.
                       <Button
-                        variant="ghost"
-                        onClick={() => handleSort('name')}
-                        className="h-auto p-0 text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase hover:bg-transparent hover:text-(--text-on-chrome)"
+                        variant="link"
+                        onClick={() => {
+                          setSearch('');
+                          fetchGoals(1, '', sortConfig);
+                        }}
+                        className="ml-1 h-auto p-0 text-[14px] text-(--action-primary)"
                       >
-                        <span
-                          className={
-                            sortConfig.field === 'name'
-                              ? 'font-extrabold'
-                              : 'opacity-85'
-                          }
-                        >
-                          Name
-                        </span>
-                        {sortConfig.field === 'name' ? (
-                          sortConfig.order === 'asc' ? (
-                            <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-                          ) : (
-                            <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-                          )
-                        ) : (
-                          <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-60" />
-                        )}
+                        Clear search
                       </Button>
-                    </TableHead>
-                    <TableHead className={cn(headCellClass, 'text-right')}>
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {goals.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={2}
-                        className={cn(
-                          bodyCellClass,
-                          'py-10 text-center whitespace-normal text-(--text-muted)'
-                        )}
-                      >
-                        {search ? (
-                          <>
-                            No program goals found matching "{search}".
-                            <Button
-                              variant="link"
-                              onClick={() => {
-                                setSearch('');
-                                fetchGoals(1, '', sortConfig);
-                              }}
-                              className="ml-1 h-auto p-0 text-[14px] text-(--action-primary)"
-                            >
-                              Clear search
-                            </Button>
-                          </>
-                        ) : (
-                          'No program goals found.'
-                        )}
-                      </TableCell>
-                    </TableRow>
+                    </>
                   ) : (
-                    goals.map(goal => (
-                      <TableRow key={goal.id} className={bodyRowClass}>
-                        <TableCell className={cn(bodyCellClass, 'font-semibold')}>
-                          {goal.name}
-                        </TableCell>
-                        <TableCell className={cn(bodyCellClass, 'text-right')}>
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="Edit program goal"
-                              aria-label="Edit program goal"
-                              onClick={() => openEditGoal(goal)}
-                              className={rowActionClass}
-                            >
-                              <PenLine className="size-[17px]" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="Delete program goal"
-                              aria-label="Delete program goal"
-                              onClick={() => openDeleteGoal(goal)}
-                              className={destructiveActionClass}
-                            >
-                              <Trash2 className="size-[17px]" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    'No program goals found.'
                   )}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                goals.map(goal => (
+                  <DirectoryRow
+                    key={goal.id}
+                    title={goal.name}
+                    actions={
+                      <RowActions
+                        label={`Actions for ${goal.name}`}
+                        actions={[
+                          { label: 'Edit', onSelect: () => openEditGoal(goal) },
+                          {
+                            label: 'Delete',
+                            danger: true,
+                            onSelect: () => openDeleteGoal(goal),
+                          },
+                        ]}
+                      />
+                    }
+                  />
+                ))
+              )}
             </div>
 
             <PaginationFooter

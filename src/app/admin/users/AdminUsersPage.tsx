@@ -31,7 +31,7 @@ function UsersTableSkeleton() {
 interface AdminUsersPageProps {
   currentUser: {
     id: string;
-    role: 'admin' | 'user' | 'partner';
+    role: 'admin' | 'user';
     email: string;
     name: string;
   };

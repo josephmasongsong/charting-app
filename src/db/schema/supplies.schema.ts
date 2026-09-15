@@ -17,14 +17,16 @@ export const supplies = pgTable(
     costPerUnit: numeric('cost_per_unit', { precision: 12, scale: 2 })
       .default('0.00')
       .notNull(),
-    quantity: integer('quantity').default(0).notNull(),
+    // There is deliberately no `quantity` column. How many units a supply has
+    // is the sum of its site_supplies rows and nothing else — a stored rollup
+    // drifted from that sum every time anything moved stock without adjusting
+    // it (see migration 0030).
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   table => [
     index('supply_name_idx').on(table.name),
     index('supply_cost_idx').on(table.costPerUnit),
-    index('supply_quantity_idx').on(table.quantity),
   ]
 );
 

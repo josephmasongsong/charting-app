@@ -2,7 +2,14 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db, users, sites, events, supplyDistributions } from '@/db';
+import {
+  db,
+  users,
+  sites,
+  events,
+  supplyDistributions,
+  referrals,
+} from '@/db';
 import { or, eq, count } from 'drizzle-orm';
 
 /** Revokes a pending invitation by deleting the never-used account. */
@@ -61,24 +68,31 @@ export async function DELETE(
       );
     }
 
-    // users is referenced by sites/events/supply_distributions with NO ACTION,
-    // so report what blocks the delete instead of surfacing an FK violation.
-    const [[siteCount], [eventCount], [distCount]] = await Promise.all([
-      db
-        .select({ n: count() })
-        .from(sites)
-        .where(or(eq(sites.tewId, id), eq(sites.pphId, id))),
-      db.select({ n: count() }).from(events).where(eq(events.userId, id)),
-      db
-        .select({ n: count() })
-        .from(supplyDistributions)
-        .where(eq(supplyDistributions.userId, id)),
-    ]);
+    // users is referenced by sites/events/supply_distributions/referrals with
+    // NO ACTION, so report what blocks the delete instead of surfacing an FK
+    // violation.
+    const [[siteCount], [eventCount], [distCount], [referralCount]] =
+      await Promise.all([
+        db
+          .select({ n: count() })
+          .from(sites)
+          .where(or(eq(sites.tewId, id), eq(sites.pphId, id))),
+        db.select({ n: count() }).from(events).where(eq(events.userId, id)),
+        db
+          .select({ n: count() })
+          .from(supplyDistributions)
+          .where(eq(supplyDistributions.userId, id)),
+        db
+          .select({ n: count() })
+          .from(referrals)
+          .where(eq(referrals.userId, id)),
+      ]);
 
     const blockers = [
       Number(siteCount?.n || 0) > 0 && `${siteCount.n} site(s)`,
       Number(eventCount?.n || 0) > 0 && `${eventCount.n} event(s)`,
       Number(distCount?.n || 0) > 0 && `${distCount.n} distribution(s)`,
+      Number(referralCount?.n || 0) > 0 && `${referralCount.n} referral(s)`,
     ].filter(Boolean);
 
     if (blockers.length > 0) {

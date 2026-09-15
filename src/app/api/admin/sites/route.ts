@@ -367,15 +367,6 @@ export async function POST(req: Request) {
             supplyId: supplyInput.supplyId,
             quantity: supplyInput.quantity,
           });
-
-          // Update main supply quantity
-          await tx
-            .update(supplies)
-            .set({
-              quantity: sql`${supplies.quantity} + ${supplyInput.quantity}`,
-              updatedAt: new Date(),
-            })
-            .where(eq(supplies.id, supplyInput.supplyId));
         }
       }
 

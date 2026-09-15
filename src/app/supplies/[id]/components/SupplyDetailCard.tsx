@@ -12,8 +12,6 @@ interface Supply {
   costPerUnit: string;
   quantity: number;
   totalValue: number;
-  distributedQuantity: number;
-  availableQuantity: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -108,19 +106,6 @@ export default function SupplyDetailCard({ data }: SupplyDetailCardProps) {
                   value={`$${supply.totalValue.toFixed(2)}`}
                 />
                 <DetailField label="Sites" value={siteDistribution.length} />
-              </div>
-            </div>
-
-            <div className={sectionBoxClass}>
-              <div className="grid grid-cols-2 gap-5">
-                <DetailField
-                  label="Distributed"
-                  value={`${supply.distributedQuantity.toLocaleString()} units`}
-                />
-                <DetailField
-                  label="Available"
-                  value={`${supply.availableQuantity.toLocaleString()} units`}
-                />
               </div>
             </div>
 

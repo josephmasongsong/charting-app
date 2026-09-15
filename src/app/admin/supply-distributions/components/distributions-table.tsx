@@ -8,17 +8,12 @@ import {
   useImperativeHandle,
 } from 'react';
 import { Button } from '@/components/ui/button';
+import { listSelectTriggerClass } from '@/components/ui/list-controls';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaginationFooter } from '@/components/ui/pagination-footer';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DirectoryRow } from '@/components/ui/directory-row';
+import { RowActions } from '@/components/ui/row-actions';
 import {
   Select,
   SelectContent,
@@ -26,19 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Trash2,
-  ArrowUpDown,
-  ChevronUp,
-  ChevronDown,
-  Eye,
-} from 'lucide-react';
+import { Truck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { useRouter } from 'next/navigation';
 
 import DeleteDistributionDialog from './delete-distribution-dialog';
-import { DistributionTypeBadge } from './distribution-type-badge';
+import { DISTRIBUTION_TYPES } from '@/lib/distribution-types';
 
 interface Distribution {
   id: string;
@@ -50,7 +39,6 @@ interface Distribution {
   userName: string;
   distributionDate: string;
   distributionType: string;
-  recipientNotes: string;
   totalCost: string;
   notes: string | null;
   createdAt: string;
@@ -107,21 +95,12 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-const headCellClass =
-  'h-auto whitespace-nowrap border border-[#0a7276] bg-(--surface-chrome) px-3.5 py-2.5 text-left text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase';
-const bodyCellClass =
-  'whitespace-nowrap border border-(--bch-gray-200) px-3.5 py-[9px]';
-const bodyRowClass =
-  'border-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
-const rowActionClass =
-  'size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)';
-const destructiveActionClass =
-  'size-8 rounded-(--radius-control) text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)';
 const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
 const successAlertClass =
   'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
-const selectTriggerClass =
-  'h-9 rounded-(--radius-control) border-(--border-input) bg-(--surface-card) text-sm shadow-none';
+// Same hard-colour tile as the sites index.
+const rowTileClass =
+  'grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-(--bch-teal-600) text-white';
 const statTileClass =
   'rounded-(--radius-card) border border-(--border-default) border-t-[3px] bg-(--surface-card) px-4 py-3.5';
 const statLabelClass =
@@ -176,10 +155,7 @@ const DistributionsTable = forwardRef<
 
     const distributionTypeOptions = [
       { value: 'all', label: 'All Types' },
-      { value: 'door_to_door', label: 'Door to Door' },
-      { value: 'community_room_pickup', label: 'Community Room Pickup' },
-      { value: 'event_distribution', label: 'Event Distribution' },
-      { value: 'emergency_distribution', label: 'Emergency Distribution' },
+      ...DISTRIBUTION_TYPES,
     ];
 
     const fetchSites = useCallback(async () => {
@@ -263,14 +239,13 @@ const DistributionsTable = forwardRef<
       userId: userFilter,
     });
 
-    const handleSort = (field: string) => {
-      const newOrder: SortOrder =
-        sortConfig.field === field && sortConfig.order === 'asc'
-          ? 'desc'
-          : 'asc';
-      const newSortConfig = { field, order: newOrder };
-      setSortConfig(newSortConfig);
-      fetchDistributions(pagination.page, '', newSortConfig, currentFilters());
+
+    // Sorting moved from column headers to a Select with the table.
+    const handleSortChange = (value: string) => {
+      const [field, order] = value.split(':');
+      const next = { field, order: order as SortOrder };
+      setSortConfig(next);
+      fetchDistributions(1, '', next, currentFilters());
     };
 
     const openDeleteDistribution = (distribution: Distribution) => {
@@ -305,30 +280,6 @@ const DistributionsTable = forwardRef<
       distributionTypeFilter !== 'all' ||
       (siteFilter !== '' && siteFilter !== 'all');
 
-    const sortableHead = (field: string, label: string) => (
-      <Button
-        variant="ghost"
-        onClick={() => handleSort(field)}
-        className="h-auto p-0 text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase hover:bg-transparent hover:text-(--text-on-chrome)"
-      >
-        <span
-          className={cn(
-            sortConfig.field === field ? 'font-extrabold' : 'opacity-85'
-          )}
-        >
-          {label}
-        </span>
-        {sortConfig.field === field ? (
-          sortConfig.order === 'asc' ? (
-            <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-          ) : (
-            <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-          )
-        ) : (
-          <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-60" />
-        )}
-      </Button>
-    );
 
     return (
       <>
@@ -427,7 +378,7 @@ const DistributionsTable = forwardRef<
               >
                 <SelectTrigger
                   aria-label="Type"
-                  className={cn(selectTriggerClass, 'w-48')}
+                  className={cn(listSelectTriggerClass, 'w-48')}
                 >
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
@@ -454,7 +405,7 @@ const DistributionsTable = forwardRef<
               >
                 <SelectTrigger
                   aria-label="Site"
-                  className={cn(selectTriggerClass, 'w-48')}
+                  className={cn(listSelectTriggerClass, 'w-48')}
                 >
                   <SelectValue placeholder="Filter by site" />
                 </SelectTrigger>
@@ -465,6 +416,30 @@ const DistributionsTable = forwardRef<
                       {site.name}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={`${sortConfig.field}:${sortConfig.order}`}
+                onValueChange={handleSortChange}
+              >
+                <SelectTrigger
+                  aria-label="Sort by"
+                  className={cn(listSelectTriggerClass, 'w-[190px]')}
+                >
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="distributionDate:desc">
+                    Newest first
+                  </SelectItem>
+                  <SelectItem value="distributionDate:asc">
+                    Oldest first
+                  </SelectItem>
+                  <SelectItem value="siteName:asc">Site (A–Z)</SelectItem>
+                  <SelectItem value="totalCost:desc">
+                    Cost (high–low)
+                  </SelectItem>
                 </SelectContent>
               </Select>
 
@@ -501,128 +476,61 @@ const DistributionsTable = forwardRef<
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <Table className="min-w-[960px] border-collapse bg-(--surface-card) text-sm">
-                  <TableHeader>
-                    <TableRow className="border-0 hover:bg-transparent">
-                      <TableHead className={headCellClass}>
-                        {sortableHead('distributionDate', 'Distribution Date')}
-                      </TableHead>
-                      <TableHead className={headCellClass}>
-                        {sortableHead('siteName', 'Site')}
-                      </TableHead>
-                      <TableHead className={headCellClass}>
-                        {sortableHead('distributionType', 'Type')}
-                      </TableHead>
-                      <TableHead className={headCellClass}>
-                        {sortableHead('userName', 'Distributed By')}
-                      </TableHead>
-                      <TableHead className={cn(headCellClass, 'text-right')}>
-                        Cost
-                      </TableHead>
-                      <TableHead className={cn(headCellClass, 'text-right')}>
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {distributions.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className={cn(
-                            bodyCellClass,
-                            'py-10 text-center whitespace-normal text-(--text-muted)'
-                          )}
+              <div>
+                {distributions.length === 0 ? (
+                  <div className="px-4 py-10 text-center text-(--text-muted)">
+                    {hasFilters ? (
+                      <>
+                        No distributions match these filters.{' '}
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onClick={() => {
+                            setDistributionTypeFilter('all');
+                            setSiteFilter('');
+                            setUserFilter('');
+                            fetchDistributions(1, '', sortConfig, {});
+                          }}
+                          className="h-auto p-0 text-[13.5px] text-(--action-primary) underline"
                         >
-                          {hasFilters ? (
-                            <>
-                              No distributions found with current filters.
-                              <Button
-                                variant="link"
-                                onClick={() => {
-                                  setSiteFilter('all');
-                                  setDistributionTypeFilter('all');
-                                  setUserFilter('');
-                                  fetchDistributions(1, '', sortConfig, {});
-                                }}
-                                className="ml-1 h-auto p-0 text-[14px] text-(--action-primary)"
-                              >
-                                Clear filters
-                              </Button>
-                            </>
-                          ) : (
-                            'No distributions found.'
-                          )}
-                        </TableCell>
-                      </TableRow>
+                          Clear filters
+                        </Button>
+                      </>
                     ) : (
-                      distributions.map(distribution => (
-                        <TableRow
-                          key={distribution.id}
-                          className={bodyRowClass}
-                        >
-                          <TableCell className={bodyCellClass}>
-                            {formatDate(distribution.distributionDate)}
-                          </TableCell>
-                          <TableCell
-                            className={cn(bodyCellClass, 'font-semibold')}
-                          >
-                            {distribution.siteName}
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            <DistributionTypeBadge
-                              type={distribution.distributionType}
-                            />
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            {distribution.userName}
-                          </TableCell>
-                          <TableCell
-                            className={cn(
-                              bodyCellClass,
-                              'text-right tabular-nums'
-                            )}
-                          >
-                            ${parseFloat(distribution.totalCost).toFixed(2)}
-                          </TableCell>
-                          <TableCell
-                            className={cn(bodyCellClass, 'text-right')}
-                          >
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="View distribution details"
-                                aria-label="View distribution details"
-                                onClick={() =>
-                                  router.push(
-                                    `/supply-distributions/${distribution.id}`
-                                  )
-                                }
-                                className={rowActionClass}
-                              >
-                                <Eye className="size-[17px]" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Delete distribution"
-                                aria-label="Delete distribution"
-                                onClick={() =>
-                                  openDeleteDistribution(distribution)
-                                }
-                                className={destructiveActionClass}
-                              >
-                                <Trash2 className="size-[17px]" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      'No distributions found.'
                     )}
-                  </TableBody>
-                </Table>
+                  </div>
+                ) : (
+                  distributions.map(distribution => (
+                    <DirectoryRow
+                      key={distribution.id}
+                      leading={
+                        <div className={rowTileClass}>
+                          <Truck size={19} />
+                        </div>
+                      }
+                      title={distribution.siteName}
+                      sub={`${formatDate(distribution.distributionDate)} · ${distribution.userName}`}
+                      actions={
+                        <RowActions
+                          label={`Actions for the ${distribution.siteName} distribution`}
+                          actions={[
+                            {
+                              label: 'View',
+                              href: `/supply-distributions/${distribution.id}`,
+                            },
+                            {
+                              label: 'Delete',
+                              danger: true,
+                              onSelect: () =>
+                                openDeleteDistribution(distribution),
+                            },
+                          ]}
+                        />
+                      }
+                    />
+                  ))
+                )}
               </div>
 
               <PaginationFooter

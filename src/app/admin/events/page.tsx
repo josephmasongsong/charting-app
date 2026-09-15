@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import EventsTable from './components/events-table';
+import EventsListPanel from '@/components/events/EventsListPanel';
 import DeleteEventDialog from './components/delete-event-dialog';
 
-function EventsTableSkeleton() {
+function EventsListPanelSkeleton() {
   return (
     <div className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) p-5 shadow-(--shadow-card)">
       <Skeleton className="h-9 w-[340px] max-w-full rounded-(--radius-control) bg-(--surface-muted)" />
@@ -69,18 +69,19 @@ export default function AdminEventsPage() {
           className="h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover)"
         >
           <Plus className="h-4 w-4" />
-          Add Event
+          Log New Event
         </Button>
       </div>
 
-      <Suspense fallback={<EventsTableSkeleton />}>
-        <EventsTable
+      <Suspense fallback={<EventsListPanelSkeleton />}>
+        <EventsListPanel
           ref={eventsTableRef}
           message={message}
           error={error}
           onClearMessage={() => setMessage('')}
           onClearError={() => setError('')}
           onDelete={openDeleteEvent}
+          canEdit
         />
       </Suspense>
 

@@ -6,6 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Modal } from '@/components/ui/modal';
 import {
+  fieldHelperClass,
+  fieldInputClass,
+  fieldLabelClass,
+  fieldSelectTriggerClass,
+} from '@/components/ui/form-fields';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -13,18 +19,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Shield, UserCheck } from 'lucide-react';
+import { User, Shield } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user' | 'partner';
-  region?: string;
+  role: 'admin' | 'user';
   jobTitle?: string;
   isActive?: boolean;
-  emailVerified?: boolean;
   createdAt: string;
   updatedAt: string;
   firstName?: string;
@@ -45,11 +49,6 @@ const primaryButtonClass =
   'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
 const outlineButtonClass =
   'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
-const labelClass = 'text-[13.5px] font-bold';
-const inputClass =
-  'rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm';
-const selectClass =
-  'w-full rounded-(--radius-control) border-(--border-input) shadow-none';
 
 export default function EditUserDialog({
   open,
@@ -64,15 +63,13 @@ export default function EditUserDialog({
     firstName: '',
     lastName: '',
     email: '',
-    role: 'user' as 'admin' | 'user' | 'partner',
-    region: 'LMDM' as 'LMDM' | 'VIR' | 'Interior' | 'Northern',
+    role: 'user' as 'admin' | 'user',
     jobTitle: 'Tenant Engagement Worker' as
       | 'Tenant Engagement Worker'
       | 'People Plants & Homes'
       | 'Tenant Support Worker'
       | 'Health Services Manager',
     isActive: true,
-    emailVerified: false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -84,8 +81,6 @@ export default function EditUserDialog({
         lastName: nameParts.slice(1).join(' ') || '',
         email: user.email,
         role: user.role,
-        region:
-          (user.region as 'LMDM' | 'VIR' | 'Interior' | 'Northern') || 'LMDM',
         jobTitle:
           (user.jobTitle as
             | 'Tenant Engagement Worker'
@@ -93,7 +88,6 @@ export default function EditUserDialog({
             | 'Tenant Support Worker'
             | 'Health Services Manager') || 'Tenant Engagement Worker',
         isActive: user.isActive ?? true,
-        emailVerified: user.emailVerified ?? false,
       });
     }
   }, [user]);
@@ -143,7 +137,7 @@ export default function EditUserDialog({
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="editFirstName" className={labelClass}>
+              <Label htmlFor="editFirstName" className={fieldLabelClass}>
                 First Name
               </Label>
               <Input
@@ -152,11 +146,11 @@ export default function EditUserDialog({
                 onChange={e => setForm({ ...form, firstName: e.target.value })}
                 required
                 disabled={loading}
-                className={inputClass}
+                className={fieldInputClass}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="editLastName" className={labelClass}>
+              <Label htmlFor="editLastName" className={fieldLabelClass}>
                 Last Name
               </Label>
               <Input
@@ -165,13 +159,13 @@ export default function EditUserDialog({
                 onChange={e => setForm({ ...form, lastName: e.target.value })}
                 required
                 disabled={loading}
-                className={inputClass}
+                className={fieldInputClass}
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="editEmail" className={labelClass}>
+            <Label htmlFor="editEmail" className={fieldLabelClass}>
               Email
             </Label>
             <Input
@@ -181,22 +175,22 @@ export default function EditUserDialog({
               onChange={e => setForm({ ...form, email: e.target.value })}
               required
               disabled={loading}
-              className={inputClass}
+              className={fieldInputClass}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="editRole" className={labelClass}>
+            <Label htmlFor="editRole" className={fieldLabelClass}>
               Role
             </Label>
             <Select
               value={form.role}
-              onValueChange={(value: 'admin' | 'user' | 'partner') => {
+              onValueChange={(value: 'admin' | 'user') => {
                 setForm({ ...form, role: value });
               }}
               disabled={loading || !isAdmin}
             >
-              <SelectTrigger id="editRole" className={selectClass}>
+              <SelectTrigger id="editRole" className={fieldSelectTriggerClass}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -204,12 +198,6 @@ export default function EditUserDialog({
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
                     User
-                  </div>
-                </SelectItem>
-                <SelectItem value="partner">
-                  <div className="flex items-center gap-2">
-                    <UserCheck className="h-4 w-4" />
-                    Partner
                   </div>
                 </SelectItem>
                 <SelectItem value="admin">
@@ -221,7 +209,7 @@ export default function EditUserDialog({
               </SelectContent>
             </Select>
             {!isAdmin && (
-              <p className="text-[12.5px] text-(--text-muted)">
+              <p className={fieldHelperClass}>
                 Only admins can change roles
               </p>
             )}
@@ -229,32 +217,7 @@ export default function EditUserDialog({
 
           {isAdmin && (
             <div className="space-y-1.5">
-              <Label htmlFor="editRegion" className={labelClass}>
-                Region
-              </Label>
-              <Select
-                value={form.region}
-                onValueChange={(
-                  value: 'LMDM' | 'VIR' | 'Interior' | 'Northern'
-                ) => setForm({ ...form, region: value })}
-                disabled={loading}
-              >
-                <SelectTrigger id="editRegion" className={selectClass}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="LMDM">LMDM</SelectItem>
-                  <SelectItem value="VIR">VIR</SelectItem>
-                  <SelectItem value="Interior">Interior</SelectItem>
-                  <SelectItem value="Northern">Northern</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {isAdmin && form.role !== 'partner' && (
-            <div className="space-y-1.5">
-              <Label htmlFor="editJobTitle" className={labelClass}>
+              <Label htmlFor="editJobTitle" className={fieldLabelClass}>
                 Job Title
               </Label>
               <Select
@@ -268,7 +231,7 @@ export default function EditUserDialog({
                 ) => setForm({ ...form, jobTitle: value })}
                 disabled={loading}
               >
-                <SelectTrigger id="editJobTitle" className={selectClass}>
+                <SelectTrigger id="editJobTitle" className={fieldSelectTriggerClass}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -291,7 +254,7 @@ export default function EditUserDialog({
 
           {isAdmin && (
             <div className="space-y-1.5">
-              <Label htmlFor="editIsActive" className={labelClass}>
+              <Label htmlFor="editIsActive" className={fieldLabelClass}>
                 Account Status
               </Label>
               <div className="flex items-center gap-3">
@@ -305,33 +268,13 @@ export default function EditUserDialog({
                 />
                 <StatusBadge isActive={form.isActive} />
               </div>
-              <p className="text-[12.5px] text-(--text-muted)">
+              <p className={fieldHelperClass}>
                 Inactive users cannot login and will be logged out
                 automatically
               </p>
             </div>
           )}
 
-          {isAdmin && (
-            <div className="space-y-1.5">
-              <Label htmlFor="editEmailVerified" className={labelClass}>
-                Email Verified
-              </Label>
-              <div className="flex items-center gap-3">
-                <Switch
-                  id="editEmailVerified"
-                  checked={form.emailVerified}
-                  onCheckedChange={checked =>
-                    setForm({ ...form, emailVerified: checked })
-                  }
-                  disabled={loading}
-                />
-                <span className="text-sm text-(--text-muted)">
-                  {form.emailVerified ? 'Verified' : 'Unverified'}
-                </span>
-              </div>
-            </div>
-          )}
 
           <div className="flex justify-end gap-3 pt-1">
             <Button

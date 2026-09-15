@@ -53,7 +53,6 @@ export async function GET(
         userJobTitle: users.jobTitle,
         distributionDate: supplyDistributions.distributionDate,
         distributionType: supplyDistributions.distributionType,
-        recipientNotes: supplyDistributions.recipientNotes,
         totalCost: supplyDistributions.totalCost,
         notes: supplyDistributions.notes,
         createdAt: supplyDistributions.createdAt,

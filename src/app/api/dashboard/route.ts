@@ -111,6 +111,24 @@ export async function GET() {
       )
       .orderBy(asc(siteSupplies.quantity), asc(sites.name), asc(supplies.name));
 
+    // Sites of mine with no tracked inventory at all — no site_supplies row
+    // exists, so the low-stock query above can never surface them (it iterates
+    // rows). A site whose rows all sit at 0 is already visible as one
+    // "Out of stock" card per supply, so this is deliberately the no-rows case.
+    const noSupplies = await db
+      .select({
+        siteId: sites.id,
+        siteName: sites.name,
+      })
+      .from(sites)
+      .leftJoin(siteSupplies, eq(siteSupplies.siteId, sites.id))
+      .where(
+        or(eq(sites.tewId, session.user.id), eq(sites.pphId, session.user.id))
+      )
+      .groupBy(sites.id, sites.name)
+      .having(sql`count(${siteSupplies.id}) = 0`)
+      .orderBy(asc(sites.name));
+
     // Calculate date for "this month"
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
@@ -200,6 +218,7 @@ export async function GET() {
     const dashboardData = {
       userSites,
       needsAttention,
+      noSupplies,
       lowStock,
       monthlyMetrics: {
         events: monthlyEvents?.count || 0,

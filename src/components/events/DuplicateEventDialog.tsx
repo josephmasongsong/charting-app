@@ -10,6 +10,10 @@ interface DuplicateEventDialogProps {
   eventId: string;
   eventTitle: string;
   trigger?: React.ReactNode;
+  /** Controlled mode: pass both to drive the dialog from outside, which is how
+   * a text-link action opens it (there is no trigger element to wrap). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const primaryButtonClass =
@@ -21,9 +25,17 @@ export const DuplicateEventDialog: React.FC<DuplicateEventDialogProps> = ({
   eventId,
   eventTitle,
   trigger,
+  open: controlledOpen,
+  onOpenChange,
 }) => {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    if (isControlled) onOpenChange?.(next);
+    else setUncontrolledOpen(next);
+  };
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDuplicate = async () => {
@@ -61,7 +73,7 @@ export const DuplicateEventDialog: React.FC<DuplicateEventDialogProps> = ({
     <>
       {trigger ? (
         <div onClick={() => setOpen(true)}>{trigger}</div>
-      ) : (
+      ) : isControlled ? null : (
         <Button
           variant="outline"
           size="icon"

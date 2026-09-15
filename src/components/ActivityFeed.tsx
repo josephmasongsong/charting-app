@@ -1,11 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
+import { listSelectTriggerClass } from '@/components/ui/list-controls';
 import { useActivityFeed } from '@/hooks/useActivityFeed';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { channelLabel, referredToLabel } from '@/lib/referral-options';
 
 type ActivityType =
   | 'user_invited'
@@ -32,6 +42,8 @@ type ActivityType =
   | 'site_supply_updated'
   | 'supply_distribution_logged'
   | 'supply_distribution_deleted'
+  | 'referral_logged'
+  | 'referral_deleted'
   | 'user_updated';
 
 interface User {
@@ -60,7 +72,27 @@ const ActivityFeed: React.FC = () => {
   const { activities } = useActivityFeed();
   const PAGE_SIZE = 8;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const visibleActivities = activities.slice(0, visibleCount);
+  const [userFilter, setUserFilter] = useState('all');
+
+  // Actors are derived from the rows already loaded rather than fetched, so
+  // the picker can never offer someone with nothing to show. Rendered whenever
+  // there is any activity at all — today one person has logged everything, and
+  // a control that appears only once a second person shows up reads as missing.
+  const actors = Array.from(
+    new Map(
+      (activities as Activity[])
+        .filter(activity => activity.userId && activity.user)
+        .map(activity => [
+          activity.userId,
+          `${activity.user.firstName} ${activity.user.lastName}`,
+        ])
+    ).entries()
+  ).sort((a, b) => a[1].localeCompare(b[1]));
+
+  const filteredActivities = (activities as Activity[]).filter(
+    activity => userFilter === 'all' || activity.userId === userFilter
+  );
+  const visibleActivities = filteredActivities.slice(0, visibleCount);
 
   const dayLabel = (iso: string) => {
     const date = new Date(iso);
@@ -155,21 +187,24 @@ const ActivityFeed: React.FC = () => {
   };
 
   const getActivityTitle = (activity: Activity): React.ReactNode => {
-    const { type, user, userId, details, targetId } = activity;
+    const { type, user, details, targetId } = activity;
     const userName = `${user.firstName} ${user.lastName}`;
-    const actor = (
-      <Link href={`/users/${userId}`} className={linkClass}>
-        {userName}
-      </Link>
+    const actor = <span className={emphasisClass}>{userName}</span>;
+
+    // An event title is the only link in the feed. People, sites, supplies,
+    // distributions and referrals are named in plain emphasis instead, so the
+    // feed reads as a record rather than a wall of navigation.
+    const target = (children: React.ReactNode) => (
+      <span className={emphasisClass}>{children}</span>
     );
-    // Link only targets that still exist; deleted ones render as plain
-    // emphasis instead of a dead link.
-    const target = (href: string, children: React.ReactNode) =>
+
+    // Events still link, except once deleted — a dead link is worse than none.
+    const eventLink = (title: React.ReactNode) =>
       activity.targetExists === false ? (
-        <span className={emphasisClass}>{children}</span>
+        <span className={emphasisClass}>{title}</span>
       ) : (
-        <Link href={href} className={linkClass}>
-          {children}
+        <Link href={`/events/${targetId}`} className={linkClass}>
+          {title}
         </Link>
       );
 
@@ -187,7 +222,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {actor}{' '}held an event{' '}
-            {target(`/events/${targetId}`, details.eventTitle)} at{' '}
+            {eventLink(details.eventTitle)} at{' '}
             {details.siteName}
           </>
         );
@@ -237,7 +272,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {actor}{' '}created site{' '}
-            {target(`/sites/${targetId}`, details.siteName)}
+            {target(details.siteName)}
           </>
         );
 
@@ -338,7 +373,7 @@ const ActivityFeed: React.FC = () => {
             <span className={emphasisClass}>
               {formatSupplyList(details.supplies)}
             </span>{' '}
-            to {target(`/sites/${targetId}`, details.siteName)}
+            to {target(details.siteName)}
           </>
         );
 
@@ -349,7 +384,7 @@ const ActivityFeed: React.FC = () => {
             <span className={emphasisClass}>
               {formatSupplyList(details.supplies)}
             </span>{' '}
-            from {target(`/sites/${targetId}`, details.siteName)}
+            from {target(details.siteName)}
           </>
         );
 
@@ -358,7 +393,7 @@ const ActivityFeed: React.FC = () => {
           <>
             {actor}{' '}updated{' '}
             <span className={emphasisClass}>{details.supplyName}</span> at{' '}
-            {target(`/sites/${targetId}`, details.siteName)}
+            {target(details.siteName)}
           </>
         );
 
@@ -366,9 +401,7 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {actor}{' '}distributed{' '}
-            {target(
-              `/supply-distributions/${targetId}`,
-              formatSupplyList(details.supplies)
+            {target(formatSupplyList(details.supplies)
             )}{' '}
             at {details.siteName}
           </>
@@ -378,6 +411,25 @@ const ActivityFeed: React.FC = () => {
         return (
           <>
             {actor}{' '}deleted a {details.distributionType} distribution at{' '}
+            <span className={emphasisClass}>{details.siteName}</span>
+          </>
+        );
+
+      case 'referral_logged':
+        return (
+          <>
+            {actor}{' '}referred a tenant to{' '}
+            {target(referredToLabel(String(details.referredTo))
+            )}{' '}
+            at {details.siteName} · via{' '}
+            {channelLabel(String(details.channel))}
+          </>
+        );
+
+      case 'referral_deleted':
+        return (
+          <>
+            {actor}{' '}deleted a referral at{' '}
             <span className={emphasisClass}>{details.siteName}</span>
           </>
         );
@@ -400,14 +452,45 @@ const ActivityFeed: React.FC = () => {
       data-slot="activity-feed"
       className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card)"
     >
-      <div className="border-b border-(--border-default) px-4 pt-4 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-(--border-default) px-4 pt-4 pb-3">
         <h4 className="text-[17px] font-bold text-(--text-body)">
           Recent Activity
         </h4>
+        {actors.length > 0 && (
+          <Select
+            value={userFilter}
+            onValueChange={value => {
+              setUserFilter(value);
+              setVisibleCount(PAGE_SIZE);
+            }}
+          >
+            <SelectTrigger
+              aria-label="Filter by person"
+              className={cn(listSelectTriggerClass, "w-[200px]")}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All people</SelectItem>
+              {actors.map(([id, name]) => (
+                <SelectItem key={id} value={id}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
-      {activities.length === 0 ? (
-        <EmptyState title="You're all caught up" className="border-0" />
+      {filteredActivities.length === 0 ? (
+        <EmptyState
+          title={
+            userFilter === 'all'
+              ? "You're all caught up"
+              : 'No activity from this person yet'
+          }
+          className="border-0"
+        />
       ) : (
         <>
           {groups.map(group => (
@@ -424,9 +507,11 @@ const ActivityFeed: React.FC = () => {
                   key={activity.id}
                   className="flex items-start gap-3 border-b border-(--bch-gray-200) px-4 py-3 hover:bg-(--action-selected)"
                 >
+                  {/* 44px matches the avatars on the index pages (users,
+                      sites) so a person reads the same size everywhere. */}
                   <AvatarTile
                     initials={getUserInitials(activity.user)}
-                    size={32}
+                    size={44}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="text-[13.5px] text-(--text-body) [text-wrap:pretty]">
@@ -441,7 +526,7 @@ const ActivityFeed: React.FC = () => {
             </div>
           ))}
 
-          {activities.length > visibleCount ? (
+          {filteredActivities.length > visibleCount ? (
             <div className="flex flex-col items-center gap-1.5 px-4 py-3">
               <Button
                 variant="outline"
@@ -451,7 +536,8 @@ const ActivityFeed: React.FC = () => {
                 Load more
               </Button>
               <span className="text-[12px] text-(--text-muted)">
-                Showing {visibleActivities.length} of {activities.length}
+                Showing {visibleActivities.length} of{' '}
+                {filteredActivities.length}
               </span>
             </div>
           ) : (

@@ -7,8 +7,10 @@ import {
   sites,
   communityPartners,
   programGoals,
+  users,
+  events,
 } from '@/db';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 export async function GET() {
   try {
@@ -52,10 +54,21 @@ export async function GET() {
       .from(communityPartners)
       .orderBy(communityPartners.name);
 
+    // Only people who have actually logged an event, matching the list filter.
+    const organizersData = await db
+      .selectDistinct({
+        id: users.id,
+        name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+      })
+      .from(users)
+      .innerJoin(events, eq(events.userId, users.id))
+      .orderBy(sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`);
+
     return NextResponse.json({
       activityTypes: activityTypesData,
       sites: sitesData,
       communityPartners: partnersData,
+      organizers: organizersData,
     });
   } catch (error) {
     console.error('Options fetch error:', error);

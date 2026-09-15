@@ -111,7 +111,7 @@ export async function generateMonthlyActivityReport(
       activityTypeId: activityTypes.id,
       activityTypeName: activityTypes.name,
       programGoalName: programGoals.name,
-      region: users.region,
+      region: sites.region,
       eventCount: sql<number>`count(${events.id})`,
       participantsServed: sql<number>`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0)`,
       newParticipants: sql<number>`coalesce(sum(${events.newParticipants}), 0)`,
@@ -122,7 +122,7 @@ export async function generateMonthlyActivityReport(
     .from(events)
     .leftJoin(activityTypes, eq(events.activityTypeId, activityTypes.id))
     .leftJoin(programGoals, eq(activityTypes.programGoalId, programGoals.id))
-    .leftJoin(users, eq(events.userId, users.id))
+    .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
         session.user.role === 'admin'
@@ -131,17 +131,17 @@ export async function generateMonthlyActivityReport(
         gte(events.eventDate, startOfPeriod.toISOString().split('T')[0]),
         lt(events.eventDate, endOfPeriod.toISOString().split('T')[0]),
         sql`${activityTypes.id} IS NOT NULL`,
-        sql`${users.region} IS NOT NULL`
+        sql`${sites.region} IS NOT NULL`
       )
     )
     .groupBy(
       activityTypes.id,
       activityTypes.name,
       programGoals.name,
-      users.region
+      sites.region
     )
     .having(sql`count(${events.id}) > 0`)
-    .orderBy(users.region, activityTypes.name);
+    .orderBy(sites.region, activityTypes.name);
 
   // Get activity types participation summary - only activity types with events in the date range
   const activityTypesParticipationData = await db
@@ -232,11 +232,11 @@ export async function generateMonthlyActivityReport(
   // Get current period participants by region
   const currentPeriodParticipantsData = await db
     .select({
-      region: users.region,
+      region: sites.region,
       participants: sql<number>`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0)`,
     })
     .from(events)
-    .leftJoin(users, eq(events.userId, users.id))
+    .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
         session.user.role === 'admin'
@@ -244,20 +244,20 @@ export async function generateMonthlyActivityReport(
           : eq(events.userId, session.user.id),
         gte(events.eventDate, currentPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, currentPeriodEnd.toISOString().split('T')[0]),
-        sql`${users.region} IS NOT NULL`
+        sql`${sites.region} IS NOT NULL`
       )
     )
-    .groupBy(users.region);
+    .groupBy(sites.region);
 
   // Get previous period participants by region
   const previousPeriodParticipantsData = await db
     .select({
-      region: users.region,
+      region: sites.region,
       participants: sql<number>`coalesce(sum(${events.newParticipants} + ${events.returningParticipants}), 0)`,
       newParticipants: sql<number>`coalesce(sum(${events.newParticipants}), 0)`,
     })
     .from(events)
-    .leftJoin(users, eq(events.userId, users.id))
+    .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
         session.user.role === 'admin'
@@ -265,19 +265,19 @@ export async function generateMonthlyActivityReport(
           : eq(events.userId, session.user.id),
         gte(events.eventDate, previousPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, previousPeriodEnd.toISOString().split('T')[0]),
-        sql`${users.region} IS NOT NULL`
+        sql`${sites.region} IS NOT NULL`
       )
     )
-    .groupBy(users.region);
+    .groupBy(sites.region);
 
   // Get current period events by region
   const currentPeriodEventsData = await db
     .select({
-      region: users.region,
+      region: sites.region,
       eventCount: sql<number>`count(${events.id})`,
     })
     .from(events)
-    .leftJoin(users, eq(events.userId, users.id))
+    .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
         session.user.role === 'admin'
@@ -285,19 +285,19 @@ export async function generateMonthlyActivityReport(
           : eq(events.userId, session.user.id),
         gte(events.eventDate, currentPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, currentPeriodEnd.toISOString().split('T')[0]),
-        sql`${users.region} IS NOT NULL`
+        sql`${sites.region} IS NOT NULL`
       )
     )
-    .groupBy(users.region);
+    .groupBy(sites.region);
 
   // Get previous period events by region
   const previousPeriodEventsData = await db
     .select({
-      region: users.region,
+      region: sites.region,
       eventCount: sql<number>`count(${events.id})`,
     })
     .from(events)
-    .leftJoin(users, eq(events.userId, users.id))
+    .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
         session.user.role === 'admin'
@@ -305,19 +305,19 @@ export async function generateMonthlyActivityReport(
           : eq(events.userId, session.user.id),
         gte(events.eventDate, previousPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, previousPeriodEnd.toISOString().split('T')[0]),
-        sql`${users.region} IS NOT NULL`
+        sql`${sites.region} IS NOT NULL`
       )
     )
-    .groupBy(users.region);
+    .groupBy(sites.region);
 
   // Get current period total cost by region
   const currentPeriodRegionalCostData = await db
     .select({
-      region: users.region,
+      region: sites.region,
       totalCost: sql<number>`coalesce(sum(${events.totalCost}), 0)`,
     })
     .from(events)
-    .leftJoin(users, eq(events.userId, users.id))
+    .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
         session.user.role === 'admin'
@@ -325,19 +325,19 @@ export async function generateMonthlyActivityReport(
           : eq(events.userId, session.user.id),
         gte(events.eventDate, currentPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, currentPeriodEnd.toISOString().split('T')[0]),
-        sql`${users.region} IS NOT NULL`
+        sql`${sites.region} IS NOT NULL`
       )
     )
-    .groupBy(users.region);
+    .groupBy(sites.region);
 
   // Get previous period total cost by region
   const previousPeriodRegionalCostData = await db
     .select({
-      region: users.region,
+      region: sites.region,
       totalCost: sql<number>`coalesce(sum(${events.totalCost}), 0)`,
     })
     .from(events)
-    .leftJoin(users, eq(events.userId, users.id))
+    .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
         session.user.role === 'admin'
@@ -345,10 +345,10 @@ export async function generateMonthlyActivityReport(
           : eq(events.userId, session.user.id),
         gte(events.eventDate, previousPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, previousPeriodEnd.toISOString().split('T')[0]),
-        sql`${users.region} IS NOT NULL`
+        sql`${sites.region} IS NOT NULL`
       )
     )
-    .groupBy(users.region);
+    .groupBy(sites.region);
 
   // Calculate overall cost growth
   const totalCurrentCost = currentPeriodRegionalCostData.reduce(
@@ -557,9 +557,9 @@ export async function generateMonthlyActivityReport(
 
   // Get active regions
   const activeRegions = await db
-    .selectDistinct({ region: users.region })
+    .selectDistinct({ region: sites.region })
     .from(events)
-    .leftJoin(users, eq(events.userId, users.id))
+    .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
         session.user.role === 'admin'
@@ -567,10 +567,10 @@ export async function generateMonthlyActivityReport(
           : eq(events.userId, session.user.id),
         gte(events.eventDate, startOfPeriod.toISOString().split('T')[0]),
         lt(events.eventDate, endOfPeriod.toISOString().split('T')[0]),
-        sql`${users.region} IS NOT NULL`
+        sql`${sites.region} IS NOT NULL`
       )
     )
-    .orderBy(users.region);
+    .orderBy(sites.region);
 
   const monthNames = [
     'January',

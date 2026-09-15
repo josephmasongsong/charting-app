@@ -25,9 +25,7 @@ export async function PATCH(
       email,
       role,
       isActive,
-      region,
       jobTitle,
-      emailVerified,
     } = body;
 
     // Check current user permissions
@@ -60,26 +58,10 @@ export async function PATCH(
       );
     }
 
-    // Only allow region changes if user is admin
-    if (region !== undefined && !isAdmin) {
-      return NextResponse.json(
-        { error: 'Only admins can change regions' },
-        { status: 403 }
-      );
-    }
-
     // Only allow jobTitle changes if user is admin
     if (jobTitle !== undefined && !isAdmin) {
       return NextResponse.json(
         { error: 'Only admins can change job titles' },
-        { status: 403 }
-      );
-    }
-
-    // Only allow emailVerified changes if user is admin
-    if (emailVerified !== undefined && !isAdmin) {
-      return NextResponse.json(
-        { error: 'Only admins can change email verification' },
         { status: 403 }
       );
     }
@@ -90,13 +72,8 @@ export async function PATCH(
     }
 
     // Validate role if provided
-    if (role && !['admin', 'user', 'partner'].includes(role)) {
+    if (role && !['admin', 'user'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
-    }
-
-    // Validate region if provided
-    if (region && !['LMDM', 'VIR', 'Interior', 'Northern'].includes(region)) {
-      return NextResponse.json({ error: 'Invalid region' }, { status: 400 });
     }
 
     // Validate jobTitle if provided
@@ -179,52 +156,12 @@ export async function PATCH(
       updateData.isActive = isActive;
     }
 
-    if (region !== undefined && isAdmin) {
-      updateData.region = region;
-    }
-
-    if (emailVerified !== undefined && isAdmin) {
-      updateData.emailVerified = emailVerified;
-    }
-
     if (jobTitle !== undefined && isAdmin) {
-      // Set jobTitle to null if role is partner, otherwise use the provided value
-      if (role === 'partner') {
-        updateData.jobTitle = null;
-      } else {
-        // Check current user role if role is not being updated
-        const [currentUserData] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, id))
-          .limit(1);
-
-        if (currentUserData?.role === 'partner' && role === undefined) {
-          updateData.jobTitle = null;
-        } else {
-          updateData.jobTitle = jobTitle;
-        }
-      }
+      updateData.jobTitle = jobTitle;
     }
 
-    // Handle role changes and jobTitle implications
     if (role !== undefined && isAdmin) {
       updateData.role = role;
-      // If changing to partner role, set jobTitle to null
-      if (role === 'partner') {
-        updateData.jobTitle = null;
-      }
-      // If changing from partner to another role and no jobTitle provided, set default
-      else if (jobTitle === undefined) {
-        const [currentUserData] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, id))
-          .limit(1);
-        if (currentUserData?.role === 'partner') {
-          updateData.jobTitle = 'Tenant Engagement Worker';
-        }
-      }
     }
 
     // Compare and track changes
@@ -250,9 +187,6 @@ export async function PATCH(
         new: updateData.jobTitle,
       };
     }
-    if (updateData.region && updateData.region !== currentUserData.region) {
-      changes.region = { old: currentUserData.region, new: updateData.region };
-    }
     if (
       updateData.isActive !== undefined &&
       updateData.isActive !== currentUserData.isActive
@@ -260,15 +194,6 @@ export async function PATCH(
       changes.isActive = {
         old: currentUserData.isActive,
         new: updateData.isActive,
-      };
-    }
-    if (
-      updateData.emailVerified !== undefined &&
-      updateData.emailVerified !== currentUserData.emailVerified
-    ) {
-      changes.emailVerified = {
-        old: currentUserData.emailVerified,
-        new: updateData.emailVerified,
       };
     }
 
@@ -327,10 +252,8 @@ export async function GET(
         ),
         email: users.email,
         role: users.role,
-        region: users.region,
         jobTitle: users.jobTitle,
         isActive: users.isActive,
-        emailVerified: users.emailVerified,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
       })

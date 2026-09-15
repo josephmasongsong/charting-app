@@ -492,16 +492,8 @@ export async function PATCH(
             .where(eq(siteSupplies.id, siteSupplyId));
 
           if (siteSupply) {
-            // Decrease main supply quantity
-            await tx
-              .update(supplies)
-              .set({
-                quantity: sql`${supplies.quantity} - ${siteSupply.quantity}`,
-                updatedAt: new Date(),
-              })
-              .where(eq(supplies.id, siteSupply.supplyId));
-
-            // Remove from site
+            // Remove from site. The supply's total is the sum of its site
+            // rows, so deleting this row is the whole update.
             await tx
               .delete(siteSupplies)
               .where(eq(siteSupplies.id, siteSupplyId));
@@ -526,10 +518,6 @@ export async function PATCH(
             .where(eq(siteSupplies.id, supplyUpdate.siteSupplyId));
 
           if (currentSiteSupply) {
-            const quantityDifference =
-              supplyUpdate.quantity - currentSiteSupply.currentQuantity;
-
-            // Update site supply quantity
             await tx
               .update(siteSupplies)
               .set({
@@ -537,17 +525,6 @@ export async function PATCH(
                 updatedAt: new Date(),
               })
               .where(eq(siteSupplies.id, supplyUpdate.siteSupplyId));
-
-            // Adjust main supply quantity
-            if (quantityDifference !== 0) {
-              await tx
-                .update(supplies)
-                .set({
-                  quantity: sql`${supplies.quantity} + ${quantityDifference}`,
-                  updatedAt: new Date(),
-                })
-                .where(eq(supplies.id, currentSiteSupply.supplyId));
-            }
           }
         }
       }
@@ -561,15 +538,6 @@ export async function PATCH(
             supplyId: supplyInput.supplyId,
             quantity: supplyInput.quantity,
           });
-
-          // Update main supply quantity
-          await tx
-            .update(supplies)
-            .set({
-              quantity: sql`${supplies.quantity} + ${supplyInput.quantity}`,
-              updatedAt: new Date(),
-            })
-            .where(eq(supplies.id, supplyInput.supplyId));
         }
       }
 
@@ -694,27 +662,8 @@ export async function DELETE(
 
     // Use transaction to handle deletion and supply adjustments
     await db.transaction(async tx => {
-      // Get all site supplies before deletion
-      const siteSuppliesData = await tx
-        .select({
-          supplyId: siteSupplies.supplyId,
-          quantity: siteSupplies.quantity,
-        })
-        .from(siteSupplies)
-        .where(eq(siteSupplies.siteId, id));
-
-      // Return supplies to main inventory
-      for (const siteSupply of siteSuppliesData) {
-        await tx
-          .update(supplies)
-          .set({
-            quantity: sql`${supplies.quantity} - ${siteSupply.quantity}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(supplies.id, siteSupply.supplyId));
-      }
-
-      // Delete site supplies first (due to foreign key)
+      // Delete site supplies first (due to foreign key). Each supply's total
+      // is the sum of its site rows, so removing them is the whole update.
       await tx.delete(siteSupplies).where(eq(siteSupplies.siteId, id));
 
       // Delete site

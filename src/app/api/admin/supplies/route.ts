@@ -200,17 +200,17 @@ export async function POST(req: Request) {
       .values({
         name: name.trim(),
         costPerUnit: costPerUnit ? parseFloat(costPerUnit).toFixed(2) : '0.00',
-        quantity: 0, // Always 0 since quantities are managed through site assignments
         createdAt: new Date(),
         updatedAt: new Date(),
       })
       .returning();
 
-    // Log the activity
+    // Log the activity. A new supply always starts with no site rows, so its
+    // quantity is 0 by construction rather than by being stored as 0.
     await ActivityFeedService.logSupplyCreated(currentUser.id, newSupply.id, {
       name: newSupply.name,
       costPerUnit: newSupply.costPerUnit,
-      quantity: newSupply.quantity,
+      quantity: 0,
     });
 
     return NextResponse.json({

@@ -28,8 +28,6 @@ interface SupplyDetailData {
     costPerUnit: string;
     quantity: number;
     totalValue: number;
-    distributedQuantity: number;
-    availableQuantity: number;
     createdAt: string;
     updatedAt: string;
   };

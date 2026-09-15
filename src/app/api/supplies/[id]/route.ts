@@ -37,7 +37,6 @@ export async function GET(
         id: supplies.id,
         name: supplies.name,
         costPerUnit: supplies.costPerUnit,
-        quantity: supplies.quantity,
         createdAt: supplies.createdAt,
         updatedAt: supplies.updatedAt,
       })
@@ -61,22 +60,20 @@ export async function GET(
       .where(eq(siteSupplies.supplyId, id))
       .orderBy(sites.name);
 
-    // Calculate total value
-    const totalValue = Number(supply.costPerUnit) * supply.quantity;
-
-    // Calculate distributed vs available quantities
-    const distributedQuantity = siteDistribution.reduce(
+    // The supply's total IS the sum of its site rows — the same rows returned
+    // as siteDistribution below, so the header can never disagree with the
+    // per-site list under it.
+    const quantity = siteDistribution.reduce(
       (sum, site) => sum + site.quantity,
       0
     );
-    const availableQuantity = supply.quantity - distributedQuantity;
+    const totalValue = Number(supply.costPerUnit) * quantity;
 
     return NextResponse.json({
       supply: {
         ...supply,
+        quantity,
         totalValue,
-        distributedQuantity,
-        availableQuantity,
       },
       siteDistribution,
     });

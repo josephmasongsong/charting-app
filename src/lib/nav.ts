@@ -4,6 +4,7 @@ import {
   Building,
   CalendarDays,
   CalendarPlus,
+  FileText,
   Home,
   MapPin,
   Newspaper,
@@ -27,7 +28,7 @@ export const primaryNav: NavItem[] = [
   { href: '/reports/monthly', icon: Newspaper, label: 'Reports' },
 ];
 
-/** The two logging actions, grouped behind a single "Log" affordance. */
+/** The three logging actions, grouped behind a single "Log" affordance. */
 export const logActions: NavItem[] = [
   { href: '/events/new', icon: CalendarPlus, label: 'Log Event' },
   {
@@ -35,6 +36,7 @@ export const logActions: NavItem[] = [
     icon: Package,
     label: 'Log Distribution',
   },
+  { href: '/referrals/new', icon: FileText, label: 'Log Referral' },
 ];
 
 /** Admin sections. /admin/settings is absent on purpose — no page exists. */
@@ -51,6 +53,7 @@ export const adminNav: NavItem[] = [
   },
   { href: '/admin/supplies', icon: Box, label: 'Supplies' },
   { href: '/admin/supply-distributions', icon: Truck, label: 'Distributions' },
+  { href: '/admin/referrals', icon: FileText, label: 'Referrals' },
 ];
 
 /**

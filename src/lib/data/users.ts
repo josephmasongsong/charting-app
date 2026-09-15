@@ -8,7 +8,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user' | 'partner';
+  role: 'admin' | 'user';
   region?: string;
   jobTitle?: string;
   isActive?: boolean;
@@ -20,7 +20,7 @@ export interface User {
 
 export interface UserSession {
   id: string;
-  role: 'admin' | 'user' | 'partner';
+  role: 'admin' | 'user';
   email: string;
   name: string;
 }

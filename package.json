@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "tsx src/scripts/seed.ts"
+    "db:seed": "tsx src/scripts/seed.ts",
+    "db:reset:data": "tsx --env-file=.env scripts/reset-transactional-data.ts",
+    "db:seed:data": "tsx --env-file=.env scripts/seed-transactional-data.ts",
+    "db:verify:data": "tsx --env-file=.env scripts/verify-transactional-data.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ActivityFeedService } from '@/lib/services/activity-feed.service';
 import { getServerSession } from 'next-auth'; // or your auth method
 import { formatTimeAgo } from '@/lib/utils/time.utils';
-import { db, supplyDistributions, sites, events } from '@/db';
+import { db, events } from '@/db';
 import { inArray } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
@@ -20,34 +20,16 @@ export async function GET(request: NextRequest) {
     // Fetch activity feed
     const activities = await ActivityFeedService.getRecentActivity(limit);
 
-    // Feed rows outlive their targets (e.g. a distribution later deleted);
-    // flag whether each linkable target still exists so the client only
-    // renders links that resolve.
+    // Feed rows outlive their targets (an event later deleted), and the event
+    // title is the only thing the feed links. So only events need checking —
+    // sites, distributions and referrals are named in plain text now, and
+    // looking them up would be three queries nothing reads.
     const liveTargets = new Set<string>();
-    const idsOf = (type: string) => [
+    const eventIds = [
       ...new Set(
-        activities.filter(a => a.targetType === type).map(a => a.targetId)
+        activities.filter(a => a.targetType === 'event').map(a => a.targetId)
       ),
     ];
-    const distIds = idsOf('supply_distribution');
-    if (distIds.length) {
-      (
-        await db
-          .select({ id: supplyDistributions.id })
-          .from(supplyDistributions)
-          .where(inArray(supplyDistributions.id, distIds))
-      ).forEach(r => liveTargets.add(r.id));
-    }
-    const siteIds = idsOf('site');
-    if (siteIds.length) {
-      (
-        await db
-          .select({ id: sites.id })
-          .from(sites)
-          .where(inArray(sites.id, siteIds))
-      ).forEach(r => liveTargets.add(r.id));
-    }
-    const eventIds = idsOf('event');
     if (eventIds.length) {
       (
         await db
@@ -56,7 +38,7 @@ export async function GET(request: NextRequest) {
           .where(inArray(events.id, eventIds))
       ).forEach(r => liveTargets.add(r.id));
     }
-    const linkableTypes = ['supply_distribution', 'site', 'event'];
+    const linkableTypes = ['event'];
 
     // Transform for frontend
     const formattedActivities = activities.map(activity => ({

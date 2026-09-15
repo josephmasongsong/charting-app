@@ -16,7 +16,6 @@ interface Distribution {
   userName: string;
   distributionDate: string;
   distributionType: string;
-  recipientNotes: string;
   totalCost: string;
   notes: string | null;
   createdAt: string;
@@ -174,17 +173,8 @@ export default function DeleteDistributionDialog({
               )}
             </div>
 
-            <div className="border-t border-(--border-default) pt-2.5">
-              <div className="mb-1 font-semibold text-(--text-muted)">
-                Recipients:
-              </div>
-              <div className="rounded-(--radius-control) bg-(--surface-card) p-2.5 text-sm">
-                {distribution.recipientNotes}
-              </div>
-            </div>
-
             {distribution.notes && (
-              <div>
+              <div className="border-t border-(--border-default) pt-2.5">
                 <div className="mb-1 font-semibold text-(--text-muted)">
                   Notes:
                 </div>

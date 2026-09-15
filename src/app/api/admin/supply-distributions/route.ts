@@ -13,6 +13,10 @@ import {
 } from '@/db';
 import { eq, ilike, or, count, desc, asc, sql, and } from 'drizzle-orm';
 import { ActivityFeedService } from '@/lib/services/activity-feed.service';
+import {
+  DEFAULT_DISTRIBUTION_TYPE,
+  isDistributionType,
+} from '@/lib/distribution-types';
 
 export async function GET(req: Request) {
   try {
@@ -74,7 +78,6 @@ export async function GET(req: Request) {
       conditions.push(
         or(
           ilike(sites.name, `%${search}%`),
-          ilike(supplyDistributions.recipientNotes, `%${search}%`),
           ilike(supplyDistributions.notes, `%${search}%`),
           ilike(
             sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
@@ -142,7 +145,6 @@ export async function GET(req: Request) {
           ),
         distributionDate: supplyDistributions.distributionDate,
         distributionType: supplyDistributions.distributionType,
-        recipientNotes: supplyDistributions.recipientNotes,
         totalCost: supplyDistributions.totalCost,
         notes: supplyDistributions.notes,
         createdAt: supplyDistributions.createdAt,
@@ -228,16 +230,24 @@ export async function POST(req: Request) {
     // Validate required fields
     if (
       !distributionData.siteId ||
-      !distributionData.recipientNotes ||
       !distributionItems ||
       !Array.isArray(distributionItems) ||
       distributionItems.length === 0
     ) {
       return NextResponse.json(
-        {
-          error:
-            'Site ID, recipient notes, and distribution items are required',
-        },
+        { error: 'Site ID and distribution items are required' },
+        { status: 400 }
+      );
+    }
+
+    // distribution_type is plain varchar with no database enum, so the picker
+    // alone guarantees nothing — reject anything outside the current taxonomy.
+    const distributionType =
+      distributionData.distributionType || DEFAULT_DISTRIBUTION_TYPE;
+
+    if (!isDistributionType(distributionType)) {
+      return NextResponse.json(
+        { error: `Unknown distribution type: ${distributionType}` },
         { status: 400 }
       );
     }
@@ -344,8 +354,7 @@ export async function POST(req: Request) {
           siteId: distributionData.siteId,
           userId: session.user.id,
           distributionDate: distributionData.distributionDate,
-          distributionType: distributionData.distributionType || 'door_to_door',
-          recipientNotes: distributionData.recipientNotes,
+          distributionType,
           totalCost: totalCost.toFixed(2),
           notes: distributionData.notes || null,
           createdAt: new Date(),
@@ -386,8 +395,7 @@ export async function POST(req: Request) {
     // Log activity
     await ActivityFeedService.logSupplyDistribution(currentUser.id, result.id, {
       siteName: site.name,
-      distributionType: distributionData.distributionType || 'door_to_door',
-      recipientNotes: distributionData.recipientNotes,
+      distributionType,
       totalCost: totalCost,
       supplies: validatedItems,
     });

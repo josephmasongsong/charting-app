@@ -2,207 +2,22 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { db, events, users, sites, activityTypes } from '@/db';
-import { eq, ilike, and, desc, gte, sql } from 'drizzle-orm';
-import EventsListClient from './components/EventsListClient';
+import EventsClient from './components/EventsClient';
 
-interface EventsPageProps {
-  searchParams: Promise<{
-    search?: string;
-    activityType?: string;
-    site?: string;
-    organizer?: string;
-    dateRange?: string;
-    page?: string;
-  }>;
-}
-
-// event_date is a DATE column; format cutoffs from local parts to avoid the
-// UTC shift that toISOString() introduces around midnight.
-const formatDateOnly = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-function dateRangeCutoff(dateRangeFilter?: string): string | null {
-  const now = new Date();
-  switch (dateRangeFilter) {
-    case 'month':
-      return formatDateOnly(new Date(now.getFullYear(), now.getMonth(), 1));
-    case '3months':
-      return formatDateOnly(
-        new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
-      );
-    case 'year':
-      return formatDateOnly(new Date(now.getFullYear(), 0, 1));
-    default:
-      return null;
-  }
-}
-
-async function getEvents(
-  search?: string,
-  activityTypeFilter?: string,
-  siteFilter?: string,
-  organizerFilter?: string,
-  dateRangeFilter?: string,
-  page = 1,
-  limit = 10
-) {
-  const offset = (page - 1) * limit;
-
-  const conditions = [];
-
-  if (search) {
-    conditions.push(ilike(events.title, `%${search}%`));
-  }
-
-  if (activityTypeFilter && activityTypeFilter !== 'all') {
-    conditions.push(eq(events.activityTypeId, activityTypeFilter));
-  }
-
-  if (siteFilter && siteFilter !== 'all') {
-    conditions.push(eq(events.siteId, siteFilter));
-  }
-
-  if (organizerFilter && organizerFilter !== 'all') {
-    conditions.push(eq(events.userId, organizerFilter));
-  }
-
-  const cutoff = dateRangeCutoff(dateRangeFilter);
-  if (cutoff) {
-    conditions.push(gte(events.eventDate, cutoff));
-  }
-
-  const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
-
-  const eventsData = await db
-    .select({
-      id: events.id,
-      title: events.title,
-      eventDate: events.eventDate,
-      activityTypeName: activityTypes.name,
-      siteName: sites.name,
-      organizerName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
-      totalParticipants: sql<number>`${events.newParticipants} + ${events.returningParticipants}`,
-      eventIsYouthFocused: events.eventIsYouthFocused,
-      activityTypeId: events.activityTypeId,
-      siteId: events.siteId,
-      userId: events.userId,
-    })
-    .from(events)
-    .leftJoin(users, eq(events.userId, users.id))
-    .leftJoin(sites, eq(events.siteId, sites.id))
-    .leftJoin(activityTypes, eq(events.activityTypeId, activityTypes.id))
-    .where(whereCondition)
-    .limit(limit)
-    .offset(offset)
-    .orderBy(desc(events.eventDate), desc(events.createdAt));
-
-  // Get total count for pagination
-  const totalCountResult = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(events)
-    .leftJoin(users, eq(events.userId, users.id))
-    .leftJoin(sites, eq(events.siteId, sites.id))
-    .leftJoin(activityTypes, eq(events.activityTypeId, activityTypes.id))
-    .where(whereCondition);
-
-  const totalCount = Number(totalCountResult[0]?.count || 0);
-
-  return { events: eventsData, totalCount };
-}
-
-async function getFilterOptions() {
-  // Get unique activity types
-  const activityTypesData = await db
-    .select({
-      id: activityTypes.id,
-      name: activityTypes.name,
-    })
-    .from(activityTypes)
-    .orderBy(activityTypes.name);
-
-  // Get unique sites
-  const sitesData = await db
-    .select({
-      id: sites.id,
-      name: sites.name,
-    })
-    .from(sites)
-    .orderBy(sites.name);
-
-  // Get unique organizers
-  const organizersData = await db
-    .selectDistinct({
-      id: users.id,
-      name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
-    })
-    .from(users)
-    .innerJoin(events, eq(events.userId, users.id))
-    .orderBy(sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`);
-
-  return {
-    activityTypes: activityTypesData,
-    sites: sitesData,
-    organizers: organizersData,
-  };
-}
-
-export default async function EventsPage({ searchParams }: EventsPageProps) {
+export default async function EventsPage() {
   const session = await getServerSession(authOptions);
 
   if (!session) {
     redirect('/login');
   }
 
-  const params = await searchParams;
-  const search = params.search || '';
-  const activityType = params.activityType || 'all';
-  const site = params.site || 'all';
-  const organizer = params.organizer || 'all';
-  const dateRange = params.dateRange || 'all';
-  const page = parseInt(params.page || '1');
-
-  const { events: eventsData, totalCount } = await getEvents(
-    search,
-    activityType,
-    site,
-    organizer,
-    dateRange,
-    page
-  );
-
-  const filterOptions = await getFilterOptions();
-
-  const isAdmin = session.user.role === 'admin';
-
-  return (
-    <EventsListClient
-      initialEvents={eventsData}
-      filterOptions={filterOptions}
-      initialFilters={{
-        search,
-        activityType,
-        site,
-        organizer,
-        dateRange,
-        page,
-      }}
-      totalCount={totalCount}
-      isAdmin={isAdmin}
-    />
-  );
+  return <EventsClient />;
 }
 
-export async function generateMetadata({ searchParams }: EventsPageProps) {
-  const params = await searchParams;
-  const search = params.search;
-
+export async function generateMetadata() {
   return {
-    title: search
-      ? `Events - Search results for "${search}"`
-      : 'Events - Browse All Community Activities',
-    description: search
-      ? `Search results for "${search}" in our events directory`
-      : 'Browse all available community events and activities in our directory',
+    title: 'Events - Browse All Community Activities',
+    description:
+      'Browse all available community events and activities in our directory',
   };
 }

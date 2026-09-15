@@ -8,26 +8,24 @@ import {
   useImperativeHandle,
 } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  listSearchInputClass,
+  listSelectTriggerClass,
+} from '@/components/ui/list-controls';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaginationFooter } from '@/components/ui/pagination-footer';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  PenLine,
-  Trash2,
-  Search,
-  ArrowUpDown,
-  ChevronUp,
-  ChevronDown,
-} from 'lucide-react';
+import { DirectoryRow } from '@/components/ui/directory-row';
+import { RowActions } from '@/components/ui/row-actions';
+import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import EditSupplyDialog from './edit-supply-dialog';
@@ -77,16 +75,6 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-const headCellClass =
-  'h-auto whitespace-nowrap border border-[#0a7276] bg-(--surface-chrome) px-3.5 py-2.5 text-left text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase';
-const bodyCellClass =
-  'whitespace-nowrap border border-(--bch-gray-200) px-3.5 py-[9px]';
-const bodyRowClass =
-  'border-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
-const rowActionClass =
-  'size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)';
-const destructiveActionClass =
-  'size-8 rounded-(--radius-control) text-(--danger) hover:bg-(--danger-surface) hover:text-(--danger)';
 const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
 const successAlertClass =
   'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
@@ -175,6 +163,15 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
       fetchSupplies(pagination.page, search, newSortConfig);
     };
 
+    // Sorting moved from clickable column headers to a Select when the
+    // table became a responsive list — there are no headers to click now.
+    const handleSortChange = (value: string) => {
+      const [field, order] = value.split(':');
+      const next = { field, order: order as SortOrder };
+      setSortConfig(next);
+      fetchSupplies(1, search, next);
+    };
+
     const openViewSupply = (supply: Supply) => {
       setViewingSupply(supply);
       setViewOpen(true);
@@ -210,30 +207,6 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
     const displayMessage = message || internalMessage;
     const displayError = error || internalError;
 
-    const sortableHead = (field: string, label: string) => (
-      <Button
-        variant="ghost"
-        onClick={() => handleSort(field)}
-        className="h-auto p-0 text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase hover:bg-transparent hover:text-(--text-on-chrome)"
-      >
-        <span
-          className={cn(
-            sortConfig.field === field ? 'font-extrabold' : 'opacity-85'
-          )}
-        >
-          {label}
-        </span>
-        {sortConfig.field === field ? (
-          sortConfig.order === 'asc' ? (
-            <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-          ) : (
-            <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-          )
-        ) : (
-          <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-60" />
-        )}
-      </Button>
-    );
 
     return (
       <>
@@ -299,131 +272,101 @@ const SuppliesTable = forwardRef<SuppliesTableRef, SuppliesTableProps>(
                 placeholder="Search by name..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="h-9 rounded-(--radius-control) border-(--border-input) bg-(--surface-card) pl-8 text-sm shadow-none md:text-sm"
+                className={listSearchInputClass}
               />
             </form>
+            <Select
+              value={`${sortConfig.field}:${sortConfig.order}`}
+              onValueChange={handleSortChange}
+            >
+              <SelectTrigger
+                aria-label="Sort by"
+                className={cn(listSelectTriggerClass, "w-[210px]")}
+              >
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name:asc">Name (A–Z)</SelectItem>
+                <SelectItem value="name:desc">Name (Z–A)</SelectItem>
+                <SelectItem value="costPerUnit:asc">Cost (low–high)</SelectItem>
+                <SelectItem value="costPerUnit:desc">Cost (high–low)</SelectItem>
+                <SelectItem value="quantity:desc">Quantity (high–low)</SelectItem>
+                <SelectItem value="quantity:asc">Quantity (low–high)</SelectItem>
+                <SelectItem value="createdAt:desc">Newest first</SelectItem>
+                <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {loading ? (
             <div className="space-y-2 p-5">
-              <Skeleton className="h-10 rounded-none bg-(--bch-gray-200)" />
-              {Array.from({ length: 5 }, (_, i) => (
+                            {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton
                   key={i}
-                  className="h-9 rounded-none bg-(--surface-muted)"
+                  className="h-[62px] rounded-none bg-(--surface-muted)"
                 />
               ))}
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <Table className="min-w-[1000px] border-collapse bg-(--surface-card) text-sm">
-                  <TableHeader>
-                    <TableRow className="border-0 hover:bg-transparent">
-                      <TableHead className={headCellClass}>
-                        {sortableHead('name', 'Name')}
-                      </TableHead>
-                      <TableHead className={headCellClass}>
-                        {sortableHead('costPerUnit', 'Cost Per Unit')}
-                      </TableHead>
-                      <TableHead className={headCellClass}>
-                        {sortableHead('quantity', 'Total Quantity')}
-                      </TableHead>
-                      <TableHead className={headCellClass}>
-                        Total Value
-                      </TableHead>
-                      <TableHead className={cn(headCellClass, 'text-right')}>
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {supplies.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={5}
-                          className={cn(
-                            bodyCellClass,
-                            'py-10 text-center whitespace-normal text-(--text-muted)'
-                          )}
+              <div>
+                {supplies.length === 0 ? (
+                  <div className="px-4 py-10 text-center text-(--text-muted)">
+                    {search ? (
+                      <>
+                        No supplies found matching &quot;{search}&quot;.
+                        <Button
+                          variant="link"
+                          onClick={() => {
+                            setSearch('');
+                            fetchSupplies(1, '', sortConfig);
+                          }}
+                          className="ml-1 h-auto p-0 text-[14px] text-(--action-primary)"
                         >
-                          {search ? (
-                            <>
-                              No supplies found matching "{search}".
-                              <Button
-                                variant="link"
-                                onClick={() => {
-                                  setSearch('');
-                                  fetchSupplies(1, '', sortConfig);
-                                }}
-                                className="ml-1 h-auto p-0 text-[14px] text-(--action-primary)"
-                              >
-                                Clear search
-                              </Button>
-                            </>
-                          ) : (
-                            'No supplies found.'
-                          )}
-                        </TableCell>
-                      </TableRow>
+                          Clear search
+                        </Button>
+                      </>
                     ) : (
-                      supplies.map(supply => (
-                        <TableRow key={supply.id} className={bodyRowClass}>
-                          <TableCell
-                            className={cn(bodyCellClass, 'font-semibold')}
-                          >
-                            <Button
-                              variant="link"
-                              onClick={() => openViewSupply(supply)}
-                              title="View supply details"
-                              className="h-auto p-0 text-sm font-semibold text-(--text-body) hover:text-(--action-primary)"
-                            >
-                              {supply.name}
-                            </Button>
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            ${parseFloat(supply.costPerUnit).toFixed(2)}
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            {supply.quantity.toLocaleString()}
-                          </TableCell>
-                          <TableCell className={bodyCellClass}>
-                            $
-                            {(
-                              parseFloat(supply.costPerUnit) * supply.quantity
-                            ).toFixed(2)}
-                          </TableCell>
-                          <TableCell
-                            className={cn(bodyCellClass, 'text-right')}
-                          >
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Edit supply"
-                                aria-label="Edit supply"
-                                onClick={() => openEditSupply(supply)}
-                                className={rowActionClass}
-                              >
-                                <PenLine className="size-[17px]" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Delete supply"
-                                aria-label="Delete supply"
-                                onClick={() => openDeleteSupply(supply)}
-                                className={destructiveActionClass}
-                              >
-                                <Trash2 className="size-[17px]" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      'No supplies found.'
                     )}
-                  </TableBody>
-                </Table>
+                  </div>
+                ) : (
+                  supplies.map(supply => (
+                    <DirectoryRow
+                      key={supply.id}
+                      title={
+                        <Button
+                          variant="link"
+                          onClick={() => openViewSupply(supply)}
+                          title="View supply details"
+                          className="h-auto p-0 text-[14.5px] font-semibold text-(--text-body) hover:text-(--action-primary)"
+                        >
+                          {supply.name}
+                        </Button>
+                      }
+                      actions={
+                        <RowActions
+                          label={`Actions for ${supply.name}`}
+                          actions={[
+                            {
+                              label: 'View',
+                              onSelect: () => openViewSupply(supply),
+                            },
+                            {
+                              label: 'Edit',
+                              onSelect: () => openEditSupply(supply),
+                            },
+                            {
+                              label: 'Delete',
+                              danger: true,
+                              onSelect: () => openDeleteSupply(supply),
+                            },
+                          ]}
+                        />
+                      }
+                    />
+                  ))
+                )}
               </div>
 
               <PaginationFooter

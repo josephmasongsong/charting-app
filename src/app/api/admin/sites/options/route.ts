@@ -62,7 +62,6 @@ export async function GET() {
         id: supplies.id,
         name: supplies.name,
         costPerUnit: supplies.costPerUnit,
-        quantity: supplies.quantity,
       })
       .from(supplies)
       .orderBy(supplies.name);

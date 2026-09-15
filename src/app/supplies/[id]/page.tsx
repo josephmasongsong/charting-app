@@ -21,7 +21,6 @@ async function getSupplyData(supplyId: string) {
         id: supplies.id,
         name: supplies.name,
         costPerUnit: supplies.costPerUnit,
-        quantity: supplies.quantity,
         createdAt: supplies.createdAt,
         updatedAt: supplies.updatedAt,
       })
@@ -45,24 +44,20 @@ async function getSupplyData(supplyId: string) {
       .where(eq(siteSupplies.supplyId, supplyId))
       .orderBy(sites.name);
 
-    // Calculate total value
-    const totalValue = Number(supply.costPerUnit) * supply.quantity;
-
-    // Calculate distributed vs available quantities
-    const distributedQuantity = siteDistribution.reduce(
+    // The supply's total IS the sum of its site rows.
+    const quantity = siteDistribution.reduce(
       (sum, site) => sum + site.quantity,
       0
     );
-    const availableQuantity = supply.quantity - distributedQuantity;
+    const totalValue = Number(supply.costPerUnit) * quantity;
 
     return {
       supply: {
         ...supply,
         createdAt: String(supply.createdAt),
         updatedAt: String(supply.updatedAt),
+        quantity,
         totalValue,
-        distributedQuantity,
-        availableQuantity,
       },
       siteDistribution,
     };

@@ -4,14 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { EmptyState } from "@/components/ui/empty-state";
-import { QuickStartCard } from "@/components/ui/quick-start-card";
 import {
   Calendar,
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Newspaper,
   Package,
+  PackageX,
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
@@ -31,6 +29,10 @@ interface DashboardData {
     lastEventDate: string | null;
     daysSince: number | null;
   }>;
+  noSupplies: Array<{
+    siteId: string;
+    siteName: string;
+  }>;
   lowStock: Array<{
     siteId: string;
     siteName: string;
@@ -43,27 +45,6 @@ const pageClass = "min-h-screen bg-(--surface-page) px-6 pt-8 pb-12";
 const containerClass = "mx-auto max-w-[1200px]";
 const sectionTitleClass = "text-[17px] font-bold";
 
-// The frequent field actions. First thing under the greeting on a phone.
-const quickStartItems = [
-  {
-    href: "/events/new",
-    icon: CalendarDays,
-    label: "Log New Event",
-    sub: "Record a community event",
-  },
-  {
-    href: "/supply-distributions/new",
-    icon: Package,
-    label: "Log Supply Distribution",
-    sub: "Record supply delivery",
-  },
-  {
-    href: "/reports/monthly",
-    icon: Newspaper,
-    label: "Monthly Reports",
-    sub: "View analytics and insights",
-  },
-];
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -150,7 +131,9 @@ export default function Dashboard() {
   }
 
   const attentionCount =
-    (data.needsAttention?.length || 0) + (data.lowStock?.length || 0);
+    (data.needsAttention?.length || 0) +
+    (data.noSupplies?.length || 0) +
+    (data.lowStock?.length || 0);
 
   const scrollAttention = (direction: -1 | 1) => {
     attentionRailRef.current?.scrollBy({
@@ -169,16 +152,9 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Phones: Quick Start first (order-1). lg+: the template layout —
-            Needs Attention full width, then Quick Start beside the feed. */}
-        <div className="mt-6 flex flex-col gap-6 lg:grid lg:grid-cols-[340px_1fr] lg:items-start lg:gap-6">
-          <QuickStartCard
-            title="Quick Start"
-            items={quickStartItems}
-            className="order-1 w-full max-w-none lg:order-2 lg:max-w-[340px]"
-          />
-
-          <section className="order-2 lg:order-1 lg:col-span-2">
+        {/* Needs Attention, then the feed — both full width at every size. */}
+        <div className="mt-6 flex flex-col gap-6">
+          <section>
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className={sectionTitleClass}>Needs Attention</h2>
               <div className="flex items-center gap-2.5">
@@ -244,6 +220,35 @@ export default function Dashboard() {
                     </Link>
                   </div>
                 ))}
+                {data.noSupplies?.map((site) => (
+                  <div
+                    key={`nosupply-${site.siteId}`}
+                    className="flex w-[300px] shrink-0 snap-start flex-col gap-2.5 rounded-(--radius-card) border border-(--border-default) border-l-4 border-l-(--bch-gold-600) bg-(--surface-card) p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="grid size-[38px] shrink-0 place-items-center rounded-full bg-[#FDF1D3] text-[#B07C0A]">
+                        <PackageX size={18} />
+                      </span>
+                      <div className="min-w-0">
+                        <Link
+                          href={`/sites/${site.siteId}`}
+                          className="block text-[14.5px] font-bold text-(--text-body) hover:text-(--action-primary) hover:underline"
+                        >
+                          {site.siteName}
+                        </Link>
+                        <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
+                          No supplies tracked at this site
+                        </div>
+                      </div>
+                    </div>
+                    <Link
+                      href={`/sites/${site.siteId}`}
+                      className="self-start text-[13px] font-bold text-(--action-primary) hover:underline"
+                    >
+                      View Site →
+                    </Link>
+                  </div>
+                ))}
                 {data.lowStock?.map((item) => (
                   <div
                     key={`${item.siteId}-${item.supplyName}`}
@@ -281,7 +286,7 @@ export default function Dashboard() {
             )}
           </section>
 
-          <div className="order-3 lg:order-3">
+          <div>
             <ActivityFeed />
           </div>
         </div>

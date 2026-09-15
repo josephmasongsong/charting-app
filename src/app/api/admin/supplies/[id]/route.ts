@@ -176,15 +176,14 @@ export async function PATCH(
       // Update supply
       const [updatedSupply] = await tx
         .update(supplies)
+        // A supply's total is the sum of its site rows, so there is nothing
+        // here to set it to — this endpoint used to accept a `totalQuantity`
+        // and stamp it over that sum, which is how stored totals drifted.
         .set({
           name: name.trim(),
           costPerUnit: costPerUnit
             ? parseFloat(costPerUnit).toFixed(2)
             : existingSupply.costPerUnit,
-          quantity:
-            totalQuantity !== undefined
-              ? totalQuantity
-              : existingSupply.quantity,
           updatedAt: new Date(),
         })
         .where(eq(supplies.id, id))

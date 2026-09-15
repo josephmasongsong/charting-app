@@ -13,7 +13,6 @@ export class ActivityFeedService {
     distributionData: {
       siteName: string;
       distributionType: string;
-      recipientNotes: string;
       totalCost: number;
       supplies: Array<{
         supplyName: string;
@@ -31,7 +30,6 @@ export class ActivityFeedService {
       metadata: {
         siteName: distributionData.siteName,
         distributionType: distributionData.distributionType,
-        recipientNotes: distributionData.recipientNotes,
         totalCost: distributionData.totalCost,
         supplies: distributionData.supplies,
         totalItems: distributionData.supplies.length,
@@ -39,6 +37,30 @@ export class ActivityFeedService {
           (sum, supply) => sum + supply.quantity,
           0
         ),
+      },
+    });
+  }
+
+  static async logReferral(
+    actorId: string,
+    referralId: string,
+    referralData: {
+      siteName: string;
+      channel: string;
+      referredTo: string;
+      referralDate: string;
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'referral_logged',
+      actorId,
+      targetType: 'referral',
+      targetId: referralId,
+      metadata: {
+        siteName: referralData.siteName,
+        channel: referralData.channel,
+        referredTo: referralData.referredTo,
+        referralDate: referralData.referralDate,
       },
     });
   }
@@ -407,6 +429,29 @@ export class ActivityFeedService {
   }
 
   // ============= NEW DELETE METHODS =============
+
+  static async logReferralDeleted(
+    actorId: string,
+    referralId: string,
+    referralData: {
+      siteName: string;
+      channel: string;
+      referredTo: string;
+    }
+  ) {
+    await db.insert(activityFeed).values({
+      activityType: 'referral_deleted',
+      actorId,
+      targetType: 'referral',
+      targetId: referralId,
+      metadata: {
+        siteName: referralData.siteName,
+        channel: referralData.channel,
+        referredTo: referralData.referredTo,
+      },
+    });
+  }
+
 
   static async logEventDeleted(
     actorId: string,

@@ -21,15 +21,8 @@ const surfaceCardClass =
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Administrator',
   user: 'User',
-  partner: 'Partner',
 };
 
-const REGION_LABELS: Record<string, string> = {
-  LMDM: 'Lower Mainland',
-  VIR: 'Vancouver Island',
-  Interior: 'Interior',
-  Northern: 'Northern',
-};
 
 async function getUser(userId: string) {
   const [user] = await db
@@ -39,7 +32,6 @@ async function getUser(userId: string) {
       lastName: users.lastName,
       email: users.email,
       role: users.role,
-      region: users.region,
       jobTitle: users.jobTitle,
       isActive: users.isActive,
     })
@@ -110,9 +102,6 @@ export default async function UserPage({ params }: UserPageProps) {
           <div>
             <ProfileField label="Role">
               {ROLE_LABELS[user.role ?? ''] ?? user.role ?? 'N/A'}
-            </ProfileField>
-            <ProfileField label="Region">
-              {REGION_LABELS[user.region ?? ''] ?? user.region ?? 'N/A'}
             </ProfileField>
             <ProfileField label="Job Title">
               {user.jobTitle ?? 'N/A'}

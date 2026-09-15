@@ -22,10 +22,8 @@ export const users = pgTable(
     resetToken: text('reset_token').unique(),
     resetTokenExpiry: timestamp('reset_token_expiry'),
     role: text('role').default('user'),
-    region: text('region').default('LMDM').notNull(),
     jobTitle: text('job_title').default('Tenant Engagement Worker'),
     isActive: boolean('is_active').default(true).notNull(),
-    emailVerified: boolean('email_verified').default(false).notNull(),
     // Invitation tracking: invitedAt/invitedBy are stamped when an admin
     // creates the account; inviteAcceptedAt is stamped on first sign-in.
     // A row with invitedAt set and inviteAcceptedAt null is a pending invite.
@@ -54,7 +52,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 export type User = typeof users.$inferSelect;
 // Type for inserting user records
 export type NewUser = typeof users.$inferInsert;
-export type UserRole = 'admin' | 'user' | 'partner';
+export type UserRole = 'admin' | 'user';
 export type UserRegion = 'LMDM' | 'VIR' | 'Interior' | 'Northern';
 export type UserJobTitle =
   | 'Tenant Engagement Worker'

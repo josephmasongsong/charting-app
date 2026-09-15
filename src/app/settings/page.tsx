@@ -8,6 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  fieldHelperClass,
+  fieldInputClass,
+  fieldLabelClass,
+  fieldSelectTriggerClass,
+} from '@/components/ui/form-fields';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -15,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Shield, UserCheck, Loader2, Check, Info } from 'lucide-react';
+import { User, Shield, Loader2, Check, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface UserData {
@@ -23,8 +29,7 @@ interface UserData {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'admin' | 'user' | 'partner';
-  emailVerified?: boolean;
+  role: 'admin' | 'user';
   createdAt: string;
   updatedAt: string;
 }
@@ -33,9 +38,6 @@ const primaryButtonClass =
   'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
 const outlineButtonClass =
   'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
-const labelClass = 'text-[13.5px] font-bold';
-const inputClass =
-  'rounded-(--radius-control) border-(--border-input) bg-(--surface-card) shadow-none md:text-sm';
 const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
 const successAlertClass =
   'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
@@ -50,11 +52,6 @@ const roleChips: Record<string, { className: string; label: string }> = {
       'border border-(--bch-blue-100) bg-(--bch-blue-50) text-(--bch-blue-700)',
     label: 'Staff user',
   },
-  partner: {
-    className:
-      'border border-(--border-default) bg-(--bch-gray-100) text-(--text-muted)',
-    label: 'Partner',
-  },
 };
 
 function SettingsContent() {
@@ -64,7 +61,7 @@ function SettingsContent() {
     firstName: '',
     lastName: '',
     email: '',
-    role: 'user' as 'admin' | 'user' | 'partner',
+    role: 'user' as 'admin' | 'user',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -155,8 +152,6 @@ function SettingsContent() {
     switch (role) {
       case 'admin':
         return <Shield className="size-3" />;
-      case 'partner':
-        return <UserCheck className="size-3" />;
       default:
         return <User className="size-3" />;
     }
@@ -223,7 +218,7 @@ function SettingsContent() {
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="firstName" className={labelClass}>
+                <Label htmlFor="firstName" className={fieldLabelClass}>
                   First Name
                 </Label>
                 <Input
@@ -234,12 +229,12 @@ function SettingsContent() {
                   }
                   placeholder="Enter your first name"
                   disabled={isSaving}
-                  className={inputClass}
+                  className={fieldInputClass}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="lastName" className={labelClass}>
+                <Label htmlFor="lastName" className={fieldLabelClass}>
                   Last Name
                 </Label>
                 <Input
@@ -250,13 +245,13 @@ function SettingsContent() {
                   }
                   placeholder="Enter your last name"
                   disabled={isSaving}
-                  className={inputClass}
+                  className={fieldInputClass}
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email" className={labelClass}>
+              <Label htmlFor="email" className={fieldLabelClass}>
                 Email
               </Label>
               <div className="relative">
@@ -269,44 +264,23 @@ function SettingsContent() {
                   }
                   placeholder="Enter your email"
                   disabled={isSaving}
-                  className={cn(inputClass, 'pr-28')}
+                  className={fieldInputClass}
                 />
-                {userData &&
-                  (userData.emailVerified ? (
-                    <span
-                      title="Verified"
-                      className="absolute top-1/2 right-2 inline-flex -translate-y-1/2 items-center gap-1 rounded-full bg-[var(--bch-green-50,#EDF6EF)] px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--success) uppercase"
-                    >
-                      <Check className="size-[11px]" />
-                      Verified
-                    </span>
-                  ) : (
-                    <span
-                      title="Unverified"
-                      className="absolute top-1/2 right-2 inline-flex -translate-y-1/2 items-center gap-1 rounded-full bg-(--warning-surface) px-2 py-[2px] text-[11.5px] font-bold tracking-[.3px] text-(--warning-text) uppercase"
-                    >
-                      <Info className="size-[11px]" />
-                      Unverified
-                    </span>
-                  ))}
               </div>
             </div>
 
             <div className="max-w-[340px] space-y-1.5">
-              <Label htmlFor="role" className={labelClass}>
+              <Label htmlFor="role" className={fieldLabelClass}>
                 Role
               </Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: 'admin' | 'user' | 'partner') =>
+                onValueChange={(value: 'admin' | 'user') =>
                   setFormData({ ...formData, role: value })
                 }
                 disabled={isSaving || currentUserRole !== 'admin'}
               >
-                <SelectTrigger
-                  id="role"
-                  className="w-full rounded-(--radius-control) border-(--border-input) bg-(--surface-card) shadow-none"
-                >
+                <SelectTrigger id="role" className={fieldSelectTriggerClass}>
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -314,12 +288,6 @@ function SettingsContent() {
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4" />
                       User
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="partner">
-                    <div className="flex items-center gap-2">
-                      <UserCheck className="h-4 w-4" />
-                      Partner
                     </div>
                   </SelectItem>
                   <SelectItem value="admin">
@@ -331,7 +299,7 @@ function SettingsContent() {
                 </SelectContent>
               </Select>
               {currentUserRole !== 'admin' && (
-                <p className="text-[12.5px] text-(--text-muted)">
+                <p className={fieldHelperClass}>
                   Only administrators can change user roles.
                 </p>
               )}

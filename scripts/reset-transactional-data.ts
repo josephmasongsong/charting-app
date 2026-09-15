@@ -1,7 +1,7 @@
 // scripts/reset-transactional-data.ts
 //
 // Purges transactional records (activity feed, distributions + their items,
-// events, site inventory) while leaving reference data untouched
+// events, referrals, site inventory) while leaving reference data untouched
 // (users, sites, supplies, activity types, program goals, community partners).
 //
 // NOTE: supplies.quantity (the global stock counter) is deliberately left
@@ -14,6 +14,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import {
   db,
   events,
+  referrals,
   supplyDistributions,
   supplyDistributionItems,
   siteSupplies,
@@ -29,6 +30,7 @@ const PURGE_TABLES = [
   'supply_distribution_items',
   'supply_distributions',
   'events',
+  'referrals',
   'site_supplies',
 ];
 const KEEP_TABLES = [
@@ -81,6 +83,7 @@ async function main() {
     await tx.delete(supplyDistributionItems);
     await tx.delete(supplyDistributions);
     await tx.delete(events);
+    await tx.delete(referrals);
     await tx.delete(siteSupplies);
   });
 

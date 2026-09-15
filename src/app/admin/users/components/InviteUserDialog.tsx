@@ -6,6 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Modal } from '@/components/ui/modal';
 import {
+  fieldInputClass,
+  fieldLabelClass,
+  fieldSelectTriggerClass,
+} from '@/components/ui/form-fields';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -13,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, Shield, UserCheck } from 'lucide-react';
+import { User, Shield } from 'lucide-react';
 
 interface InviteUserDialogProps {
   open: boolean;
@@ -28,11 +33,6 @@ const primaryButtonClass =
   'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
 const outlineButtonClass =
   'h-auto rounded-(--radius-control) border-(--action-primary) bg-(--surface-card) px-[18px] py-[9px] text-[15px] font-normal text-(--action-primary) shadow-none hover:bg-(--action-selected) hover:text-(--action-primary)';
-const labelClass = 'text-[13.5px] font-bold';
-const inputClass =
-  'rounded-(--radius-control) border-(--border-input) shadow-none md:text-sm';
-const selectClass =
-  'w-full rounded-(--radius-control) border-(--border-input) shadow-none';
 
 export default function InviteUserDialog({
   open,
@@ -47,8 +47,7 @@ export default function InviteUserDialog({
     lastName: '',
     email: '',
     password: '',
-    role: 'user' as 'admin' | 'user' | 'partner',
-    region: 'LMDM' as 'LMDM' | 'VIR' | 'Interior' | 'Northern',
+    role: 'user' as 'admin' | 'user',
     jobTitle: 'Tenant Engagement Worker' as
       | 'Tenant Engagement Worker'
       | 'People Plants & Homes'
@@ -81,7 +80,6 @@ export default function InviteUserDialog({
           email: '',
           password: '',
           role: 'user',
-          region: 'LMDM',
           jobTitle: 'Tenant Engagement Worker',
           sendInvite: true,
         });
@@ -110,7 +108,7 @@ export default function InviteUserDialog({
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="firstName" className={labelClass}>
+            <Label htmlFor="firstName" className={fieldLabelClass}>
               First Name
             </Label>
             <Input
@@ -119,11 +117,11 @@ export default function InviteUserDialog({
               onChange={e => setForm({ ...form, firstName: e.target.value })}
               required
               disabled={loading}
-              className={inputClass}
+              className={fieldInputClass}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="lastName" className={labelClass}>
+            <Label htmlFor="lastName" className={fieldLabelClass}>
               Last Name
             </Label>
             <Input
@@ -132,13 +130,13 @@ export default function InviteUserDialog({
               onChange={e => setForm({ ...form, lastName: e.target.value })}
               required
               disabled={loading}
-              className={inputClass}
+              className={fieldInputClass}
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="email" className={labelClass}>
+          <Label htmlFor="email" className={fieldLabelClass}>
             Email
           </Label>
           <Input
@@ -148,12 +146,12 @@ export default function InviteUserDialog({
             onChange={e => setForm({ ...form, email: e.target.value })}
             required
             disabled={loading}
-            className={inputClass}
+            className={fieldInputClass}
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="password" className={labelClass}>
+          <Label htmlFor="password" className={fieldLabelClass}>
             Temporary Password
           </Label>
           <Input
@@ -164,22 +162,22 @@ export default function InviteUserDialog({
             required
             disabled={loading}
             placeholder="Minimum 8 characters"
-            className={inputClass}
+            className={fieldInputClass}
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="role" className={labelClass}>
+          <Label htmlFor="role" className={fieldLabelClass}>
             Role
           </Label>
           <Select
             value={form.role}
-            onValueChange={(value: 'admin' | 'user' | 'partner') => {
+            onValueChange={(value: 'admin' | 'user') => {
               setForm({ ...form, role: value });
             }}
             disabled={loading}
           >
-            <SelectTrigger id="role" className={selectClass}>
+            <SelectTrigger id="role" className={fieldSelectTriggerClass}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -187,12 +185,6 @@ export default function InviteUserDialog({
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   User
-                </div>
-              </SelectItem>
-              <SelectItem value="partner">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="h-4 w-4" />
-                  Partner
                 </div>
               </SelectItem>
               <SelectItem value="admin">
@@ -207,32 +199,7 @@ export default function InviteUserDialog({
 
         {isAdmin && (
           <div className="space-y-1.5">
-            <Label htmlFor="region" className={labelClass}>
-              Region
-            </Label>
-            <Select
-              value={form.region}
-              onValueChange={(value: 'LMDM' | 'VIR' | 'Interior' | 'Northern') =>
-                setForm({ ...form, region: value })
-              }
-              disabled={loading}
-            >
-              <SelectTrigger id="region" className={selectClass}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="LMDM">LMDM</SelectItem>
-                <SelectItem value="VIR">VIR</SelectItem>
-                <SelectItem value="Interior">Interior</SelectItem>
-                <SelectItem value="Northern">Northern</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {isAdmin && form.role !== 'partner' && (
-          <div className="space-y-1.5">
-            <Label htmlFor="jobTitle" className={labelClass}>
+            <Label htmlFor="jobTitle" className={fieldLabelClass}>
               Job Title
             </Label>
             <Select
@@ -246,7 +213,7 @@ export default function InviteUserDialog({
               ) => setForm({ ...form, jobTitle: value })}
               disabled={loading}
             >
-              <SelectTrigger id="jobTitle" className={selectClass}>
+              <SelectTrigger id="jobTitle" className={fieldSelectTriggerClass}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -275,7 +242,7 @@ export default function InviteUserDialog({
               setForm({ ...form, sendInvite: checked as boolean })
             }
           />
-          <Label htmlFor="sendInvite" className="text-sm">
+          <Label htmlFor="sendInvite" className={fieldLabelClass}>
             Send invitation email
           </Label>
         </div>

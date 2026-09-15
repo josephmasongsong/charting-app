@@ -7,12 +7,14 @@ import {
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { listSearchInputClass, listSelectTriggerClass } from '@/components/ui/list-controls';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaginationFooter } from '@/components/ui/pagination-footer';
+import { DirectoryRow } from '@/components/ui/directory-row';
+import { RowActions } from '@/components/ui/row-actions';
 import {
   Select,
   SelectContent,
@@ -20,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Eye, PenLine, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
 
@@ -31,11 +33,9 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user' | 'partner';
-  region?: string;
+  role: 'admin' | 'user';
   jobTitle?: string;
   isActive?: boolean;
-  emailVerified?: boolean;
   createdAt: string;
   updatedAt: string;
   firstName?: string;
@@ -44,7 +44,7 @@ interface User {
 
 interface UserSession {
   id: string;
-  role: 'admin' | 'user' | 'partner';
+  role: 'admin' | 'user';
   email: string;
   name: string;
 }
@@ -75,15 +75,6 @@ export interface UsersTableRef {
   refreshData: () => void;
 }
 
-// Directory row per the design system's StaffRow: avatar, name+title,
-// role+region, email link, status, action — striped, hairline-separated.
-const directoryRowClass =
-  'grid min-w-[760px] grid-cols-[56px_1.1fr_1fr_1.4fr_auto_80px] items-center gap-3 border-b border-(--bch-gray-200) px-4 py-3 text-[14.5px] last:border-b-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
-const subLineClass = 'text-[13.5px] text-(--text-muted)';
-const selectTriggerClass =
-  'h-9 w-[190px] rounded-(--radius-control) border-(--border-input) bg-(--surface-card) text-sm shadow-none';
-const rowActionClass =
-  'size-8 rounded-(--radius-control) text-(--action-primary) hover:bg-(--action-selected) hover:text-(--action-primary)';
 const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
 const successAlertClass =
   'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
@@ -266,20 +257,19 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                 placeholder="Search by name or email..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="h-9 rounded-(--radius-control) border-(--border-input) bg-(--surface-card) pl-8 text-sm shadow-none md:text-sm"
+                className={listSearchInputClass}
               />
             </form>
             <Select
               value={`${sortConfig.field}:${sortConfig.order}`}
               onValueChange={handleSortChange}
             >
-              <SelectTrigger aria-label="Sort by" className={selectTriggerClass}>
+              <SelectTrigger aria-label="Sort by" className={listSelectTriggerClass}>
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="name:asc">Name (A–Z)</SelectItem>
                 <SelectItem value="name:desc">Name (Z–A)</SelectItem>
-                <SelectItem value="email:asc">Email (A–Z)</SelectItem>
                 <SelectItem value="createdAt:desc">Newest first</SelectItem>
                 <SelectItem value="createdAt:asc">Oldest first</SelectItem>
               </SelectContent>
@@ -297,7 +287,7 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div>
                 {users.length === 0 ? (
                   <div className="px-4 py-10 text-center text-(--text-muted)">
                     {search ? (
@@ -320,51 +310,34 @@ const UsersTable = forwardRef<UsersTableRef, UsersTableProps>(
                   </div>
                 ) : (
                   users.map(user => (
-                    <div key={user.id} className={directoryRowClass}>
-                      <AvatarTile initials={userInitials(user.name)} size={44} />
-
-                      <b className="min-w-0 truncate">{user.name}</b>
-
-                      <div className={cn(subLineClass, 'min-w-0 truncate')}>
-                        {user.jobTitle || '—'}
-                      </div>
-
-                      <a
-                        href={`mailto:${user.email}`}
-                        className="truncate text-(--action-primary) hover:underline"
-                      >
-                        {user.email}
-                      </a>
-
-                      <StatusBadge isActive={user.isActive} />
-
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          asChild
-                          variant="ghost"
-                          size="icon"
-                          title="View profile"
-                          className={rowActionClass}
-                        >
-                          <Link
-                            href={`/users/${user.id}`}
-                            aria-label={`View ${user.name}`}
-                          >
-                            <Eye className="size-[17px]" />
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Edit user"
-                          aria-label={`Edit ${user.name}`}
-                          onClick={() => openEditUser(user)}
-                          className={rowActionClass}
-                        >
-                          <PenLine className="size-[17px]" />
-                        </Button>
-                      </div>
-                    </div>
+                    <DirectoryRow
+                      key={user.id}
+                      leading={
+                        <AvatarTile initials={userInitials(user.name)} size={44} />
+                      }
+                      title={
+                        <span className="flex flex-wrap items-center gap-2">
+                          {user.name}
+                          {/* Only the exception is worth a pill — an active
+                              account is the norm and says nothing. */}
+                          {user.isActive === false && (
+                            <StatusBadge isActive={false} />
+                          )}
+                        </span>
+                      }
+                      actions={
+                        <RowActions
+                          label={`Actions for ${user.name}`}
+                          actions={[
+                            { label: 'View', href: `/users/${user.id}` },
+                            {
+                              label: 'Edit',
+                              onSelect: () => openEditUser(user),
+                            },
+                          ]}
+                        />
+                      }
+                    />
                   ))
                 )}
               </div>

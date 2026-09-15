@@ -28,8 +28,7 @@ export const supplyDistributions = pgTable(
     distributionDate: date('distribution_date').notNull(),
     distributionType: varchar('distribution_type', { length: 50 })
       .notNull()
-      .default('door_to_door'), // 'event_distribution', 'door_to_door', 'community_room_pickup', 'emergency_distribution'
-    recipientNotes: text('recipient_notes').notNull(), // "Mrs. Johnson apt 3B, family of 4"
+      .default('door_to_door'), // see DISTRIBUTION_TYPES in src/lib/distribution-types.ts
     totalCost: numeric('total_cost', { precision: 12, scale: 2 })
       .default('0.00')
       .notNull(),

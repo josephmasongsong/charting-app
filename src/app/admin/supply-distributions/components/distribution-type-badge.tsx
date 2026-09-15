@@ -1,23 +1,19 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { distributionTypeLabel } from '@/lib/distribution-types';
 
-/** Formats a snake_case distribution type for display. */
+/** Formats a stored distribution type for display, retired values included. */
 export function formatDistributionType(type: string): string {
-  return type
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  return distributionTypeLabel(type);
 }
 
 const typeChipClasses: Record<string, string> = {
   door_to_door: 'bg-(--surface-chrome) font-bold text-(--text-on-chrome)',
   event_distribution:
     'border border-(--bch-blue-100) bg-(--action-selected) font-semibold text-(--action-primary)',
-  community_room_pickup:
+  tenant_request:
     'border border-[#f0e2b0] bg-(--bch-tan-50) font-semibold text-(--bch-tan-700)',
-  emergency_distribution:
-    'bg-(--danger-surface) font-semibold text-(--danger)',
 };
 
 export function DistributionTypeBadge({

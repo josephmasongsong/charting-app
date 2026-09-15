@@ -17,7 +17,7 @@ import { Calendar, Copy, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { cn } from '@/lib/utils';
-import { DuplicateEventDialog } from '../components/DuplicateEventDialog';
+import { DuplicateEventDialog } from '@/components/events/DuplicateEventDialog';
 
 interface EventPageProps {
   params: Promise<{

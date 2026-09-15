@@ -8,7 +8,7 @@ import {
   X,
   Calendar,
   Package,
-  Users,
+  FileText,
   Info,
   Loader2,
 } from 'lucide-react';
@@ -26,6 +26,10 @@ import {
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import {
+  DEFAULT_DISTRIBUTION_TYPE,
+  DISTRIBUTION_TYPES,
+} from '@/lib/distribution-types';
 
 interface Site {
   id: string;
@@ -59,7 +63,6 @@ interface FormData {
   eventId: string;
   distributionType: string;
   distributionDate: string;
-  recipientNotes: string;
   notes: string;
 }
 
@@ -124,9 +127,8 @@ export default function SupplyDistributionForm() {
   const [formData, setFormData] = useState<FormData>({
     siteId: '',
     eventId: '',
-    distributionType: 'door_to_door',
+    distributionType: DEFAULT_DISTRIBUTION_TYPE,
     distributionDate: new Date().toISOString().split('T')[0],
-    recipientNotes: '',
     notes: '',
   });
 
@@ -143,13 +145,6 @@ export default function SupplyDistributionForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  const distributionTypes = [
-    { value: 'door_to_door', label: 'Door to Door' },
-    { value: 'community_room_pickup', label: 'Community Room Pickup' },
-    { value: 'event_distribution', label: 'Event Distribution' },
-    { value: 'emergency_distribution', label: 'Emergency Distribution' },
-  ];
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -309,11 +304,7 @@ export default function SupplyDistributionForm() {
     setError('');
     setSuccess('');
 
-    if (
-      !formData.siteId ||
-      !formData.recipientNotes ||
-      distributionItems.every(item => !item.supplyId)
-    ) {
+    if (!formData.siteId || distributionItems.every(item => !item.supplyId)) {
       setError(
         'Please fill in all required fields and add at least one supply item.'
       );
@@ -366,9 +357,8 @@ export default function SupplyDistributionForm() {
         setFormData({
           siteId: '',
           eventId: '',
-          distributionType: 'door_to_door',
+          distributionType: DEFAULT_DISTRIBUTION_TYPE,
           distributionDate: new Date().toISOString().split('T')[0],
-          recipientNotes: '',
           notes: '',
         });
 
@@ -430,7 +420,6 @@ export default function SupplyDistributionForm() {
     { label: 'Distribution type', ok: !!formData.distributionType },
     { label: 'At least one supply item', ok: validItems.length > 0 },
     { label: 'Quantities within stock', ok: overages === 0 },
-    { label: 'Recipient information', ok: !!formData.recipientNotes.trim() },
   ];
   const remaining = checklist.filter(c => !c.ok).length;
   const readyNote =
@@ -536,7 +525,7 @@ export default function SupplyDistributionForm() {
                   Distribution type <Required />
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {distributionTypes.map(type => {
+                  {DISTRIBUTION_TYPES.map(type => {
                     const selected = formData.distributionType === type.value;
                     return (
                       <button
@@ -812,49 +801,16 @@ export default function SupplyDistributionForm() {
 
             <Card className={surfaceCardClass}>
               <SectionHeader
-                icon={Users}
-                title="Who received the supplies"
-                sub="The written detail drives reach reporting"
+                icon={FileText}
+                title="Notes"
+                sub="Optional context about this distribution"
               />
-              <div className="mt-5 space-y-4">
+              <div className="mt-5">
                 <div className="space-y-1.5">
-                  <Label
-                    htmlFor="recipientNotes"
-                    className="text-[15px] font-normal"
-                  >
-                    Recipient Information <Required />
-                  </Label>
-                  <Textarea
-                    id="recipientNotes"
-                    placeholder="e.g., Mrs. Johnson apt 3B, family of 4, or Event attendees (12 people)"
-                    value={formData.recipientNotes}
-                    onChange={e =>
-                      setFormData({
-                        ...formData,
-                        recipientNotes: e.target.value,
-                      })
-                    }
-                    disabled={submitting}
-                    aria-invalid={!!error && !formData.recipientNotes}
-                    className={inputClass}
-                  />
-                  <p className="flex items-start gap-2 text-[12.5px] text-(--text-muted)">
-                    <Info className="mt-0.5 size-3.5 shrink-0" />
-                    <span>
-                      Do not record health information, immigration status, or
-                      anything a tenant shared in confidence. Use unit numbers
-                      rather than names where you can.
-                    </span>
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="notes" className="text-[15px] font-normal">
-                    Additional Notes
-                  </Label>
                   <Textarea
                     id="notes"
-                    placeholder="Any additional context about this distribution..."
+                    aria-label="Notes"
+                    placeholder="Any context worth keeping about this distribution..."
                     value={formData.notes}
                     onChange={e =>
                       setFormData({ ...formData, notes: e.target.value })
@@ -862,6 +818,15 @@ export default function SupplyDistributionForm() {
                     disabled={submitting}
                     className={inputClass}
                   />
+                  <p className="flex items-start gap-2 text-[12.5px] text-(--text-muted)">
+                    <Info className="mt-0.5 size-3.5 shrink-0" />
+                    <span>
+                      Do not record tenant names, health information,
+                      immigration status, or anything a tenant shared in
+                      confidence. Use unit numbers rather than names where you
+                      need to be specific.
+                    </span>
+                  </p>
                 </div>
               </div>
             </Card>
