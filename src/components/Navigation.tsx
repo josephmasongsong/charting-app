@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, LogOut, Settings } from "lucide-react";
+import { ChevronDown, LogOut, Plus, Settings, Shield } from "lucide-react";
 import { adminNav, isActiveHref, logActions, primaryNav } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
@@ -24,9 +24,13 @@ const menuItemClass =
   "gap-2.5 rounded-none px-2.5 py-[9px] text-[14.5px] text-(--text-body) focus:bg-(--action-selected) focus:text-(--action-primary)";
 const destructiveMenuItemClass =
   "gap-2.5 rounded-none px-2.5 py-[9px] text-[14.5px] text-(--danger) focus:bg-(--danger-surface) focus:text-(--danger)";
-// Header nav follows the FeedbackWizard precedent: white, gap-4, 14.5px.
 const navLinkClass =
-  "flex items-center gap-1 border-b-2 py-1 text-[14.5px] text-(--text-on-chrome) transition-opacity";
+  "flex items-center gap-1.5 rounded-(--radius-control) px-3 py-1.5 text-[14.5px] text-(--text-on-chrome) transition-colors";
+const navLinkActiveClass = "bg-white/[.18] font-semibold";
+const navLinkIdleClass = "opacity-85 hover:bg-white/10 hover:opacity-100";
+// White rather than action blue: blue would blend into the teal bar.
+const logButtonClass =
+  "flex cursor-pointer items-center gap-1.5 rounded-(--radius-control) bg-white px-3.5 py-[7px] text-sm font-bold text-(--surface-chrome) transition-colors hover:bg-(--action-selected)";
 
 export default function Navigation() {
   const { data: session } = useSession();
@@ -54,25 +58,23 @@ export default function Navigation() {
   };
 
   const userInitials = getUserInitials(session.user?.name, session.user?.email);
-  const logActive = logActions.some((item) => pathname === item.href);
   const adminActive = pathname.startsWith("/admin");
 
   return (
     <nav className="sticky top-0 z-50 bg-(--surface-chrome)">
       <div className="px-4">
         <div className="flex h-14 items-center justify-between gap-4">
-          <Link
-            href="/dashboard"
-            className="flex shrink-0 items-center gap-2.5 text-[17px] font-bold tracking-[.3px] text-(--text-on-chrome)"
-          >
-            <BrandMark size={32} />
-            <span className="hidden sm:inline">BC HOUSING</span>
-          </Link>
+          <div className="flex items-center gap-7">
+            <Link
+              href="/dashboard"
+              className="flex shrink-0 items-center gap-2.5 text-[17px] font-bold tracking-[.3px] text-(--text-on-chrome)"
+            >
+              <BrandMark size={32} />
+              <span className="hidden sm:inline">BC HOUSING</span>
+            </Link>
 
-          {/* Links sit on the right beside the user menu; phones use the
-              bottom bar instead. */}
-          <div className="flex items-center gap-4">
-            <div className="hidden items-center gap-4 md:flex">
+            {/* Phones use the bottom bar instead. */}
+            <div className="hidden items-center gap-1 md:flex">
               {primaryNav.map((item) => {
                 const active = isActiveHref(pathname, item.href);
                 return (
@@ -82,46 +84,14 @@ export default function Navigation() {
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       navLinkClass,
-                      active
-                        ? "border-(--text-on-chrome) font-semibold"
-                        : "border-transparent opacity-85 hover:opacity-100",
+                      active ? navLinkActiveClass : navLinkIdleClass,
                     )}
                   >
+                    <item.icon className="size-[15px]" />
                     {item.label}
                   </Link>
                 );
               })}
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className={cn(
-                      navLinkClass,
-                      "cursor-pointer",
-                      logActive
-                        ? "border-(--text-on-chrome) font-semibold"
-                        : "border-transparent opacity-85 hover:opacity-100",
-                    )}
-                  >
-                    Log
-                    <ChevronDown className="size-[13px]" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className={menuContentClass}>
-                  {logActions.map((item) => (
-                    <DropdownMenuItem
-                      key={item.href}
-                      asChild
-                      className={menuItemClass}
-                    >
-                      <Link href={item.href}>
-                        <item.icon className="size-4" />
-                        {item.label}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
 
               {isAdmin && (
                 <DropdownMenu>
@@ -130,11 +100,10 @@ export default function Navigation() {
                       className={cn(
                         navLinkClass,
                         "cursor-pointer",
-                        adminActive
-                          ? "border-(--text-on-chrome) font-semibold"
-                          : "border-transparent opacity-85 hover:opacity-100",
+                        adminActive ? navLinkActiveClass : navLinkIdleClass,
                       )}
                     >
+                      <Shield className="size-[15px]" />
                       Admin
                       <ChevronDown className="size-[13px]" />
                     </button>
@@ -159,6 +128,36 @@ export default function Navigation() {
                 </DropdownMenu>
               )}
             </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={cn(logButtonClass, "hidden md:flex")}>
+                  <Plus className="size-[15px]" />
+                  Log
+                  <ChevronDown className="size-[13px]" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={4}
+                className={menuContentClass}
+              >
+                {logActions.map((item) => (
+                  <DropdownMenuItem
+                    key={item.href}
+                    asChild
+                    className={menuItemClass}
+                  >
+                    <Link href={item.href}>
+                      <item.icon className="size-4" />
+                      {item.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* User Menu */}
             <DropdownMenu>
