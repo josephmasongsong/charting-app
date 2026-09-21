@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,16 +25,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { User, Shield, Loader2, Check, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface UserData {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: 'admin' | 'user';
-  createdAt: string;
-  updatedAt: string;
-}
-
 const primaryButtonClass =
   'h-auto rounded-(--radius-control) bg-(--action-primary) px-[18px] py-[9px] text-[15px] font-normal text-(--text-on-chrome) shadow-none hover:bg-(--action-primary-hover) disabled:bg-(--action-primary-disabled) disabled:opacity-100';
 const outlineButtonClass =
@@ -42,21 +33,9 @@ const alertClass = 'border-y-0 border-r-0 px-3.5 py-3';
 const successAlertClass =
   'rounded-[2px] border-l-[5px] border-l-(--success) bg-[var(--bch-green-50,#EDF6EF)] text-foreground';
 
-const roleChips: Record<string, { className: string; label: string }> = {
-  admin: {
-    className: 'bg-(--surface-chrome) text-(--text-on-chrome)',
-    label: 'Administrator',
-  },
-  user: {
-    className:
-      'border border-(--bch-blue-100) bg-(--bch-blue-50) text-(--bch-blue-700)',
-    label: 'Staff user',
-  },
-};
-
 function SettingsContent() {
   const { data: session, update } = useSession();
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -87,7 +66,6 @@ function SettingsContent() {
         const data = await response.json();
 
         if (data.user) {
-          setUserData(data.user);
           setFormData({
             firstName: data.user.firstName || '',
             lastName: data.user.lastName || '',
@@ -127,7 +105,6 @@ function SettingsContent() {
 
       if (data.success) {
         setMessage('Profile updated successfully!');
-        setUserData(data.user);
 
         // Update the session if name or email changed
         await update({
@@ -148,20 +125,9 @@ function SettingsContent() {
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Shield className="size-3" />;
-      default:
-        return <User className="size-3" />;
-    }
-  };
-
-  const roleChip = roleChips[currentUserRole];
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-(--surface-page) px-6 pt-8 pb-12">
+      <div className="bg-(--surface-page) px-6 pt-8 pb-12">
         <div className="mx-auto max-w-[900px]">
           <Card className="gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) shadow-none">
             <div className="flex items-center justify-center gap-2 p-6 text-(--text-muted)">
@@ -175,23 +141,11 @@ function SettingsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-(--surface-page) px-6 pt-8 pb-12">
+    <div className="bg-(--surface-page) px-6 pt-8 pb-12">
       <div className="mx-auto max-w-[900px]">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-[28px] leading-tight font-bold tracking-[-.2px]">
-            Account Settings
-          </h1>
-          <span
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-full px-3.5 py-[5px] text-xs font-bold tracking-[.5px] uppercase',
-              roleChip?.className ??
-                'bg-(--surface-muted) text-(--text-body)'
-            )}
-          >
-            {getRoleIcon(currentUserRole)}
-            {roleChip?.label ?? currentUserRole}
-          </span>
-        </div>
+        <h1 className="mb-5 text-[28px] leading-tight font-bold tracking-[-.2px]">
+          Account Settings
+        </h1>
 
         <Card className="gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) p-8 shadow-none">
           <h2 className="text-[19px] font-bold">Profile Information</h2>
@@ -305,23 +259,6 @@ function SettingsContent() {
               )}
             </div>
 
-            {userData && (
-              <div className="space-y-1.5 border-t border-(--border-default) pt-[18px] text-sm">
-                <p>
-                  <strong>Account created:</strong>{' '}
-                  <span className="text-(--text-muted)">
-                    {new Date(userData.createdAt).toLocaleDateString()}
-                  </span>
-                </p>
-                <p>
-                  <strong>Last updated:</strong>{' '}
-                  <span className="text-(--text-muted)">
-                    {new Date(userData.updatedAt).toLocaleDateString()}
-                  </span>
-                </p>
-              </div>
-            )}
-
             <div className="flex gap-2.5 pt-2">
               <Button
                 type="submit"
@@ -333,20 +270,11 @@ function SettingsContent() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  if (userData) {
-                    setFormData({
-                      firstName: userData.firstName || '',
-                      lastName: userData.lastName || '',
-                      email: userData.email || '',
-                      role: userData.role || 'user',
-                    });
-                  }
-                }}
+                onClick={() => router.push('/dashboard')}
                 disabled={isSaving}
                 className={outlineButtonClass}
               >
-                Reset
+                Cancel
               </Button>
             </div>
           </form>

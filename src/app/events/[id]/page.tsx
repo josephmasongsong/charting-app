@@ -45,7 +45,6 @@ async function getEvent(eventId: string) {
       updatedAt: events.updatedAt,
       userId: events.userId,
       userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
-      userJobTitle: users.jobTitle,
       siteId: events.siteId,
       siteName: sites.name,
       siteAddress: sites.address,
@@ -148,7 +147,7 @@ export default async function EventPage({ params }: EventPageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-(--surface-page) px-6 pt-6 pb-11">
+    <div className="bg-(--surface-page) px-6 pt-6 pb-11">
       <div className="mx-auto max-w-[1180px]">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -232,7 +231,7 @@ export default async function EventPage({ params }: EventPageProps) {
             </ProfileField>
             <div>
               <div className="mb-2 text-base font-bold">Logged By</div>
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <AvatarTile initials={organizerInitials ?? ''} size={44} />
                 <div className="min-w-0">
                   <Link
@@ -241,11 +240,6 @@ export default async function EventPage({ params }: EventPageProps) {
                   >
                     {event.userName}
                   </Link>
-                  {event.userJobTitle && (
-                    <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
-                      {event.userJobTitle}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

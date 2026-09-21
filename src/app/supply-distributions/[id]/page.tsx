@@ -81,7 +81,6 @@ async function getDistribution(id: string) {
       siteName: sites.name,
       userId: supplyDistributions.userId,
       userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
-      userJobTitle: users.jobTitle,
       eventId: supplyDistributions.eventId,
       eventTitle: events.title,
     })
@@ -136,7 +135,7 @@ export default async function DistributionPage({
     .join('');
 
   return (
-    <div className="min-h-screen bg-(--surface-page) px-6 pt-6 pb-12">
+    <div className="bg-(--surface-page) px-6 pt-6 pb-12">
       <div className="mx-auto max-w-[1180px]">
         <div>
           <h1 className="text-[28px] leading-tight font-bold tracking-[-.2px]">
@@ -193,7 +192,7 @@ export default async function DistributionPage({
 
           <div>
             <div className="mb-3 text-[17px] font-bold">Distributed By</div>
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               <AvatarTile initials={initials ?? ''} size={44} />
               <div className="min-w-0">
                 <Link
@@ -202,11 +201,6 @@ export default async function DistributionPage({
                 >
                   {distribution.userName}
                 </Link>
-                {distribution.userJobTitle && (
-                  <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
-                    {distribution.userJobTitle}
-                  </div>
-                )}
               </div>
             </div>
 

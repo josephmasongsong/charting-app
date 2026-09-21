@@ -67,7 +67,6 @@ async function getReferral(id: string) {
       siteName: sites.name,
       userId: referrals.userId,
       userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
-      userJobTitle: users.jobTitle,
     })
     .from(referrals)
     .leftJoin(sites, eq(referrals.siteId, sites.id))
@@ -98,7 +97,7 @@ export default async function ReferralPage({ params }: ReferralPageProps) {
     .join('');
 
   return (
-    <div className="min-h-screen bg-(--surface-page) px-6 pt-6 pb-12">
+    <div className="bg-(--surface-page) px-6 pt-6 pb-12">
       <div className="mx-auto max-w-[1180px]">
         <div>
           <h1 className="text-[28px] leading-tight font-bold tracking-[-.2px]">
@@ -144,7 +143,7 @@ export default async function ReferralPage({ params }: ReferralPageProps) {
 
           <div>
             <div className="mb-3 text-[17px] font-bold">Referred By</div>
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               <AvatarTile initials={initials ?? ''} size={44} />
               <div className="min-w-0">
                 <Link
@@ -153,11 +152,6 @@ export default async function ReferralPage({ params }: ReferralPageProps) {
                 >
                   {referral.userName}
                 </Link>
-                {referral.userJobTitle && (
-                  <div className="mt-0.5 text-[12.5px] text-(--text-muted)">
-                    {referral.userJobTitle}
-                  </div>
-                )}
               </div>
             </div>
 

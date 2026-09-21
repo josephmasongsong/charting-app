@@ -47,8 +47,6 @@ async function getAssignedSites(userId: string) {
     .select({
       id: sites.id,
       name: sites.name,
-      address: sites.address,
-      numberOfTenants: sites.numberOfTenants,
     })
     .from(sites)
     // Sites where this person is either the TEW or the PPH programmer.
@@ -75,7 +73,7 @@ export default async function UserPage({ params }: UserPageProps) {
   const initials = `${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`;
 
   return (
-    <div className="min-h-screen bg-(--surface-page) px-6 pt-6 pb-12">
+    <div className="bg-(--surface-page) px-6 pt-6 pb-12">
       <div className="mx-auto max-w-[1180px]">
         <div>
           <h1 className="text-[28px] leading-tight font-bold tracking-[-.2px]">
@@ -140,10 +138,6 @@ export default async function UserPage({ params }: UserPageProps) {
                       >
                         {site.name}
                       </Link>
-                      <div className="text-[12.5px] text-(--text-muted)">
-                        {site.address} · {site.numberOfTenants} tenant
-                        {site.numberOfTenants === 1 ? '' : 's'}
-                      </div>
                     </div>
                     {/* TODO: /users/[id] — not wired: template status pill
                         (Operational / In development) needs a sites.status
