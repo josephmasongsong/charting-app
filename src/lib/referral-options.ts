@@ -12,9 +12,9 @@ export const CHANNELS = [
 ] as const;
 
 export const REFERRED_TO = [
-  { value: 'building_site_staff', label: 'Building or site staff' },
-  { value: 'tenant_support_worker', label: 'Tenant support worker' },
-  { value: 'third_party', label: 'Third party' },
+  { value: 'building_site_staff', label: 'Building and Site Staff' },
+  { value: 'health_services', label: 'Health Services' },
+  { value: 'third_party_provider', label: 'Third-party Provider' },
   { value: 'other', label: 'Other' },
 ] as const;
 

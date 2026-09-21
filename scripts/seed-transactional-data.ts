@@ -331,8 +331,8 @@ const DIST_BASKETS: Array<{ month: (m: number) => number; items: string[] }> = [
 const CHANNELS = ['in_person', 'phone_call', 'email'] as const;
 const REFERRED_TO = [
   'building_site_staff',
-  'tenant_support_worker',
-  'third_party',
+  'health_services',
+  'third_party_provider',
   'other',
 ] as const;
 
@@ -655,8 +655,8 @@ async function run() {
         ]);
         const referredTo = weightedPick<(typeof REFERRED_TO)[number]>([
           ['building_site_staff', 5],
-          ['tenant_support_worker', 4],
-          ['third_party', 2],
+          ['health_services', 4],
+          ['third_party_provider', 2],
           ['other', 1],
         ]);
         const actorId = site.pphId && chance(0.12) ? site.pphId : site.tewId;

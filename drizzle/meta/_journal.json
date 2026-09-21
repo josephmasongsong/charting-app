@@ -218,6 +218,13 @@
       "when": 1789013924453,
       "tag": "0030_derive_supply_quantity",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789935526056,
+      "tag": "0031_rename_referral_targets",
+      "breakpoints": true
     }
   ]
 }
