@@ -34,7 +34,7 @@ async function ReportContent({ searchParams }: PageProps) {
     );
 
     return (
-      <div className="min-h-screen bg-(--surface-page) px-6 pt-8 pb-12">
+      <div className="bg-(--surface-page) px-6 pt-8 pb-12">
         <div className="mx-auto max-w-[1200px]">
           <MonthlyActivityReport
             data={reportData}
@@ -45,7 +45,7 @@ async function ReportContent({ searchParams }: PageProps) {
     );
   } catch (error) {
     return (
-      <div className="min-h-screen bg-(--surface-page) px-6 pt-8 pb-12">
+      <div className="bg-(--surface-page) px-6 pt-8 pb-12">
         <div className="mx-auto max-w-[1200px]">
           <Card className="gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) shadow-(--shadow-card)">
             <CardContent className="flex flex-col items-center justify-center py-12">

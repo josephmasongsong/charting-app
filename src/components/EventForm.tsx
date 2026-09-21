@@ -52,9 +52,11 @@ interface EventFormProps {
   initialData?: any;
   isDuplicated?: boolean;
   isAdmin?: boolean;
+  // Set when a parent layout already supplies the page background and padding.
+  embedded?: boolean;
 }
 
-const pageClass = "min-h-screen bg-(--surface-page) px-6 pt-7 pb-10";
+const pageClass = "bg-(--surface-page) px-6 pt-7 pb-10";
 const containerClass = "mx-auto max-w-[1160px]";
 const cardClass =
   "gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) px-6 pt-5 pb-6 shadow-(--shadow-card)";
@@ -124,6 +126,7 @@ export default function EventForm({
   initialData,
   isDuplicated,
   isAdmin,
+  embedded,
 }: EventFormProps) {
   const router = useRouter();
   const [options, setOptions] = useState<Options>({
@@ -375,7 +378,7 @@ export default function EventForm({
 
   if (optionsLoading) {
     return (
-      <div className={pageClass}>
+      <div className={embedded ? undefined : pageClass}>
         <div
           className={cn(
             containerClass,
@@ -390,7 +393,7 @@ export default function EventForm({
   }
 
   return (
-    <div className={pageClass}>
+    <div className={embedded ? undefined : pageClass}>
       <div className={containerClass}>
         <h1 className="text-[30px] leading-tight font-bold tracking-[-.2px]">
           {mode === "create" ? "Log New Event" : "Edit Event"}

@@ -41,7 +41,7 @@ interface DashboardData {
   }>;
 }
 
-const pageClass = "min-h-screen bg-(--surface-page) px-6 pt-8 pb-12";
+const pageClass = "bg-(--surface-page) px-6 pt-8 pb-12";
 const containerClass = "mx-auto max-w-[1200px]";
 const sectionTitleClass = "text-[17px] font-bold";
 

@@ -31,7 +31,7 @@ export default function EventsClient() {
   const [error, setError] = useState('');
 
   return (
-    <div className="min-h-screen bg-(--surface-page) px-6 pt-7 pb-10">
+    <div className="bg-(--surface-page) px-6 pt-7 pb-10">
       <div className="mx-auto max-w-[1180px] space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

@@ -40,7 +40,7 @@ interface FormData {
   referredTo: string;
 }
 
-const pageClass = "min-h-screen bg-(--surface-page) px-6 pt-7 pb-10";
+const pageClass = "bg-(--surface-page) px-6 pt-7 pb-10";
 // 840px per the design-system template — narrower than the other forms
 // because this one is a single column of four fields.
 const containerClass = "mx-auto max-w-[840px]";

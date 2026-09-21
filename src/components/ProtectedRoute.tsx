@@ -27,7 +27,7 @@ export default function ProtectedRoute({
   if (status === 'loading') {
     return (
       fallback || (
-        <div className="flex min-h-screen items-center justify-center">
+        <div className="flex min-h-[calc(100dvh-3.5rem)] items-center justify-center">
           <Card className="w-full max-w-md">
             <CardContent className="flex items-center justify-center p-6">
               <Loader2 className="h-6 w-6 animate-spin mr-2" />

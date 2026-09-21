@@ -9,7 +9,7 @@ export default async function AdminLayout({
   await requireAdmin();
 
   return (
-    <div className="min-h-screen bg-(--surface-page) p-6">
+    <div className="bg-(--surface-page) p-6">
       <div className="mx-auto max-w-7xl">{children}</div>
     </div>
   );

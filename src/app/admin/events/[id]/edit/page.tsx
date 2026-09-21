@@ -87,7 +87,7 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
     redirect('/admin/events');
   }
 
-  return <EventForm mode="edit" eventId={id} initialData={eventData} />;
+  return <EventForm mode="edit" eventId={id} initialData={eventData} embedded />;
 }
 
 export async function generateMetadata({ params }: EditEventPageProps) {

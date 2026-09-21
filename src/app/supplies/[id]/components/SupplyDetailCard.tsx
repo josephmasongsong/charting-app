@@ -66,7 +66,7 @@ export default function SupplyDetailCard({ data }: SupplyDetailCardProps) {
   const { supply, siteDistribution } = data;
 
   return (
-    <div className="min-h-screen bg-(--surface-page) px-6 pt-6 pb-12">
+    <div className="bg-(--surface-page) px-6 pt-6 pb-12">
       <div className="mx-auto max-w-2xl">
         <div className="mb-5">
           <Button

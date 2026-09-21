@@ -237,7 +237,7 @@ export default async function SitePage({ params }: SitePageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-(--surface-page) px-6 pt-6 pb-12">
+    <div className="bg-(--surface-page) px-6 pt-6 pb-12">
       <div className="mx-auto max-w-[1180px]">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>

@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-(--surface-page) px-6 pt-8 pb-12">
+    <div className="bg-(--surface-page) px-6 pt-8 pb-12">
       <div className="mx-auto max-w-[1200px]">
         <div className="flex items-center justify-center py-12">
           <Card className="w-full max-w-md gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) shadow-(--shadow-card)">

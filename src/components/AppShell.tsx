@@ -26,7 +26,7 @@ export default function AppShell({
     <>
       <Navigation />
       {/* Bottom padding keeps the fixed phone bar clear of page content. */}
-      <main className="min-h-screen bg-(--surface-page) pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <main className="min-h-[calc(100dvh-3.5rem)] bg-(--surface-page) pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
         {children}
       </main>
       <BottomNav />

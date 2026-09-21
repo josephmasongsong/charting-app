@@ -391,7 +391,7 @@ export default function SupplyDistributionForm() {
 
   if (optionsLoading) {
     return (
-      <div className="min-h-screen bg-(--surface-page) px-6 pt-7 pb-10">
+      <div className="bg-(--surface-page) px-6 pt-7 pb-10">
         <div className="mx-auto flex min-h-96 max-w-[1220px] items-center justify-center">
           <div className="text-center text-(--text-muted)">
             <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin" />
@@ -430,7 +430,7 @@ export default function SupplyDistributionForm() {
         : 'All required fields complete';
 
   return (
-    <div className="min-h-screen bg-(--surface-page) px-6 pt-7 pb-10">
+    <div className="bg-(--surface-page) px-6 pt-7 pb-10">
       <div className="mx-auto max-w-[1220px]">
         <h1 className="text-[30px] leading-tight font-bold tracking-[-.2px]">
           Log Supply Distribution
