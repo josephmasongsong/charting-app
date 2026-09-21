@@ -194,7 +194,7 @@ function EmptyState({
         data-size="page"
         className={cn(
           "flex min-h-[60vh] items-center justify-center px-6 py-12",
-          emptyStateVariants({ tone }),
+          emptyStateVariants({ tone, size: "page" }),
           className
         )}
         {...props}
