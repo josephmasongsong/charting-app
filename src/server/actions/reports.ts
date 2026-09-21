@@ -10,8 +10,10 @@ import {
   supplyDistributions,
   supplyDistributionItems,
   supplies,
+  referrals,
 } from '@/db';
-import { or, sql, eq, and, gte, lt } from 'drizzle-orm';
+import { or, sql, eq, and, gte, lt, inArray } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { authOptions } from '@/lib/auth';
 import { getServerSession } from 'next-auth';
 
@@ -27,24 +29,96 @@ import type {
   MonthlySupplyDistributionGrowth,
   SitePerformance,
   SupplyDistributionSummary,
+  ReferralBreakdownItem,
   MonthlyActivityReportData,
 } from '@/components/reports/monthly/types';
+import {
+  CHANNELS,
+  REFERRED_TO,
+  channelLabel,
+  referredToLabel,
+} from '@/lib/referral-options';
 
-// Updated generateMonthlyActivityReport function to include supply distributions
+// Every taxonomy value appears (zero included) in form order, so a category's
+// slot never shifts with the data; stored values outside the taxonomy trail.
+function buildReferralBreakdown(
+  taxonomy: readonly { value: string; label: string }[],
+  counts: Map<string, number>,
+  labelFor: (value: string) => string
+): ReferralBreakdownItem[] {
+  const known = new Set(taxonomy.map(t => t.value));
+  return [
+    ...taxonomy.map(t => ({
+      value: t.value,
+      label: t.label,
+      count: counts.get(t.value) ?? 0,
+    })),
+    ...[...counts.entries()]
+      .filter(([value]) => !known.has(value))
+      .map(([value, count]) => ({ value, label: labelFor(value), count })),
+  ];
+}
+
+// Builds the all-regions report plus one report per region that had events in
+// the period, so the page can switch region tabs without another round trip.
 export async function generateMonthlyActivityReport(
   startYear: number,
   startMonth: number,
   endYear?: number,
   endMonth?: number
-): Promise<
-  MonthlyActivityReportData & {
-    availableDateRange: { minDate: string; maxDate: string };
-  }
-> {
+): Promise<MonthlyActivityReportData> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     throw new Error('Unauthorized');
   }
+  const user = { id: session.user.id, role: session.user.role };
+
+  const overall = await buildMonthlyActivityReport(
+    user,
+    startYear,
+    startMonth,
+    endYear,
+    endMonth
+  );
+  const regionEntries = await Promise.all(
+    overall.regions.map(
+      async region =>
+        [
+          region,
+          await buildMonthlyActivityReport(
+            user,
+            startYear,
+            startMonth,
+            endYear,
+            endMonth,
+            region
+          ),
+        ] as const
+    )
+  );
+
+  return { ...overall, regionReports: Object.fromEntries(regionEntries) };
+}
+
+type ReportUser = { id: string; role?: string | null };
+
+async function buildMonthlyActivityReport(
+  user: ReportUser,
+  startYear: number,
+  startMonth: number,
+  endYear?: number,
+  endMonth?: number,
+  region?: string
+): Promise<MonthlyActivityReportData> {
+  // Restricts a query to sites in the region; a no-op for the all-regions report.
+  const regionScope = (siteIdColumn: AnyPgColumn) =>
+    region
+      ? inArray(
+          siteIdColumn,
+          db.select({ id: sites.id }).from(sites).where(eq(sites.region, region))
+        )
+      : sql`true`;
+
 
   // Get available date range from actual events
   const dateRange = await db
@@ -55,9 +129,9 @@ export async function generateMonthlyActivityReport(
     .from(events)
     .leftJoin(users, eq(events.userId, users.id))
     .where(
-      session.user.role === 'admin'
+      user.role === 'admin'
         ? sql`true`
-        : eq(events.userId, session.user.id)
+        : eq(events.userId, user.id)
     );
 
   const startOfPeriod = new Date(startYear, startMonth - 1, 1);
@@ -87,9 +161,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(users, eq(supplyDistributions.userId, users.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(supplyDistributions.userId, session.user.id),
+          : eq(supplyDistributions.userId, user.id),
+        regionScope(supplyDistributions.siteId),
         gte(
           supplyDistributions.distributionDate,
           startOfPeriod.toISOString().split('T')[0]
@@ -125,9 +200,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, startOfPeriod.toISOString().split('T')[0]),
         lt(events.eventDate, endOfPeriod.toISOString().split('T')[0]),
         sql`${activityTypes.id} IS NOT NULL`,
@@ -156,9 +232,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(users, eq(events.userId, users.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, startOfPeriod.toISOString().split('T')[0]),
         lt(events.eventDate, endOfPeriod.toISOString().split('T')[0]),
         sql`${activityTypes.id} IS NOT NULL`
@@ -182,9 +259,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(users, eq(events.userId, users.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, startOfPeriod.toISOString().split('T')[0]),
         lt(events.eventDate, endOfPeriod.toISOString().split('T')[0]),
         sql`${programGoals.id} IS NOT NULL`
@@ -204,14 +282,16 @@ export async function generateMonthlyActivityReport(
       totalCost: sql<number>`coalesce(sum(${events.totalCost}), 0)`,
       totalEventDuration: sql<number>`coalesce(sum(${events.eventDuration}), 0)`,
       totalAdminDuration: sql<number>`coalesce(sum(${events.adminDuration}), 0)`,
+      totalTagEvents: sql<number>`count(*) filter (where ${events.usedTenantActivityGrant})`,
     })
     .from(events)
     .leftJoin(users, eq(events.userId, users.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, startOfPeriod.toISOString().split('T')[0]),
         lt(events.eventDate, endOfPeriod.toISOString().split('T')[0])
       )
@@ -239,9 +319,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, currentPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, currentPeriodEnd.toISOString().split('T')[0]),
         sql`${sites.region} IS NOT NULL`
@@ -260,9 +341,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, previousPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, previousPeriodEnd.toISOString().split('T')[0]),
         sql`${sites.region} IS NOT NULL`
@@ -280,9 +362,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, currentPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, currentPeriodEnd.toISOString().split('T')[0]),
         sql`${sites.region} IS NOT NULL`
@@ -300,9 +383,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, previousPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, previousPeriodEnd.toISOString().split('T')[0]),
         sql`${sites.region} IS NOT NULL`
@@ -320,9 +404,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, currentPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, currentPeriodEnd.toISOString().split('T')[0]),
         sql`${sites.region} IS NOT NULL`
@@ -340,9 +425,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, previousPeriodStart.toISOString().split('T')[0]),
         lt(events.eventDate, previousPeriodEnd.toISOString().split('T')[0]),
         sql`${sites.region} IS NOT NULL`
@@ -562,9 +648,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(sites, eq(events.siteId, sites.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, startOfPeriod.toISOString().split('T')[0]),
         lt(events.eventDate, endOfPeriod.toISOString().split('T')[0]),
         sql`${sites.region} IS NOT NULL`
@@ -642,9 +729,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(users, eq(supplyDistributions.userId, users.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(supplyDistributions.userId, session.user.id),
+          : eq(supplyDistributions.userId, user.id),
+        regionScope(supplyDistributions.siteId),
         gte(
           supplyDistributions.distributionDate,
           previousPeriodStart.toISOString().split('T')[0]
@@ -701,9 +789,10 @@ export async function generateMonthlyActivityReport(
     .leftJoin(users, eq(events.userId, users.id))
     .where(
       and(
-        session.user.role === 'admin'
+        user.role === 'admin'
           ? sql`true`
-          : eq(events.userId, session.user.id),
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
         gte(events.eventDate, startOfPeriod.toISOString().split('T')[0]),
         lt(events.eventDate, endOfPeriod.toISOString().split('T')[0]),
         sql`${sites.name} IS NOT NULL`
@@ -733,14 +822,95 @@ export async function generateMonthlyActivityReport(
     .select({ count: sql<number>`count(*)` })
     .from(sites)
     .where(
-      session.user.role === 'admin'
-        ? sql`true`
-        : or(
-            eq(sites.tewId, session.user.id),
-            eq(sites.pphId, session.user.id)
-          )
+      and(
+        user.role === 'admin'
+          ? sql`true`
+          : or(eq(sites.tewId, user.id), eq(sites.pphId, user.id)),
+        region ? eq(sites.region, region) : sql`true`
+      )
     );
   const totalSiteCount = Number(siteCountRow?.count || 0);
+
+  const [previousTagRow] = await db
+    .select({
+      count: sql<number>`count(*) filter (where ${events.usedTenantActivityGrant})`,
+    })
+    .from(events)
+    .where(
+      and(
+        user.role === 'admin'
+          ? sql`true`
+          : eq(events.userId, user.id),
+        regionScope(events.siteId),
+        gte(events.eventDate, previousPeriodStart.toISOString().split('T')[0]),
+        lt(events.eventDate, previousPeriodEnd.toISOString().split('T')[0])
+      )
+    );
+
+  // Referrals follow the same role scoping as events: admins see all, workers
+  // only the ones they logged.
+  const referralScope = and(
+    user.role === 'admin' ? sql`true` : eq(referrals.userId, user.id),
+    regionScope(referrals.siteId)
+  );
+
+  const referralRows = await db
+    .select({
+      referredTo: referrals.referredTo,
+      channel: referrals.channel,
+      count: sql<number>`count(*)`,
+    })
+    .from(referrals)
+    .where(
+      and(
+        referralScope,
+        gte(referrals.referralDate, startOfPeriod.toISOString().split('T')[0]),
+        lt(referrals.referralDate, endOfPeriod.toISOString().split('T')[0])
+      )
+    )
+    .groupBy(referrals.referredTo, referrals.channel);
+
+  const [previousReferralRow] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(referrals)
+    .where(
+      and(
+        referralScope,
+        gte(
+          referrals.referralDate,
+          previousPeriodStart.toISOString().split('T')[0]
+        ),
+        lt(
+          referrals.referralDate,
+          previousPeriodEnd.toISOString().split('T')[0]
+        )
+      )
+    );
+
+  const referredToCounts = new Map<string, number>();
+  const channelCounts = new Map<string, number>();
+  for (const row of referralRows) {
+    const count = Number(row.count);
+    referredToCounts.set(
+      row.referredTo,
+      (referredToCounts.get(row.referredTo) ?? 0) + count
+    );
+    channelCounts.set(
+      row.channel,
+      (channelCounts.get(row.channel) ?? 0) + count
+    );
+  }
+
+  const referralSummary = {
+    total: referralRows.reduce((sum, row) => sum + Number(row.count), 0),
+    previousTotal: Number(previousReferralRow?.count || 0),
+    byReferredTo: buildReferralBreakdown(
+      REFERRED_TO,
+      referredToCounts,
+      referredToLabel
+    ),
+    byChannel: buildReferralBreakdown(CHANNELS, channelCounts, channelLabel),
+  };
 
   return {
     reportMonth,
@@ -753,6 +923,8 @@ export async function generateMonthlyActivityReport(
       (sum, row) => sum + Number(row.newParticipants),
       0
     ),
+    totalTagEvents: Number(totalMetrics[0]?.totalTagEvents || 0),
+    totalPreviousTagEvents: Number(previousTagRow?.count || 0),
     totalCost: Number(totalMetrics[0]?.totalCost || 0),
     totalEventDuration: Number(totalMetrics[0]?.totalEventDuration || 0),
     totalAdminDuration: Number(totalMetrics[0]?.totalAdminDuration || 0),
@@ -785,6 +957,7 @@ export async function generateMonthlyActivityReport(
     supplyDistributions: supplyDistributionsWithNumbers,
     monthlySupplyDistributionGrowth: monthlySupplyDistributionGrowth,
     sitePerformance: sitePerformanceWithUtilization,
+    referrals: referralSummary,
     totalSiteCount,
     regions: activeRegions
       .map(r => r.region)

@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  Award,
   BarChart3,
   Calendar,
   Contact,
@@ -10,6 +11,7 @@ import {
   Users,
 } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { MonthlyActivityReportProps } from './types';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -17,6 +19,7 @@ import { DateRangeDialog } from './DateRangeDialog';
 import { MonthlyReportExportButton } from './MonthlyReportExportButton';
 import { SupplyDistributionsSidebar } from './SupplyDistributionsSidebar';
 import { SitePerformanceCard } from './SitePerformanceCard';
+import { ReferralsCard } from './ReferralsCard';
 import { ActivityTypeByRegionTable } from './ActivityTypeByRegionTable';
 import {
   getGrowthIcon,
@@ -25,10 +28,25 @@ import {
   getCostGrowthColor,
 } from './GrowthIndicators';
 
+const tabsListClass =
+  'h-auto gap-1 rounded-(--radius-control) bg-transparent p-0';
+const tabTriggerClass =
+  'rounded-(--radius-control) border border-(--border-default) bg-(--surface-card) px-3.5 py-[7px] text-[14.5px] font-normal text-(--text-body) data-[state=active]:border-(--action-primary) data-[state=active]:bg-(--action-primary) data-[state=active]:text-(--text-on-chrome) data-[state=active]:shadow-none';
+
 export function MonthlyActivityReport({
-  data,
+  data: overall,
   currentParams,
 }: MonthlyActivityReportProps) {
+  const [selectedRegion, setSelectedRegion] = useState('all');
+  // A region can drop out when the period changes; fall back to all regions.
+  const activeRegion = overall.regions.includes(selectedRegion)
+    ? selectedRegion
+    : 'all';
+  // Everything below reads from `data`, the selected region's report.
+  const data =
+    (activeRegion !== 'all' && overall.regionReports?.[activeRegion]) ||
+    overall;
+
   // Previous-period attendance sum (drives the derived-KPI deltas)
   const totalPreviousParticipants = data.monthlyParticipantGrowth.reduce(
     (sum, item) => sum + item.previousMonthParticipants,
@@ -88,6 +106,10 @@ export function MonthlyActivityReport({
     data.totalNewParticipants,
     data.totalPreviousNewParticipants,
   );
+  const tagEventsGrowth = growthOf(
+    data.totalTagEvents,
+    data.totalPreviousTagEvents,
+  );
 
   return (
     <div className="space-y-6">
@@ -105,9 +127,31 @@ export function MonthlyActivityReport({
             currentParams={currentParams}
             availableDateRange={data.availableDateRange}
           />
-          <MonthlyReportExportButton data={data} />
+          <MonthlyReportExportButton
+            data={data}
+            regionLabel={activeRegion === 'all' ? undefined : activeRegion}
+          />
         </div>
       </div>
+
+      {overall.regions.length > 1 && (
+        <Tabs value={activeRegion} onValueChange={setSelectedRegion}>
+          <TabsList className={tabsListClass}>
+            <TabsTrigger value="all" className={tabTriggerClass}>
+              All regions
+            </TabsTrigger>
+            {overall.regions.map(region => (
+              <TabsTrigger
+                key={region}
+                value={region}
+                className={tabTriggerClass}
+              >
+                {region}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      )}
 
       {/* Metric Cards - Top Row */}
       <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
@@ -192,7 +236,7 @@ export function MonthlyActivityReport({
         />
         <KpiCard
           variant="panel"
-          label="Cost per Participant"
+          label="Cost per Attendance"
           value={`$${costPerParticipant.toFixed(2)}`}
           icon={Target}
           sub={
@@ -215,7 +259,7 @@ export function MonthlyActivityReport({
         />
         <KpiCard
           variant="panel"
-          label="Avg Participants / Event"
+          label="Avg Attendance / Event"
           value={avgParticipants.toFixed(1)}
           icon={Contact}
           sub={
@@ -234,6 +278,37 @@ export function MonthlyActivityReport({
               </div>{' '}
               vs Previous Period
             </div>
+          }
+        />
+        <KpiCard
+          variant="panel"
+          label="Events with TAG"
+          value={data.totalTagEvents.toLocaleString()}
+          icon={Award}
+          sub={
+            <>
+              <div className="text-xs text-(--text-muted)">
+                {data.totalEvents > 0
+                  ? Math.round((data.totalTagEvents / data.totalEvents) * 100)
+                  : 0}
+                % of events used a Tenant Activity Grant
+              </div>
+              <div className="flex items-center gap-1 text-xs text-(--text-muted)">
+                <div
+                  className={cn(
+                    'flex items-center gap-1',
+                    getGrowthColor(tagEventsGrowth.type),
+                  )}
+                >
+                  {getGrowthIcon(tagEventsGrowth.type)}
+                  <span>
+                    {tagEventsGrowth.rate > 0 ? '+' : ''}
+                    {tagEventsGrowth.rate}%
+                  </span>
+                </div>{' '}
+                vs Previous Period
+              </div>
+            </>
           }
         />
       </div>
@@ -266,6 +341,7 @@ export function MonthlyActivityReport({
             sites={data.sitePerformance}
             totalSiteCount={data.totalSiteCount}
           />
+          <ReferralsCard referrals={data.referrals} />
         </div>
       </div>
     </div>

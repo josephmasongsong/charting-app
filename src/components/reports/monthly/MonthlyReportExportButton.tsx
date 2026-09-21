@@ -8,6 +8,8 @@ import * as XLSX from 'xlsx';
 
 interface MonthlyReportExportButtonProps {
   data: MonthlyActivityReportData;
+  /** Set when the report is scoped to one region; omitted for all regions. */
+  regionLabel?: string;
 }
 
 const outlineButtonClass =
@@ -15,6 +17,7 @@ const outlineButtonClass =
 
 export function MonthlyReportExportButton({
   data,
+  regionLabel,
 }: MonthlyReportExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -47,12 +50,14 @@ export function MonthlyReportExportButton({
       const worksheetData: any[][] = [
         ['Monthly Activity Report'],
         ['Report Period:', data.reportMonth],
+        ['Region:', regionLabel ?? 'All regions'],
         [],
         ['Summary Statistics'],
         ['Total Events:', data.totalEvents],
-        ['Total Participants:', data.totalParticipants],
+        ['Total Attendances:', data.totalParticipants],
         ['New Participants:', data.totalNewParticipants],
         ['Returning Participants:', data.totalReturningParticipants],
+        ['Events with TAG:', data.totalTagEvents],
         [
           'Total Event Duration (hrs):',
           Math.round(data.totalEventDuration / 60),
@@ -111,7 +116,10 @@ export function MonthlyReportExportButton({
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Monthly Report');
 
       // Generate filename
-      const filename = `monthly-report-${data.reportMonth.replace(/\s+/g, '-').toLowerCase()}.xlsx`;
+      const regionSuffix = regionLabel
+        ? `-${regionLabel.replace(/\s+/g, '-').toLowerCase()}`
+        : '';
+      const filename = `monthly-report-${data.reportMonth.replace(/\s+/g, '-').toLowerCase()}${regionSuffix}.xlsx`;
 
       // Write workbook and trigger download
       XLSX.writeFile(workbook, filename);

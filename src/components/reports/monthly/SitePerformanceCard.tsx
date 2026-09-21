@@ -1,7 +1,16 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { MapPin } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface SitePerformance {
   siteName: string;
@@ -15,61 +24,95 @@ interface SitePerformanceCardProps {
   totalSiteCount?: number;
 }
 
-const progressTrackClass =
-  'h-3.5 overflow-hidden rounded-full bg-(--bch-gray-200)';
+const headCellClass =
+  'h-auto whitespace-nowrap border border-[#0a7276] bg-(--surface-chrome) px-3.5 py-2.5 text-left text-xs font-bold tracking-[.04em] text-(--text-on-chrome) uppercase';
+const bodyCellClass =
+  'whitespace-nowrap border border-(--bch-gray-200) px-3.5 py-[9px]';
+const bodyRowClass =
+  'border-0 even:bg-(--surface-muted) hover:bg-(--action-selected)';
+const footerCellClass =
+  'whitespace-nowrap border border-[#9CCFC6] bg-[#AEDBD3] px-3.5 py-2.5 font-bold';
 
 export function SitePerformanceCard({
   sites,
   totalSiteCount,
 }: SitePerformanceCardProps) {
-  // Sort sites by event count (descending) and take top 5
-  const topSites = [...sites]
-    .sort((a, b) => b.eventCount - a.eventCount)
-    .slice(0, 5);
+  const rankedSites = [...sites].sort(
+    (a, b) =>
+      b.participantCount - a.participantCount || b.eventCount - a.eventCount
+  );
 
-  const maxEvents = topSites[0]?.eventCount || 1;
-  // Coverage derives from the full (unsliced) list: it contains only sites
-  // with events this period.
+  // The list contains only sites with events this period.
   const visitedCount = sites.length;
   const totalVisits = sites.reduce((sum, site) => sum + site.eventCount, 0);
+  const totalAttendances = sites.reduce(
+    (sum, site) => sum + site.participantCount,
+    0
+  );
 
   return (
-    <Card className="h-fit gap-0 rounded-(--radius-card) border-(--border-default) bg-(--surface-card) p-5 shadow-none">
-      <div className="mb-4 flex items-center gap-2 text-base font-bold">
+    <Card className="h-fit gap-0 overflow-hidden rounded-(--radius-card) border-(--border-default) bg-(--surface-card) p-0 shadow-none">
+      <div className="flex items-center gap-2 border-b border-(--border-default) px-5 py-4 text-base font-bold">
         <MapPin className="size-4" />
         Site Activity This Period
       </div>
 
-      {topSites.length > 0 ? (
-        <div className="space-y-4">
-          {topSites.map(site => {
-            const barWidth = (site.eventCount / maxEvents) * 100;
-
-            return (
-              <div key={site.siteName} className="space-y-1.5">
-                <div className="flex items-baseline justify-between gap-2.5 text-sm">
-                  <span className="font-semibold">{site.siteName}</span>
-                  <span className="text-right text-xs whitespace-nowrap text-(--text-muted)">
-                    {site.eventCount} events ·{' '}
-                    {site.participantCount.toLocaleString()} participants
-                  </span>
-                </div>
-                <div className={progressTrackClass}>
-                  <div
-                    className="h-full bg-(--surface-chrome)"
-                    style={{ width: `${barWidth}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+      {rankedSites.length > 0 ? (
+        <>
+          <div className="overflow-x-auto">
+            <Table className="border-collapse bg-(--surface-card) text-sm">
+              <TableHeader>
+                <TableRow className="border-0 hover:bg-transparent">
+                  <TableHead className={headCellClass}>Site</TableHead>
+                  <TableHead className={cn(headCellClass, 'text-right')}>
+                    Events
+                  </TableHead>
+                  <TableHead className={cn(headCellClass, 'text-right')}>
+                    Attendances
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rankedSites.map(site => (
+                  <TableRow key={site.siteName} className={bodyRowClass}>
+                    <TableCell
+                      className={cn(
+                        bodyCellClass,
+                        'font-semibold whitespace-normal'
+                      )}
+                    >
+                      {site.siteName}
+                    </TableCell>
+                    <TableCell className={cn(bodyCellClass, 'text-right')}>
+                      {site.eventCount.toLocaleString()}
+                    </TableCell>
+                    <TableCell
+                      className={cn(bodyCellClass, 'text-right font-semibold')}
+                    >
+                      {site.participantCount.toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="border-0 hover:bg-transparent">
+                  <TableCell className={footerCellClass}>
+                    Total
+                  </TableCell>
+                  <TableCell className={cn(footerCellClass, 'text-right')}>
+                    {totalVisits.toLocaleString()}
+                  </TableCell>
+                  <TableCell className={cn(footerCellClass, 'text-right')}>
+                    {totalAttendances.toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
           {typeof totalSiteCount === 'number' && totalSiteCount > 0 && (
-            <div className="pt-1 text-[12.5px] text-(--text-muted)">
-              {visitedCount} of {totalSiteCount} sites visited this period ·{' '}
-              {totalVisits} total visits
+            <div className="border-t border-(--border-default) px-5 py-3 text-[12.5px] text-(--text-muted)">
+              {visitedCount} of {totalSiteCount} sites visited this period
             </div>
           )}
-        </div>
+        </>
       ) : (
         <EmptyState
           icon={MapPin}

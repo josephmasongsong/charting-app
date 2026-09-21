@@ -79,6 +79,19 @@ export interface SitePerformance {
   utilizationRate: number;
 }
 
+export interface ReferralBreakdownItem {
+  value: string;
+  label: string;
+  count: number;
+}
+
+export interface ReferralSummary {
+  total: number;
+  previousTotal: number;
+  byReferredTo: ReferralBreakdownItem[];
+  byChannel: ReferralBreakdownItem[];
+}
+
 export interface MonthlyActivityReportData {
   reportMonth: string;
   totalEvents: number;
@@ -86,6 +99,8 @@ export interface MonthlyActivityReportData {
   totalNewParticipants: number;
   totalReturningParticipants: number;
   totalPreviousNewParticipants: number;
+  totalTagEvents: number;
+  totalPreviousTagEvents: number;
   totalCost: number;
   totalEventDuration: number;
   totalAdminDuration: number;
@@ -99,9 +114,12 @@ export interface MonthlyActivityReportData {
   supplyDistributions: SupplyDistributionSummary[];
   monthlySupplyDistributionGrowth: MonthlySupplyDistributionGrowth;
   sitePerformance: SitePerformance[];
+  referrals: ReferralSummary;
   totalSiteCount: number;
   regions: string[];
   availableDateRange: { minDate: string; maxDate: string };
+  /** The same report scoped to each region, keyed by region name. */
+  regionReports?: Record<string, MonthlyActivityReportData>;
 }
 
 export interface MonthlyActivityReportProps {

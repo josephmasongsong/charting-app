@@ -139,7 +139,7 @@ export function ActivityTypeByRegionTable({
                       Events
                     </TableHead>
                     <TableHead className={cn(headCellClass, 'text-right')}>
-                      Participants
+                      Attendances
                     </TableHead>
                     <TableHead className={cn(headCellClass, 'text-right')}>
                       Total Cost

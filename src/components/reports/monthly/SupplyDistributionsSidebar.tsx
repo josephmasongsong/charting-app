@@ -29,8 +29,8 @@ const footerCellClass =
 export function SupplyDistributionsSidebar({
   supplyDistributions,
 }: SupplyDistributionsSidebarProps) {
-  const totalDistributions = supplyDistributions.reduce(
-    (sum, supply) => sum + supply.distributionCount,
+  const totalValue = supplyDistributions.reduce(
+    (sum, supply) => sum + supply.totalCost,
     0
   );
   const totalQuantity = supplyDistributions.reduce(
@@ -51,10 +51,10 @@ export function SupplyDistributionsSidebar({
               <TableRow className="border-0 hover:bg-transparent">
                 <TableHead className={headCellClass}>Supply</TableHead>
                 <TableHead className={cn(headCellClass, 'text-right')}>
-                  Distributions
+                  Quantity
                 </TableHead>
                 <TableHead className={cn(headCellClass, 'text-right')}>
-                  Quantity
+                  Total Value
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -66,23 +66,23 @@ export function SupplyDistributionsSidebar({
                   >
                     {supply.supplyName}
                   </TableCell>
-                  <TableCell className={cn(bodyCellClass, 'text-right')}>
-                    {supply.distributionCount}
-                  </TableCell>
                   <TableCell
                     className={cn(bodyCellClass, 'text-right font-semibold')}
                   >
                     {supply.totalQuantityDistributed.toLocaleString()}
+                  </TableCell>
+                  <TableCell className={cn(bodyCellClass, 'text-right')}>
+                    ${supply.totalCost.toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))}
               <TableRow className="border-0 hover:bg-transparent">
                 <TableCell className={footerCellClass}>Total</TableCell>
                 <TableCell className={cn(footerCellClass, 'text-right')}>
-                  {totalDistributions}
+                  {totalQuantity.toLocaleString()}
                 </TableCell>
                 <TableCell className={cn(footerCellClass, 'text-right')}>
-                  {totalQuantity.toLocaleString()}
+                  ${totalValue.toFixed(2)}
                 </TableCell>
               </TableRow>
             </TableBody>
