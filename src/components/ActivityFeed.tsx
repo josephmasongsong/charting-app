@@ -1,20 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { listSelectTriggerClass } from '@/components/ui/list-controls';
 import { useActivityFeed } from '@/hooks/useActivityFeed';
 import { AvatarTile } from '@/components/ui/avatar-tile';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 import { channelLabel, referredToLabel } from '@/lib/referral-options';
 
 type ActivityType =
@@ -72,26 +63,8 @@ const ActivityFeed: React.FC = () => {
   const { activities } = useActivityFeed();
   const PAGE_SIZE = 8;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [userFilter, setUserFilter] = useState('all');
 
-  // Actors are derived from the rows already loaded rather than fetched, so
-  // the picker can never offer someone with nothing to show. Rendered whenever
-  // there is any activity at all — today one person has logged everything, and
-  // a control that appears only once a second person shows up reads as missing.
-  const actors = Array.from(
-    new Map(
-      (activities as Activity[])
-        .filter(activity => activity.userId && activity.user)
-        .map(activity => [
-          activity.userId,
-          `${activity.user.firstName} ${activity.user.lastName}`,
-        ])
-    ).entries()
-  ).sort((a, b) => a[1].localeCompare(b[1]));
-
-  const filteredActivities = (activities as Activity[]).filter(
-    activity => userFilter === 'all' || activity.userId === userFilter
-  );
+  const filteredActivities = activities as Activity[];
   const visibleActivities = filteredActivities.slice(0, visibleCount);
 
   const dayLabel = (iso: string) => {
@@ -456,41 +429,10 @@ const ActivityFeed: React.FC = () => {
         <h4 className="text-[17px] font-bold text-(--text-body)">
           Recent Activity
         </h4>
-        {actors.length > 0 && (
-          <Select
-            value={userFilter}
-            onValueChange={value => {
-              setUserFilter(value);
-              setVisibleCount(PAGE_SIZE);
-            }}
-          >
-            <SelectTrigger
-              aria-label="Filter by person"
-              className={cn(listSelectTriggerClass, "w-[200px]")}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All people</SelectItem>
-              {actors.map(([id, name]) => (
-                <SelectItem key={id} value={id}>
-                  {name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
       </div>
 
       {filteredActivities.length === 0 ? (
-        <EmptyState
-          title={
-            userFilter === 'all'
-              ? "You're all caught up"
-              : 'No activity from this person yet'
-          }
-          className="border-0"
-        />
+        <EmptyState title="You're all caught up" className="border-0" />
       ) : (
         <>
           {groups.map(group => (
