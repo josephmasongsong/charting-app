@@ -83,8 +83,8 @@ const ActivityTypesTable = forwardRef<
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [sortConfig, setSortConfig] = useState<SortConfig>({
-      field: 'createdAt',
-      order: 'desc',
+      field: 'name',
+      order: 'asc',
     });
     const [pagination, setPagination] = useState<PaginationInfo>({
       page: 1,
@@ -295,8 +295,6 @@ const ActivityTypesTable = forwardRef<
               <SelectContent>
                 <SelectItem value="name:asc">Name (A–Z)</SelectItem>
                 <SelectItem value="name:desc">Name (Z–A)</SelectItem>
-                <SelectItem value="createdAt:desc">Newest first</SelectItem>
-                <SelectItem value="createdAt:asc">Oldest first</SelectItem>
               </SelectContent>
             </Select>
           </div>

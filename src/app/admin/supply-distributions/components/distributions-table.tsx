@@ -59,13 +59,6 @@ interface SortConfig {
   order: SortOrder;
 }
 
-interface DistributionStats {
-  totalDistributions: number;
-  totalValue: number;
-  totalItems: number;
-  avgCost: number;
-}
-
 interface FilterConfig {
   siteId?: string;
   distributionType?: string;
@@ -101,11 +94,6 @@ const successAlertClass =
 // Same hard-colour tile as the sites index.
 const rowTileClass =
   'grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-(--bch-teal-600) text-white';
-const statTileClass =
-  'rounded-(--radius-card) border border-(--border-default) border-t-[3px] bg-(--surface-card) px-4 py-3.5';
-const statLabelClass =
-  'text-[11.5px] font-bold tracking-[.7px] text-(--text-muted) uppercase';
-const statValueClass = 'mt-1 text-[28px] leading-[1.2] font-bold';
 
 const DistributionsTable = forwardRef<
   DistributionsTableRef,
@@ -136,7 +124,6 @@ const DistributionsTable = forwardRef<
       total: 0,
       pages: 0,
     });
-    const [stats, setStats] = useState<DistributionStats | null>(null);
 
     // Filter states
     const [siteFilter, setSiteFilter] = useState('all');
@@ -202,9 +189,6 @@ const DistributionsTable = forwardRef<
           if (response.ok) {
             setDistributions(data.distributions);
             setPagination(data.pagination);
-            if (data.stats) {
-              setStats(data.stats);
-            }
             setInternalError('');
           } else {
             setInternalError(data.error || 'Failed to fetch distributions');
@@ -327,39 +311,6 @@ const DistributionsTable = forwardRef<
             </Button>
           </Alert>
         )}
-
-        <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <div className={cn(statTileClass, 'border-t-(--surface-chrome)')}>
-            <div className={statLabelClass}>Total distributions</div>
-            <div className={statValueClass}>
-              {(stats?.totalDistributions ?? pagination.total).toLocaleString()}
-            </div>
-          </div>
-          <div className={cn(statTileClass, 'border-t-(--action-primary)')}>
-            <div className={statLabelClass}>Total value distributed</div>
-            <div
-              className={cn(statValueClass, !stats && 'text-(--text-muted)')}
-            >
-              {stats ? `$${stats.totalValue.toFixed(2)}` : '—'}
-            </div>
-          </div>
-          <div className={cn(statTileClass, 'border-t-(--bch-seafoam)')}>
-            <div className={statLabelClass}>Total items distributed</div>
-            <div
-              className={cn(statValueClass, !stats && 'text-(--text-muted)')}
-            >
-              {stats ? stats.totalItems.toLocaleString() : '—'}
-            </div>
-          </div>
-          <div className={cn(statTileClass, 'border-t-(--bch-gold-500)')}>
-            <div className={statLabelClass}>Avg. cost per distribution</div>
-            <div
-              className={cn(statValueClass, !stats && 'text-(--text-muted)')}
-            >
-              {stats ? `$${stats.avgCost.toFixed(2)}` : '—'}
-            </div>
-          </div>
-        </div>
 
         <div className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card)">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-(--border-default) px-5 py-4">

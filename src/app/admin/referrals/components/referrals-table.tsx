@@ -56,13 +56,6 @@ interface SortConfig {
   order: SortOrder;
 }
 
-interface ReferralStats {
-  totalReferrals: number;
-  inPerson: number;
-  phoneCall: number;
-  email: number;
-}
-
 interface FilterConfig {
   siteId?: string;
   channel?: string;
@@ -101,11 +94,6 @@ const successAlertClass =
 // Same hard-colour tile as the sites index.
 const rowTileClass =
   'grid size-11 shrink-0 place-items-center rounded-(--radius-avatar) bg-(--bch-teal-600) text-white';
-const statTileClass =
-  'rounded-(--radius-card) border border-(--border-default) border-t-[3px] bg-(--surface-card) px-4 py-3.5';
-const statLabelClass =
-  'text-[11.5px] font-bold tracking-[.7px] text-(--text-muted) uppercase';
-const statValueClass = 'mt-1 text-[28px] leading-[1.2] font-bold';
 
 const ReferralsTable = forwardRef<ReferralsTableRef, ReferralsTableProps>(
   (
@@ -124,7 +112,6 @@ const ReferralsTable = forwardRef<ReferralsTableRef, ReferralsTableProps>(
 
     const [referrals, setReferrals] = useState<Referral[]>([]);
     const [sites, setSites] = useState<Array<{ id: string; name: string }>>([]);
-    const [stats, setStats] = useState<ReferralStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState<PaginationInfo>({
       page: 1,
@@ -203,7 +190,6 @@ const ReferralsTable = forwardRef<ReferralsTableRef, ReferralsTableProps>(
           setPagination(
             data.pagination || { page: 1, limit: 10, total: 0, pages: 0 }
           );
-          setStats(data.stats || null);
         } catch (err) {
           console.error('Failed to fetch referrals:', err);
           onError('Failed to load referrals');
@@ -330,33 +316,6 @@ const ReferralsTable = forwardRef<ReferralsTableRef, ReferralsTableProps>(
             </Button>
           </Alert>
         )}
-
-        <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <div className={cn(statTileClass, 'border-t-(--surface-chrome)')}>
-            <div className={statLabelClass}>Total referrals</div>
-            <div className={statValueClass}>
-              {(stats?.totalReferrals ?? pagination.total).toLocaleString()}
-            </div>
-          </div>
-          <div className={cn(statTileClass, 'border-t-(--action-primary)')}>
-            <div className={statLabelClass}>In person</div>
-            <div className={cn(statValueClass, !stats && 'text-(--text-muted)')}>
-              {stats ? stats.inPerson.toLocaleString() : '—'}
-            </div>
-          </div>
-          <div className={cn(statTileClass, 'border-t-(--bch-seafoam)')}>
-            <div className={statLabelClass}>Phone call</div>
-            <div className={cn(statValueClass, !stats && 'text-(--text-muted)')}>
-              {stats ? stats.phoneCall.toLocaleString() : '—'}
-            </div>
-          </div>
-          <div className={cn(statTileClass, 'border-t-(--bch-gold-500)')}>
-            <div className={statLabelClass}>Email</div>
-            <div className={cn(statValueClass, !stats && 'text-(--text-muted)')}>
-              {stats ? stats.email.toLocaleString() : '—'}
-            </div>
-          </div>
-        </div>
 
         <div className="overflow-hidden rounded-(--radius-card) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-card)">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-(--border-default) px-5 py-4">
